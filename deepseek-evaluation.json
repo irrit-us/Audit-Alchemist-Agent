@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "dataset": "synthetic-python-smoke-v1",
+  "executable": "/home/ubuntu/Audit-Alchemist-Agent/target/debug/audit-harness",
+  "args": [
+    "agent",
+    "--endpoint",
+    "https://api.deepseek.com/chat/completions",
+    "--model",
+    "deepseek-flash",
+    "--api-key-env",
+    "AUDIT_API_KEY",
+    "--max-source-bytes",
+    "262144",
+    "--max-tokens",
+    "4096",
+    "--timeout-ms",
+    "120000"
+  ],
+  "jobs": 2,
+  "timeout_ms": 120000,
+  "max_output_bytes": 1048576,
+  "metrics": {
+    "true_positives": 3,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "successful_cases": 6,
+    "failed_cases": 0,
+    "exact_match_cases": 6,
+    "elapsed_ms": 10702
+  },
+  "cases": [
+    {
+      "run": {
+        "case_id": "command-injection",
+        "outcome": "success",
+        "elapsed_ms": 2399,
+        "exit_code": 0,
+        "error": null,
+        "findings": [
+          {
+            "cwe": "CWE-78",
+            "path": "sources/command_unsafe.py",
+            "line": 5,
+            "severity": "high",
+            "title": "OS command injection via unsanitized name concatenated into shell command",
+            "evidence": "The HTTP handler supplies attacker-controlled text as `name`, which is concatenated directly into the command string passed to `subprocess.check_output(..., shell=True)`. Because shell metacharacters are not escaped and no argument list is used, an input such as `; <command>` (e.g. \"x; id\" or \"$(id)\") is interpreted by /bin/sh and executed, yielding arbitrary command execution with the privileges of the process. `shell=True` combined with string building provides no quoting/validation protection; the safe form is passing a list of args with shell=False (e.g. subprocess.check_output([\"printf\", \"Hello %s\", name]))."
+          }
+        ]
+      },
+      "matched": [
+        {
+          "cwe": "CWE-78",
+          "path": "sources/command_unsafe.py",
+          "line": 5
+        }
+      ],
+      "unexpected": [],
+      "missed": [],
+      "duplicate_findings": 0
+    },
+    {
+      "run": {
+        "case_id": "command-safe",
+        "outcome": "success",
+        "elapsed_ms": 1182,
+        "exit_code": 0,
+        "error": null,
+        "findings": []
+      },
+      "matched": [],
+      "unexpected": [],
+      "missed": [],
+      "duplicate_findings": 0
+    },
+    {
+      "run": {
+        "case_id": "sql-injection",
+        "outcome": "success",
+        "elapsed_ms": 2591,
+        "exit_code": 0,
+        "error": null,
+        "findings": [
+          {
+            "cwe": "CWE-89",
+            "path": "sources/sql_unsafe.py",
+            "line": 3,
+            "severity": "high",
+            "title": "SQL injection via string concatenation in username lookup",
+            "evidence": "The attacker-controlled `username` argument is concatenated directly into the SQL text on line 2 (`\"SELECT secret FROM users WHERE name = '\" + username + \"'\"`) and the resulting string is passed to `connection.execute(query)` on line 3. No parameter binding, escaping, or allow-list validation is applied, so input such as `' OR '1'='1` or `'; --` rewrites the WHERE clause and allows reading private `secret` records for arbitrary users (including UNION-based extraction). Fix by using a parameterized query, e.g. `connection.execute(\"SELECT secret FROM users WHERE name = ?\", (username,))`."
+          }
+        ]
+      },
+      "matched": [
+        {
+          "cwe": "CWE-89",
+          "path": "sources/sql_unsafe.py",
+          "line": 3
+        }
+      ],
+      "unexpected": [],
+      "missed": [],
+      "duplicate_findings": 0
+    },
+    {
+      "run": {
+        "case_id": "sql-safe",
+        "outcome": "success",
+        "elapsed_ms": 656,
+        "exit_code": 0,
+        "error": null,
+        "findings": []
+      },
+      "matched": [],
+      "unexpected": [],
+      "missed": [],
+      "duplicate_findings": 0
+    },
+    {
+      "run": {
+        "case_id": "code-injection",
+        "outcome": "success",
+        "elapsed_ms": 2014,
+        "exit_code": 0,
+        "error": null,
+        "findings": [
+          {
+            "cwe": "CWE-95",
+            "path": "sources/eval_unsafe.py",
+            "line": 3,
+            "severity": "critical",
+            "title": "Arbitrary code execution via eval() on untrusted HTTP expression",
+            "evidence": "The function parameter `expression` is documented as untrusted text arriving from a public HTTP request, and it is passed unmodified to the built-in `eval()` at line 3. No validation, sanitization, parsing, or allow-listing (e.g. ast.literal_eval or a restricted arithmetic parser) is applied, and eval executes arbitrary Python expressions, so an attacker can supply payloads that import modules or invoke OS commands, achieving remote code execution in the server process."
+          }
+        ]
+      },
+      "matched": [
+        {
+          "cwe": "CWE-95",
+          "path": "sources/eval_unsafe.py",
+          "line": 3
+        }
+      ],
+      "unexpected": [],
+      "missed": [],
+      "duplicate_findings": 0
+    },
+    {
+      "run": {
+        "case_id": "literal-safe",
+        "outcome": "success",
+        "elapsed_ms": 6925,
+        "exit_code": 0,
+        "error": null,
+        "findings": []
+      },
+      "matched": [],
+      "unexpected": [],
+      "missed": [],
+      "duplicate_findings": 0
+    }
+  ]
+}

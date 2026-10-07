@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "name": "synthetic-python-smoke-v1",
+  "cases": [
+    {"id":"command-injection","target":"sources/command_unsafe.py","instruction":"The HTTP handler passes attacker-controlled text as the name argument. Audit the command execution.","expected":[{"cwe":"CWE-78","path":"sources/command_unsafe.py","line":5}]},
+    {"id":"command-safe","target":"sources/command_safe.py","instruction":"The HTTP handler passes attacker-controlled text as the name argument. Audit the command execution.","expected":[]},
+    {"id":"sql-injection","target":"sources/sql_unsafe.py","instruction":"The username argument is attacker-controlled. The database holds private user records. Audit query construction.","expected":[{"cwe":"CWE-89","path":"sources/sql_unsafe.py","line":3}]},
+    {"id":"sql-safe","target":"sources/sql_safe.py","instruction":"The username argument is attacker-controlled. The database holds private user records. Audit query construction.","expected":[]},
+    {"id":"code-injection","target":"sources/eval_unsafe.py","instruction":"The expression argument comes directly from a public HTTP request. Audit expression evaluation.","expected":[{"cwe":"CWE-95","path":"sources/eval_unsafe.py","line":3}]},
+    {"id":"literal-safe","target":"sources/literal_safe.py","instruction":"The expression argument comes from a public HTTP request and is limited upstream to 100 characters. Audit whether arbitrary code execution is possible.","expected":[]}
+  ]
+}
