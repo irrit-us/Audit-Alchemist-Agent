@@ -15,8 +15,8 @@ a minimal `node.toml`, quick-start instructions, licenses/skill attribution, and
 Every archive has a sibling `.sha256` checksum file. Verify before extracting:
 
 ```sh
-sha256sum -c audit-harness-v0.1.0-x86_64-unknown-linux-musl.tar.gz.sha256
-tar -xzf audit-harness-v0.1.0-x86_64-unknown-linux-musl.tar.gz
+sha256sum -c audit-harness-v0.1.1-x86_64-unknown-linux-musl.tar.gz.sha256
+tar -xzf audit-harness-v0.1.1-x86_64-unknown-linux-musl.tar.gz
 ```
 
 On Windows, compare `Get-FileHash -Algorithm SHA256 <archive.zip>` with the
@@ -46,8 +46,8 @@ To release a new version, update `Cargo.toml`, regenerate and commit `Cargo.lock
 record changes, and push a matching annotated tag:
 
 ```sh
-git tag -a v0.1.0 -m 'Release v0.1.0'
-git push origin v0.1.0
+git tag -a v0.1.1 -m 'Release v0.1.1'
+git push origin v0.1.1
 ```
 
 The workflow refuses to overwrite existing release assets. A failed build can

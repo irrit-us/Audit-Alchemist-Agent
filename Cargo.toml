@@ -1,6 +1,6 @@
 [package]
 name = "audit-harness"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "Bounded CLI execution and reproducible evaluation for vulnerability discovery agents"
 license = "MIT"

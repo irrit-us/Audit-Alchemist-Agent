@@ -45,7 +45,10 @@ jobs:
     timeout-minutes: 30
     env:
       CARGO_TERM_COLOR: always
-      CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER: musl-gcc
+      # Rust supplies musl CRT/libc for the final link. Ubuntu's musl-gcc specs
+      # can inject a dynamic loader for -static-pie; use GCC for that link.
+      CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER: gcc
+      CC_x86_64_unknown_linux_musl: musl-gcc
       CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS: '-C target-feature=+crt-static'
       CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_RUSTFLAGS: '-C target-feature=+crt-static'
     steps:
@@ -68,6 +71,7 @@ jobs:
           binary=target/x86_64-unknown-linux-musl/release/audit-harness
           readelf -lW "$binary" > target/program-headers.txt
           readelf -dW "$binary" > target/dynamic-section.txt
+          cat target/program-headers.txt target/dynamic-section.txt
           if grep -q 'INTERP' target/program-headers.txt || grep -q '(NEEDED)' target/dynamic-section.txt; then
             echo 'musl binary is not self-contained' >&2
             exit 1

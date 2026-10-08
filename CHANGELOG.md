@@ -5,7 +5,15 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
-## [0.1.0] - 2026-10-08
+## [0.1.1] - 2026-10-08
+
+### Fixed
+
+- Use GCC with Rust's bundled musl CRT for the final static PIE link, while
+  compiling native C dependencies with musl-gcc. The initial `v0.1.0` CI candidate
+  retained an ELF interpreter and was blocked from publication by the static-link gate.
+
+## [0.1.0] - 2026-10-08 (unpublished candidate)
 
 ### Fixed
 
