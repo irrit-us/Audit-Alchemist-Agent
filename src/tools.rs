@@ -36,7 +36,7 @@ pub fn definitions() -> Vec<Value> {
     };
     vec![
         tool("load_skill", "Load built-in guidance by exact catalog name. Omit resource for SKILL.md, then request an exact available_resources path if needed. Use save_to with an explicit resource to write the bundled script/reference to a new root-relative file without returning its content. Parent directories must exist; existing files are never overwritten. Run saved scripts through Bash. Content is compiled into the binary.", json!({"name":string(),"resource":string(),"save_to":string()}), json!(["name"])),
-        tool("bash", "Run Bash in the audit root to explore code (rg/grep/git), build and run local PoCs, or invoke other installed tools. Commands run with host permissions; cwd and shell variables reset each call, files persist. No interactive stdin. Output is capped with an explicit truncation marker; narrow commands when truncated. Use timeout_ms for slow tests (capped by the run deadline).", json!({"command":string(),"timeout_ms":integer()}), json!(["command"])),
+        tool("bash", "Execute command as Bash in the audit root with host permissions. Shell state resets each call; files persist. No interactive stdin. Output is bounded and truncation marked. timeout_ms defaults to 30000, capped by the run deadline.", json!({"command":string(),"timeout_ms":integer()}), json!(["command"])),
         tool("read_file", "Read UTF-8 text with 1-based line labels. Use offset and limit to page through files. Read the finding's source line with this tool before citing it. Streams the requested page without loading the whole file. Scan cap 64 MiB per call; output cap 32 KiB. total_lines is null until EOF. Paths are relative to the audit root.", json!({"path":string(),"offset":integer(),"limit":integer()}), json!(["path"])),
         tool("write_file", "Create or overwrite a UTF-8 file relative to the audit root, including PoCs and test fixtures. Parent directories must exist (use Bash mkdir -p). Read existing files before overwriting. Maximum content 1 MiB.", json!({"path":string(),"content":string()}), json!(["path","content"])),
         tool("edit_file", "Replace exactly one occurrence of old_text with new_text in a UTF-8 file. Read first; on missing or ambiguous matches, re-read and provide a unique exact match. Paths are root-relative.", json!({"path":string(),"old_text":string(),"new_text":string()}), json!(["path","old_text","new_text"])),
@@ -339,6 +339,7 @@ async fn capture(
 
 async fn bash(root: &Path, script: &str, timeout: Duration) -> Result<Value> {
     let mut command = Command::new(bash_program());
+    // Pass the original script as one argument: Bash owns parsing and shell options.
     command
         .args(["--noprofile", "--norc", "-c", script])
         .current_dir(root)

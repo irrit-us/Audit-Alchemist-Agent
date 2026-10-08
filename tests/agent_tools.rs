@@ -88,6 +88,54 @@ async fn workspace_tools_page_edit_search_and_report_recoverable_errors() {
 }
 
 #[tokio::test]
+async fn bash_preserves_shell_syntax_and_native_failure_semantics() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut tools = WorkspaceTools::new(
+        dir.path(),
+        &Context {
+            sources: vec![],
+            total_bytes: 0,
+        },
+    )
+    .unwrap();
+    let script = r#"values=('space value' '$HOME' '$(touch unexpected)')
+printf '%s\n' "${values[@]}" > 'input with spaces.txt'
+cat <<'LITERAL' >> 'input with spaces.txt'
+$HOME `literal` $(also_literal)
+LITERAL
+mapfile -t lines < 'input with spaces.txt'
+printf '[%s]\n' "${lines[@]}" | while IFS= read -r line; do
+    printf '%s\n' "$line"
+done
+suffix=$(printf '%s' tail)
+printf '%s\n' "$suffix"
+for file in *.txt; do printf 'file:%s\n' "$file"; done
+false | true
+printf 'pipeline=%s\n' "$?"
+false
+printf 'continued\n'
+"#;
+    let result = tools
+        .execute(
+            "bash",
+            &json!({"command":script}).to_string(),
+            Duration::from_secs(5),
+        )
+        .await;
+    assert_eq!(result["exit_code"], 0, "{result}");
+    assert_eq!(result["stderr"], "");
+    assert_eq!(
+        result["stdout"],
+        "[space value]\n[$HOME]\n[$(touch unexpected)]\n[$HOME `literal` $(also_literal)]\ntail\nfile:input with spaces.txt\npipeline=0\ncontinued\n"
+    );
+    assert!(!dir.path().join("unexpected").exists());
+    assert_eq!(
+        std::fs::read_to_string(dir.path().join("input with spaces.txt")).unwrap(),
+        "space value\n$HOME\n$(touch unexpected)\n$HOME `literal` $(also_literal)\n"
+    );
+}
+
+#[tokio::test]
 async fn bash_runs_pocs_reports_nonzero_exit_and_bounds_output_and_time() {
     let dir = tempfile::tempdir().unwrap();
     let mut tools = WorkspaceTools::new(

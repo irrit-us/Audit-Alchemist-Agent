@@ -7,6 +7,9 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- Kept Bash as a command string plus optional timeout, with a shorter tool
+  description and regression coverage for native shell syntax and failure semantics.
+
 - Shortened the default audit prompt, skill descriptions, and contributor entry
   point. Detailed guidance stays on demand; skill loading is driven by need.
 

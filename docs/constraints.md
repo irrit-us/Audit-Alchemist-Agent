@@ -31,6 +31,15 @@ follow-ups are in [Harness design research](harness-design.md).
 
 ## Extension constraints
 
+Bash must remain a thin execution interface: a command string and optional
+timeout, passed unchanged as one argument to Bash. Let Bash interpret quoting,
+pipes, redirects, heredocs, expansions, and compound commands. Do not add a
+command DSL, command rewriting, tool-specific subcommands, or implicit
+`set -e`/`pipefail`. Keep timeout, bounded capture, and descendant cleanup in the
+supervisor. Preserve stdout, stderr, and exit status in the tool result; file
+helpers and skill scripts remain optional conveniences. The shell syntax and
+failure-semantics fixture in `tests/agent_tools.rs` protects this boundary.
+
 Default-loaded content must stay concise and decision-relevant: audit scope,
 evidence/output rules, actual tool semantics, and short skill routing metadata.
 Keep research, language manuals, examples, and implementation history on demand.

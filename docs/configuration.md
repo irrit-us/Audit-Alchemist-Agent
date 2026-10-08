@@ -78,6 +78,15 @@ Bash under Program Files when available; otherwise Bash must be on PATH. Shell
 variables and cwd changes reset per call; files persist. Unix process groups and
 Windows kill-on-close jobs clean up ordinary child processes on timeout/cancellation.
 
+The Bash interface accepts `command` and optional `timeout_ms` (default 30000,
+capped by the remaining run deadline). The command is passed unchanged to
+`bash --noprofile --norc -c`; Bash handles quoting, pipes, redirects, heredocs,
+and expansions. The harness does not inject `set -e` or `pipefail`; commands can
+select those options explicitly. Stdin is closed, so this is a noninteractive
+shell call, not a persistent terminal. Results retain stdout, stderr, exit code,
+and timeout/truncation metadata. Debuggers needing interactive control can use
+the on-demand controller scripts or tmux guidance.
+
 ### Console output (`audit`)
 
 The machine-readable report always goes to stdout or `--output`; these flags
