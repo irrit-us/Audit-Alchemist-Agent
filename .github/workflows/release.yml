@@ -1,0 +1,113 @@
+name: Release binaries
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  metadata:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - id: meta
+        run: python scripts/release.py metadata
+
+  checks:
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    needs: metadata
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-22.04
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-22.04
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    env:
+      CARGO_TERM_COLOR: always
+      CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER: musl-gcc
+      CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS: '-C target-feature=+crt-static'
+      CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_RUSTFLAGS: '-C target-feature=+crt-static'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install musl toolchain
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - name: Build optimized CLI
+        run: cargo build --locked --release --bin audit-harness --target ${{ matrix.target }}
+      - name: Verify musl has no dynamic loader or shared dependencies
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        shell: bash
+        run: |
+          binary=target/x86_64-unknown-linux-musl/release/audit-harness
+          readelf -lW "$binary" > target/program-headers.txt
+          readelf -dW "$binary" > target/dynamic-section.txt
+          if grep -q 'INTERP' target/program-headers.txt || grep -q '(NEEDED)' target/dynamic-section.txt; then
+            echo 'musl binary is not self-contained' >&2
+            exit 1
+          fi
+      - name: Package and smoke-test extracted CLI
+        run: python scripts/release.py package --target ${{ matrix.target }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: audit-harness-${{ needs.metadata.outputs.version }}-${{ matrix.target }}
+          path: target/release-dist/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+  publish:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: [metadata, checks, build]
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: audit-harness-${{ needs.metadata.outputs.version }}-*
+          path: target/release-dist
+          merge-multiple: true
+      - name: Verify all three archives and checksums
+        run: python scripts/release.py verify
+      - name: Publish complete release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          flags=()
+          if [[ "$RELEASE_TAG" == *-* ]]; then flags+=(--prerelease); fi
+          gh release create "$RELEASE_TAG" target/release-dist/* \
+            --verify-tag --title "$RELEASE_TAG" --generate-notes "${flags[@]}"

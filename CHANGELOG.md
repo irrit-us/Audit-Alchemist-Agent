@@ -5,6 +5,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-08
+
 ### Fixed
 
 - Windows HTTP test fixtures now reset accepted sockets to blocking mode with
@@ -19,6 +21,9 @@ All notable changes to this project are documented here. The format follows
   point. Detailed guidance stays on demand; skill loading is driven by need.
 
 ### Added
+
+- CI-built AMD64 Linux GNU, static Linux musl, and Windows MSVC release archives,
+  checksums, build metadata, extracted-binary smoke checks, and gated tag publication.
 
 - Versioned standalone TOML configuration, explicit CLI overrides, custom on-demand
   skills, native tool selection, and resolved evaluation configuration snapshots.

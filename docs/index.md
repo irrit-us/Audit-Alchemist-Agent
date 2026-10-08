@@ -7,6 +7,7 @@ Start with the [README](../README.md) for installation and a first run.
 | [Architecture](architecture.md) | Layers, modules, data flow, and design principles |
 | [Monitoring and skills](monitoring.md) | Run journals, debugging, local diagnostics, and built-in guidance |
 | [Configuration](configuration.md) | Commands, flags, limits, exit codes, and report behavior |
+| [Binary releases](releases.md) | AMD64 GNU, musl, and Windows downloads, checksums, and release CI |
 | [Authentication](authentication.md) | API-key and Sign In With ChatGPT (Codex) credentials |
 | [Protocol](protocol.md) | Version 1 agent request/response and dataset contract |
 | [Evaluation](evaluation.md) | Matching, scoring, metrics, and reproducibility |
