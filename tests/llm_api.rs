@@ -23,7 +23,18 @@ fn fixture(
         "http://{}/v1/chat/completions",
         listener.local_addr().unwrap()
     );
-    let body = serde_json::json!({"choices": [{"message": {"content": content.to_string()}, "finish_reason": finish}]}).to_string();
+    let body = if status == 200 {
+        // The adapter always requests streaming, so serve SSE.
+        let delta = serde_json::json!({
+            "choices": [{"delta": {"content": content.to_string()}, "finish_reason": null}]
+        });
+        let stop = serde_json::json!({
+            "choices": [{"delta": {}, "finish_reason": finish}]
+        });
+        format!("data: {delta}\n\ndata: {stop}\n\ndata: [DONE]\n\n")
+    } else {
+        "{}".to_string()
+    };
     let (sender, receiver) = mpsc::channel();
     let handle = thread::spawn(move || {
         let deadline = std::time::Instant::now() + Duration::from_secs(10);
@@ -72,7 +83,7 @@ fn fixture(
         sender
             .send(serde_json::from_slice(&bytes[header_end..header_end + length]).unwrap())
             .unwrap();
-        write!(stream, "HTTP/1.1 {status} Fixture\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len()).unwrap();
+        write!(stream, "HTTP/1.1 {status} Fixture\r\nContent-Type: text/event-stream\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len()).unwrap();
     });
     (endpoint, receiver, handle)
 }

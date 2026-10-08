@@ -152,6 +152,12 @@ impl WireStream {
                 self.emit_text(content, sink);
             }
         }
+        if let Some(reason) = choice.get("finish_reason").and_then(Value::as_str) {
+            // Only `stop` is a normal completion; length/content_filter are not.
+            if reason != "stop" {
+                self.error = Some(format!("model stopped with finish_reason {reason}"));
+            }
+        }
     }
 
     fn handle_responses(&mut self, event: &Value, sink: &mut dyn EventSink) {
@@ -215,6 +221,11 @@ impl WireStream {
                 }
             }
             "message_delta" => {
+                if let Some(reason) = event.pointer("/delta/stop_reason").and_then(Value::as_str) {
+                    if reason == "max_tokens" {
+                        self.error = Some("model stopped with stop_reason max_tokens".to_owned());
+                    }
+                }
                 if let Some(usage) = event.get("usage") {
                     self.set_usage(anthropic_usage(usage), sink);
                 }
@@ -457,6 +468,24 @@ mod tests {
             )
             .unwrap();
         assert!(failed.finish().unwrap_err().to_string().contains("busy"));
+    }
+
+    #[test]
+    fn finish_rejects_truncated_completions() {
+        let mut stream = WireStream::new(WireApi::ChatCompletions);
+        let mut sink = Capture::default();
+        stream
+            .handle_data(
+                r#"{"choices":[{"delta":{"content":"partial"},"finish_reason":"length"}]}"#,
+                &mut sink,
+            )
+            .unwrap();
+        stream.handle_data("[DONE]", &mut sink).unwrap();
+        assert!(stream
+            .finish()
+            .unwrap_err()
+            .to_string()
+            .contains("finish_reason length"));
     }
 
     #[test]
