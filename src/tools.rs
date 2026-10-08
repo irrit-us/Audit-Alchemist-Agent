@@ -1,5 +1,7 @@
 //! Model-facing workspace tools. Bash runs with host permissions, not in a sandbox.
 
+mod read;
+
 use crate::{
     context::{
         tools::{SearchLimits, SourceRoot, WalkLimits},
@@ -33,7 +35,7 @@ pub fn definitions() -> Vec<Value> {
     };
     vec![
         tool("bash", "Run Bash in the audit root to explore code (rg/grep/git), build and run local PoCs, or invoke other installed tools. Commands run with host permissions; cwd and shell variables reset each call, files persist. No interactive stdin. Output is capped with an explicit truncation marker; narrow commands when truncated. Use timeout_ms for slow tests (capped by the run deadline).", json!({"command":string(),"timeout_ms":integer()}), json!(["command"])),
-        tool("read_file", "Read UTF-8 text with 1-based line labels. Use offset and limit to page through files. Read the finding's source line with this tool before citing it. Maximum file size 1 MiB; output cap 32 KiB. Paths are relative to the audit root.", json!({"path":string(),"offset":integer(),"limit":integer()}), json!(["path"])),
+        tool("read_file", "Read UTF-8 text with 1-based line labels. Use offset and limit to page through files. Read the finding's source line with this tool before citing it. Streams the requested page without loading the whole file. Scan cap 64 MiB per call; output cap 32 KiB. total_lines is null until EOF. Paths are relative to the audit root.", json!({"path":string(),"offset":integer(),"limit":integer()}), json!(["path"])),
         tool("write_file", "Create or overwrite a UTF-8 file relative to the audit root, including PoCs and test fixtures. Parent directories must exist (use Bash mkdir -p). Read existing files before overwriting. Maximum content 1 MiB.", json!({"path":string(),"content":string()}), json!(["path","content"])),
         tool("edit_file", "Replace exactly one occurrence of old_text with new_text in a UTF-8 file. Read first; on missing or ambiguous matches, re-read and provide a unique exact match. Paths are root-relative.", json!({"path":string(),"old_text":string(),"new_text":string()}), json!(["path","old_text","new_text"])),
         tool("list_files", "List supported source paths under a root-relative directory or file (use . for root). Prunes dependency/build directories. At most 128 files; narrow the target on overflow, or use Bash rg --files for broader exploration.", json!({"target":string()}), json!(["target"])),
@@ -105,51 +107,19 @@ impl WorkspaceTools {
                     limit: Option<usize>,
                 }
                 let args: Args = serde_json::from_str(arguments)?;
-                let file = self.root.read(&args.path, FILE_BYTES)?;
-                let lines: Vec<_> = file.content.lines().collect();
-                let offset = args.offset.unwrap_or(1);
-                let limit = args.limit.unwrap_or(200);
-                ensure!(offset > 0 && limit > 0, "offset and limit must be positive");
-                ensure!(
-                    offset <= lines.len().max(1),
-                    "offset exceeds {} lines",
-                    lines.len()
-                );
-                let mut content = String::new();
-                // Include escaped path and envelope overhead, leaving room for
-                // the loop's remaining_tool_calls field. Never register a line
-                // whose text could be removed by the outer result cap.
-                let overhead =
-                    serde_json::to_string(&json!({"path":file.path,"total_lines":lines.len()}))?
-                        .len()
-                        + 256;
-                let content_budget = OUTPUT_BYTES.saturating_sub(overhead);
-                let mut encoded_bytes = 0;
-                let mut count = 0;
-                for (index, line) in lines.iter().enumerate().skip(offset - 1).take(limit) {
-                    let numbered = format!("{}: {}\n", index + 1, line);
-                    let encoded_line_bytes = serde_json::to_string(&numbered)?.len();
-                    if encoded_bytes + encoded_line_bytes > content_budget {
-                        ensure!(
-                            count > 0,
-                            "line {} exceeds output cap; inspect it with Bash",
-                            index + 1
-                        );
-                        break;
-                    }
-                    content.push_str(&numbered);
-                    encoded_bytes += encoded_line_bytes;
-                    count += 1;
-                    self.observed
-                        .entry(file.path.clone())
-                        .or_default()
-                        .insert(index as u32 + 1);
-                }
-                let next = offset - 1 + count;
-                Ok(
-                    json!({"path":file.path,"content":content,"total_lines":lines.len(),"next_offset":if next < lines.len() { Some(next + 1) } else { None },"truncated":next < lines.len()}),
-                )
+                let page = read::read(
+                    &self.root,
+                    &args.path,
+                    args.offset.unwrap_or(1),
+                    args.limit.unwrap_or(200),
+                )?;
+                self.observed
+                    .entry(page.path)
+                    .or_default()
+                    .extend((page.offset..page.offset + page.lines).map(|line| line as u32));
+                Ok(page.result)
             }
+
             "write_file" => {
                 #[derive(Deserialize)]
                 #[serde(deny_unknown_fields)]
@@ -274,38 +244,62 @@ fn bash_program() -> PathBuf {
     "bash".into()
 }
 
-async fn capture(mut pipe: impl tokio::io::AsyncRead + Unpin) -> Result<(String, bool)> {
-    // Drain both pipes to avoid deadlocks; retain a bounded prefix and tail.
-    let mut head = Vec::new();
-    let mut tail = std::collections::VecDeque::new();
-    let mut total = 0usize;
+#[derive(Default)]
+struct CaptureBuffer {
+    head: Vec<u8>,
+    tail: std::collections::VecDeque<u8>,
+    total: usize,
+}
+
+impl CaptureBuffer {
+    fn push(&mut self, bytes: &[u8]) {
+        self.total = self.total.saturating_add(bytes.len());
+        let prefix = bytes
+            .len()
+            .min((OUTPUT_BYTES / 2).saturating_sub(self.head.len()));
+        self.head.extend_from_slice(&bytes[..prefix]);
+        self.tail.extend(&bytes[prefix..]);
+        let excess = self.tail.len().saturating_sub(OUTPUT_BYTES / 2);
+        self.tail.drain(..excess);
+    }
+
+    fn render(&self) -> (String, bool) {
+        let truncated = self.total > OUTPUT_BYTES;
+        let mut bytes = self.head.clone();
+        if truncated {
+            // Trim a cut UTF-8 character at either truncation boundary.
+            if let Err(error) = std::str::from_utf8(&bytes) {
+                if error.error_len().is_none() {
+                    bytes.truncate(error.valid_up_to());
+                }
+            }
+            bytes.extend_from_slice(b"\n[output truncated; narrow the command]\n");
+            bytes.extend(
+                self.tail
+                    .iter()
+                    .copied()
+                    .skip_while(|byte| byte & 0xc0 == 0x80),
+            );
+        } else {
+            // Decode once: a character can straddle the head/tail boundary.
+            bytes.extend(self.tail.iter());
+        }
+        (String::from_utf8_lossy(&bytes).into_owned(), truncated)
+    }
+}
+
+async fn capture(
+    mut pipe: impl tokio::io::AsyncRead + Unpin,
+    output: &mut CaptureBuffer,
+) -> Result<()> {
     let mut buffer = [0u8; 8192];
     loop {
         let n = pipe.read(&mut buffer).await?;
         if n == 0 {
-            break;
+            return Ok(());
         }
-        total = total.saturating_add(n);
-        for byte in &buffer[..n] {
-            if head.len() < OUTPUT_BYTES / 2 {
-                head.push(*byte);
-            } else {
-                if tail.len() == OUTPUT_BYTES / 2 {
-                    tail.pop_front();
-                }
-                tail.push_back(*byte);
-            }
-        }
+        output.push(&buffer[..n]);
     }
-    let truncated = total > OUTPUT_BYTES;
-    let mut text = String::from_utf8_lossy(&head).into_owned();
-    if truncated {
-        text.push_str("\n[output truncated; narrow the command]\n");
-    }
-    text.push_str(&String::from_utf8_lossy(
-        &tail.into_iter().collect::<Vec<_>>(),
-    ));
-    Ok((text, truncated))
 }
 
 async fn bash(root: &Path, script: &str, timeout: Duration) -> Result<Value> {
@@ -329,27 +323,65 @@ async fn bash(root: &Path, script: &str, timeout: Duration) -> Result<Value> {
     let _job = crate::runner::ProcessJob::attach(&child)?;
     let stdout = child.stdout.take().expect("piped stdout");
     let stderr = child.stderr.take().expect("piped stderr");
+    let mut out = CaptureBuffer::default();
+    let mut err = CaptureBuffer::default();
     let result = tokio::time::timeout(timeout, async {
-        tokio::try_join!(capture(stdout), capture(stderr), async {
-            child.wait().await.context("wait for Bash")
-        })
+        tokio::try_join!(
+            capture(stdout, &mut out),
+            capture(stderr, &mut err),
+            async { child.wait().await.context("wait for Bash") }
+        )
     })
     .await;
     drop(group);
+    #[cfg(windows)]
+    drop(_job);
+    let (stdout, out_cut) = out.render();
+    let (stderr, err_cut) = err.render();
+    let mut report = json!({"exit_code":null,"stdout":stdout,"stderr":stderr,"truncated":out_cut || err_cut,"timed_out":false});
     match result {
-        Ok(Ok(((stdout, out_cut), (stderr, err_cut), status))) => Ok(
-            json!({"exit_code":status.code(),"stdout":stdout,"stderr":stderr,"truncated":out_cut || err_cut}),
-        ),
+        Ok(Ok(((), (), status))) => report["exit_code"] = json!(status.code()),
         result => {
             let _ = child.kill().await;
             let _ = child.wait().await;
             match result {
                 Err(_) => {
-                    bail!("Bash exceeded its timeout; use a smaller test or request more time")
+                    report["timed_out"] = json!(true);
+                    report["error"] = json!("Bash exceeded its timeout; partial output is included. Use a smaller test or request more time");
                 }
-                Ok(Err(error)) => Err(error),
+                Ok(Err(error)) => report["error"] = json!(format!("{error:#}")),
                 _ => unreachable!(),
             }
         }
+    }
+    Ok(report)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn capture_preserves_unicode_across_chunks_and_retention_boundary() {
+        let original = format!("{}雪ending", "x".repeat(OUTPUT_BYTES / 2 - 1));
+        let mut buffer = CaptureBuffer::default();
+        for chunk in original.as_bytes().chunks(7) {
+            buffer.push(chunk);
+        }
+        assert_eq!(buffer.render(), (original, false));
+    }
+
+    #[test]
+    fn capture_retains_bounded_head_and_tail() {
+        let mut buffer = CaptureBuffer::default();
+        for _ in 0..100 {
+            buffer.push(&[b'x'; 8192]);
+        }
+        buffer.push(b"final diagnostic");
+        assert_eq!(buffer.head.len() + buffer.tail.len(), OUTPUT_BYTES);
+        let (text, cut) = buffer.render();
+        assert!(cut);
+        assert!(text.contains("output truncated"));
+        assert!(text.ends_with("final diagnostic"));
     }
 }

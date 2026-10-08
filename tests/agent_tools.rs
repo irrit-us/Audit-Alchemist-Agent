@@ -125,7 +125,7 @@ async fn bash_runs_pocs_reports_nonzero_exit_and_bounds_output_and_time() {
     let result = tools
         .execute(
             "bash",
-            r#"{"command":"(sleep 0.8; printf leaked > late.txt) & wait","timeout_ms":100}"#,
+            r#"{"command":"printf 'partial-result'; printf 'partial-error' >&2; (sleep 2; printf leaked > late.txt) & wait","timeout_ms":500}"#,
             timeout,
         )
         .await;
@@ -134,11 +134,64 @@ async fn bash_runs_pocs_reports_nonzero_exit_and_bounds_output_and_time() {
         "{result}"
     );
     assert!(start.elapsed() < Duration::from_secs(3));
-    tokio::time::sleep(Duration::from_secs(1)).await;
+    assert_eq!(result["timed_out"], true);
+    assert_eq!(result["stdout"], "partial-result");
+    assert_eq!(result["stderr"], "partial-error");
+    assert!(result["exit_code"].is_null());
+    tokio::time::sleep(Duration::from_secs(2)).await;
     assert!(
         !dir.path().join("late.txt").exists(),
         "timed-out descendant survived"
     );
+}
+
+#[tokio::test]
+async fn paged_reads_of_large_files_register_only_returned_lines() {
+    let dir = tempfile::tempdir().unwrap();
+    let text = format!(
+        "{}sink(name)\nlast\n",
+        "# padding padding padding\n".repeat(60_000)
+    );
+    assert!(text.len() > 1_048_576);
+    std::fs::write(dir.path().join("large.py"), text).unwrap();
+    let mut tools = WorkspaceTools::new(
+        dir.path(),
+        &Context {
+            sources: vec![],
+            total_bytes: 0,
+        },
+    )
+    .unwrap();
+    let result = tools
+        .execute(
+            "read_file",
+            r#"{"path":"large.py","offset":60001,"limit":1}"#,
+            Duration::from_secs(5),
+        )
+        .await;
+    assert_eq!(result["content"], "60001: sink(name)\n", "{result}");
+    assert_eq!(result["next_offset"], 60002);
+    assert!(result["total_lines"].is_null());
+    let mut finding = Finding {
+        cwe: "CWE-78".into(),
+        path: "large.py".into(),
+        line: 60001,
+        severity: Severity::High,
+        title: "x".into(),
+        evidence: "x".into(),
+    };
+    tools.validate_finding(&finding).unwrap();
+    finding.line = 60002;
+    assert!(tools.validate_finding(&finding).is_err());
+    let result = tools
+        .execute(
+            "read_file",
+            r#"{"path":"large.py","offset":60002,"limit":1}"#,
+            Duration::from_secs(5),
+        )
+        .await;
+    assert_eq!(result["total_lines"], 60002);
+    assert!(result["next_offset"].is_null());
 }
 
 fn calls() -> Vec<Value> {

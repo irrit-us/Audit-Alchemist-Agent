@@ -55,8 +55,8 @@ model turn; the wall-clock deadline covers the entire audit, including tools.
 
 | Tool | Use and bounds |
 | --- | --- |
-| `bash` | Run commands, rg/grep, builds, tests, and local PoCs in the audit root. Defaults to a 30-second timeout, with `timeout_ms` capped by the remaining audit time. Both output pipes are drained with bounded storage; truncated output is explicitly marked. |
-| `read_file` | Read UTF-8 files up to 1 MiB, with 1-based `offset`/`limit` paging (default 200 lines), line labels, and `next_offset`. |
+| `bash` | Run commands, rg/grep, builds, tests, and local PoCs in the audit root. Defaults to a 30-second timeout, with `timeout_ms` capped by the remaining audit time. Both output pipes are drained with bounded storage; truncated output is explicitly marked. Timeouts return `timed_out: true`, an error, and captured partial stdout/stderr. |
+| `read_file` | Stream UTF-8 source pages with 1-based `offset`/`limit` (default 200 lines), line labels, and `next_offset`. Supports files larger than 1 MiB without loading them entirely. Scans at most 64 MiB per call (including skipped lines); retains only the bounded page. `total_lines` is null until EOF is reached. |
 | `write_file` | Create/overwrite UTF-8 files up to 1 MiB; parent directories must exist. |
 | `edit_file` | Replace a unique, exact `old_text` match; missing/ambiguous matches return an actionable error. |
 | `list_files` | List up to 128 supported source files; prune build/dependency directories. Use Bash for broader listings and other file types. |

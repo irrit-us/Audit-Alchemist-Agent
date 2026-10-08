@@ -46,6 +46,12 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- Paged reads stream large files with bounded retained memory and an explicit
+  scan cap; they no longer reject a small requested region solely because the
+  file exceeds 1 MiB. Only returned lines become eligible finding citations.
+- Bash timeouts preserve captured diagnostics and report `timed_out`; retained
+  output preserves UTF-8 characters across chunk and head/tail boundaries.
+
 - Audit guidance now encourages exploration and local PoC validation; final
   findings must cite an initially supplied or explicitly read source line.
 - Search no longer silently stops when an exact byte budget is exhausted.

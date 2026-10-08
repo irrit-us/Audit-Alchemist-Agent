@@ -1,5 +1,18 @@
 # Validation
 
+## Tool reliability follow-up: 2026-10-08
+
+The second pass uses the same Windows/MSVC/Git Bash environment and validation
+commands below. It adds streaming reads of files over 1 MiB, exact page citation
+checks, CRLF/empty/unterminated-line coverage, oversized-line and scan-budget
+rejection, UTF-8 capture across buffer boundaries, and bounded head/tail storage.
+The timeout fixture now verifies that both partial output streams survive while
+the descendant process is still terminated. No live-model quality measurement
+was performed in this pass.
+
+All 69 tests passed (41 unit, 28 integration); formatting, strict Clippy, and
+`git diff --check` also passed.
+
 ## Tool-loop validation: 2026-10-08
 
 Validated locally on Windows with Rust 1.95.0 (MSVC) and Git Bash:
