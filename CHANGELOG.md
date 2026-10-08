@@ -15,6 +15,12 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- Process lifecycle, rejected-mutation, Unicode stream fragmentation, and
+  all-provider tool rejection regression checks. Incomplete-stream tests now
+  allow the full fixture tool budget, avoiding an unrelated failure masking bugs.
+- Linux/Windows Rust CI matrix and an independent Linux debugger job, with
+  explicit time limits, read-only repository permissions, and required tool checks.
+
 - **Harness design constraints** with primary-source research, contributor
   guidance, enforcement/test mappings, and prioritized reliability/evaluation gaps.
 

@@ -2,17 +2,10 @@ use audit_harness::{
     context::snapshot,
     dataset::{Case, Dataset},
     evaluate::{aggregate, score},
-    protocol::{Finding, FindingKey, Response, Severity, VERSION},
-    runner::{Outcome, RunResult},
+    protocol::{Finding, FindingKey, Request, Response, Severity, VERSION},
+    runner::{run, Outcome, RunConfig, RunResult},
 };
-#[cfg(unix)]
-use audit_harness::{
-    protocol::Request,
-    runner::{run, RunConfig},
-};
-use std::path::PathBuf;
-#[cfg(unix)]
-use std::time::Duration;
+use std::{path::PathBuf, time::Duration};
 
 fn key() -> FindingKey {
     FindingKey {
@@ -41,7 +34,6 @@ fn result(outcome: Outcome, findings: Vec<Finding>) -> RunResult {
         findings,
     }
 }
-#[cfg(unix)]
 fn request() -> Request {
     Request {
         schema_version: VERSION,
@@ -140,11 +132,23 @@ fn dataset_and_snapshot_limits() {
     assert!(snapshot(dir.path(), "../escape.py", 1024).is_err());
 }
 
-#[cfg(unix)]
 async fn shell(script: &str, timeout_ms: u64, limit: usize) -> RunResult {
+    #[cfg(unix)]
+    let executable = PathBuf::from("/bin/sh");
+    #[cfg(windows)]
+    let executable = std::env::var_os("AUDIT_BASH")
+        .map(PathBuf::from)
+        .or_else(|| {
+            std::env::var_os("ProgramFiles")
+                .map(|root| PathBuf::from(root).join("Git/bin/bash.exe"))
+                .filter(|path| path.is_file())
+        })
+        .unwrap_or_else(|| "bash".into());
+    #[cfg(not(any(unix, windows)))]
+    let executable = PathBuf::from("bash");
     run(
         &RunConfig {
-            executable: PathBuf::from("/bin/sh"),
+            executable,
             args: vec!["-c".into(), script.into()],
             root: std::env::current_dir().unwrap(),
             timeout: Duration::from_millis(timeout_ms),
@@ -155,7 +159,6 @@ async fn shell(script: &str, timeout_ms: u64, limit: usize) -> RunResult {
     .await
 }
 
-#[cfg(unix)]
 #[tokio::test]
 async fn subprocess_failure_modes() {
     assert_eq!(

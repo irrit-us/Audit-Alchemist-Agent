@@ -157,8 +157,9 @@ status. Ctrl-C aborts an audit or evaluation and emits no complete report.
 
 The runner passes arguments directly without a shell. On Unix it creates a
 process group and kills ordinary descendants on completion, failure, timeout, or
-cancellation, then reaps the direct child. Other platforms terminate only the
-direct child. Descendants that deliberately detach can escape the group. This is
+cancellation, then reaps the direct child. Windows uses kill-on-close jobs to
+clean up ordinary descendants; other platforms terminate only the direct child.
+Descendants that deliberately detach on Unix can escape the group. This is
 execution supervision, not an OS security sandbox: external agents inherit the
 environment and have filesystem and network access. Use a container or a
 separate account when running untrusted agents.

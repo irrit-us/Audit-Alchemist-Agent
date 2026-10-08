@@ -1,5 +1,30 @@
 # Validation
 
+## Process and provider regression coverage: 2026-10-08
+
+All 89 Rust tests passed locally on Windows/MSVC, along with formatting and
+strict Clippy. New checks cover cancellation after descendant readiness,
+background cleanup after successful Bash completion, simultaneous large stdout
+and stderr with retained tails, rejected arguments without file mutations,
+duplicate tool IDs on all provider wires, and Unicode SSE data split at every
+byte boundary. Subprocess failure checks previously gated to Unix now run on
+Windows too. The incomplete-stream fixture now permits its full four-call
+batch, ensuring a budget failure cannot hide missing stream validation, and
+also covers Responses and Anthropic incomplete turns.
+
+The debugger suite passed nine checks with two local dependency skips (GDB and
+pwntools); Node and opt-in Foundry checks ran. Strict dependency mode correctly
+failed for those missing tools. No live-model quality evaluation or line-coverage
+percentage was measured.
+
+CI now runs independent Linux and Windows Rust jobs, plus a Linux debugger job
+that requires Node, GDB, and pwntools. Jobs have wall-clock bounds and read-only
+repository permissions; matrix failures do not cancel the other platform's
+diagnostics. This follows [GitHub's matrix guidance](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations).
+Lifecycle checks exercise the cleanup obligations described in
+[Tokio's process documentation](https://docs.rs/tokio/latest/tokio/process/index.html).
+Local results above do not assert that a particular hosted CI run passed.
+
 ## Debugging skills and concise defaults: 2026-10-08
 
 Validated on Windows with Rust 1.95.0 (MSVC): all 81 Rust tests, formatting,

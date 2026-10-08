@@ -84,6 +84,26 @@ mod tests {
     }
 
     #[test]
+    fn unicode_payloads_survive_every_byte_split_and_single_byte_chunks() {
+        let input = "event: message\r\ndata: {\"text\":\"雪🦀\"}\r\n\r\ndata: [DONE]\n";
+        let expected = vec!["{\"text\":\"雪🦀\"}", "[DONE]"];
+        for split in 0..=input.len() {
+            let mut lines = SseLines::new();
+            let mut output = lines.push(&input.as_bytes()[..split]).unwrap();
+            output.extend(lines.push(&input.as_bytes()[split..]).unwrap());
+            output.extend(lines.finish().unwrap());
+            assert_eq!(output, expected, "split at byte {split}");
+        }
+        let mut lines = SseLines::new();
+        let mut output = Vec::new();
+        for byte in input.as_bytes().chunks(1) {
+            output.extend(lines.push(byte).unwrap());
+        }
+        output.extend(lines.finish().unwrap());
+        assert_eq!(output, expected);
+    }
+
+    #[test]
     fn rejects_non_utf8() {
         let mut lines = SseLines::new();
         assert!(lines.push(b"data: \xff\n").is_err());

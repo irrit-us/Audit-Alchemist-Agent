@@ -515,18 +515,71 @@ fn dry_run_explores_directories_without_credentials_and_reports_prompt_cost() {
 
 #[test]
 fn incomplete_tool_streams_never_execute_calls() {
-    for body in [
-        tool_turn("chat-completions").replace("tool_calls\"}", "length\"}"),
-        tool_turn("chat-completions").replace("data: [DONE]\n\n", ""),
+    for (wire, body) in [
+        (
+            "chat-completions",
+            tool_turn("chat-completions").replace("tool_calls\"}", "length\"}"),
+        ),
+        (
+            "chat-completions",
+            tool_turn("chat-completions").replace("data: [DONE]\n\n", ""),
+        ),
+        (
+            "responses",
+            tool_turn("responses").replace("response.completed", "response.incomplete"),
+        ),
+        (
+            "anthropic",
+            tool_turn("anthropic").replace(&sse(json!({"type":"message_stop"})), ""),
+        ),
+        (
+            "anthropic",
+            tool_turn("anthropic").replace(
+                "\"stop_reason\":\"tool_use\"",
+                "\"stop_reason\":\"max_tokens\"",
+            ),
+        ),
     ] {
         let dir = tempfile::tempdir().unwrap();
         std::fs::write(dir.path().join("entry.py"), "pass\n").unwrap();
         let (endpoint, rx, task) = server(vec![body]);
-        let output = run("chat-completions", dir.path(), &endpoint, "3");
-        assert_eq!(output.status.code(), Some(2));
+        // The complete fixture contains four calls. Allow all four so a budget
+        // rejection cannot hide a broken incomplete-stream check.
+        let output = run(wire, dir.path(), &endpoint, "4");
+        assert_eq!(output.status.code(), Some(2), "{wire}");
+        let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+        assert_eq!(report["outcome"], "provider_error");
+        assert!(!report["error"]
+            .as_str()
+            .unwrap()
+            .contains("exhausted --max-tool-calls"));
         rx.recv().unwrap();
         task.join().unwrap();
         assert!(!dir.path().join("poc.sh").exists());
+    }
+}
+
+#[test]
+fn duplicate_tool_ids_never_execute_mutations_on_any_wire() {
+    for wire in ["chat-completions", "responses", "anthropic"] {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("entry.py"), "pass\n").unwrap();
+        let body = tool_turn(wire).replace("\"write-2\"", "\"read-1\"");
+        let (endpoint, rx, task) = server(vec![body]);
+        let output = run(wire, dir.path(), &endpoint, "4");
+        assert_eq!(output.status.code(), Some(2), "{wire}");
+        let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+        assert_eq!(report["outcome"], "provider_error");
+        assert!(
+            report["error"]
+                .as_str()
+                .unwrap()
+                .contains("duplicate tool call"),
+            "{wire}: {report}"
+        );
+        rx.recv().unwrap();
+        task.join().unwrap();
+        assert!(!dir.path().join("poc.sh").exists(), "{wire}");
     }
 }
 

@@ -159,7 +159,10 @@ are reported as skips. Set `AUDIT_TEST_FOUNDRY=1` to run Forge compiler fixtures
 (which may download solc), and `AUDIT_TEST_FORGE_STD` to a local forge-std checkout
 for the typed test. Local validation covered Forge 1.8.1, solc 0.6.12 and 0.8.26,
 Node 24.18.0, and forge-std commit `0258fe875e1d8e207c1eb7175e542ea32356773c`.
-Linux CI installs GDB and pwntools for their native smoke tests.
+Linux CI installs GDB and pwntools for their native smoke tests and Node for
+Inspector tests. `AUDIT_REQUIRE_DEBUG_TOOLS=1` makes missing dependencies fail
+that job rather than silently skipping their tests. Local runs may still skip
+unavailable optional tools; Foundry tests remain explicitly opt-in.
 
 The debugger, tmux, and reporting guidance adapts selected MIT-licensed
 [codex-auditor skills](https://github.com/0RAYS/codex-auditor/tree/5974e700bf5b44f10d885bb238dd8bcab8f42145/skills).

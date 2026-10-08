@@ -168,4 +168,10 @@ contract RawCapabilityTest {
 
 
 if __name__ == "__main__":
+    if os.environ.get("AUDIT_REQUIRE_DEBUG_TOOLS") == "1":
+        missing = [tool for tool in ("node", "gdb") if not shutil.which(tool)]
+        if not importlib.util.find_spec("pwnlib"):
+            missing.append("pwntools")
+        if missing:
+            raise SystemExit("Required debug test dependencies missing: " + ", ".join(missing))
     unittest.main()
