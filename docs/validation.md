@@ -1,5 +1,16 @@
 # Validation
 
+## Windows HTTP fixture correction: 2026-10-08
+
+The first matrix run exposed `WouldBlock` in the Windows mock-provider request
+reader. The three HTTP fixtures polled nonblocking listeners but assumed
+accepted streams were blocking. They now explicitly restore blocking mode and
+set both read and write timeouts. A regression test forces nonblocking mode on
+every platform and delays two request fragments until the server is ready.
+All 90 Rust tests, formatting, and strict Clippy passed locally on Windows/MSVC.
+This changes test infrastructure only; production Bash and provider behavior
+are unchanged. See [Winsock accept semantics](https://learn.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-accept).
+
 ## Process and provider regression coverage: 2026-10-08
 
 All 89 Rust tests passed locally on Windows/MSVC, along with formatting and

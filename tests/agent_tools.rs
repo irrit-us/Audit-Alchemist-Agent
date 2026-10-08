@@ -1,3 +1,5 @@
+mod support;
+
 use audit_harness::{
     context::{Context, Source},
     protocol::{Finding, Severity},
@@ -340,9 +342,7 @@ fn server(bodies: Vec<String>) -> (String, mpsc::Receiver<Value>, thread::JoinHa
                     Err(error) => panic!("{error}"),
                 }
             };
-            stream
-                .set_read_timeout(Some(Duration::from_secs(5)))
-                .unwrap();
+            support::configure_http_stream(&stream);
             let mut bytes = vec![];
             let mut buffer = [0; 8192];
             let (offset, length) = loop {

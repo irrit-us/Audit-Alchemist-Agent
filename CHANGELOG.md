@@ -5,6 +5,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- Windows HTTP test fixtures now reset accepted sockets to blocking mode with
+  read/write timeouts; delayed request fragments no longer cause `WouldBlock`.
+
 ### Changed
 
 - Kept Bash as a command string plus optional timeout, with a shorter tool

@@ -1,3 +1,5 @@
+mod support;
+
 use serde_json::{json, Value};
 use std::{
     io::{Read, Write},
@@ -28,9 +30,7 @@ fn server(replies: Vec<(u16, u64, String)>) -> (String, thread::JoinHandle<()>) 
                     Err(error) => panic!("{error}"),
                 }
             };
-            stream
-                .set_read_timeout(Some(Duration::from_secs(5)))
-                .unwrap();
+            support::configure_http_stream(&stream);
             let mut bytes = Vec::new();
             let mut buf = [0; 8192];
             loop {

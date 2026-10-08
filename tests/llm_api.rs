@@ -1,3 +1,5 @@
+mod support;
+
 use std::{
     io::{Read, Write},
     net::TcpListener,
@@ -51,9 +53,7 @@ fn fixture(
                 Err(error) => panic!("{error}"),
             }
         };
-        stream
-            .set_read_timeout(Some(Duration::from_secs(5)))
-            .unwrap();
+        support::configure_http_stream(&stream);
         let mut bytes = Vec::new();
         let mut buffer = [0; 8192];
         let (header_end, length) = loop {
