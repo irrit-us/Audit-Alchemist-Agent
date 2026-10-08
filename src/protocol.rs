@@ -69,6 +69,19 @@ pub enum Severity {
     Critical,
 }
 
+impl Severity {
+    /// Stable lowercase label for console rendering and reports.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Severity::Info => "info",
+            Severity::Low => "low",
+            Severity::Medium => "medium",
+            Severity::High => "high",
+            Severity::Critical => "critical",
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Response {

@@ -30,6 +30,7 @@ pub enum Outcome {
     OutputLimit,
     NonzeroExit,
     InvalidResponse,
+    ProviderError,
 }
 
 impl Outcome {
@@ -43,6 +44,7 @@ impl Outcome {
             Outcome::OutputLimit => "output_limit",
             Outcome::NonzeroExit => "nonzero_exit",
             Outcome::InvalidResponse => "invalid_response",
+            Outcome::ProviderError => "provider_error",
         }
     }
 }

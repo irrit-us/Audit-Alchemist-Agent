@@ -143,7 +143,7 @@ fn api_failures_truncation_and_out_of_scope_findings_fail_the_run() {
         handle.join().unwrap();
         assert_eq!(output.status.code(), Some(2));
         let report: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
-        assert_eq!(report["outcome"], "nonzero_exit");
+        assert_eq!(report["outcome"], "provider_error");
         assert_eq!(report["findings"].as_array().unwrap().len(), 0);
     }
 }

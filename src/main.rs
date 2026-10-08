@@ -1,17 +1,19 @@
-use anyhow::{ensure, Context, Result};
+use anyhow::{bail, ensure, Context, Result};
 use audit_harness::{
     context::{self, ContextBudget},
     dataset,
     evaluate::{aggregate, score, Report},
+    output::{self, ColorChoice, OutputFormat},
     progress::Progress,
     protocol::{Request, VERSION},
     provider::{self, LlmOptions},
-    runner::{self, Outcome, RunConfig},
+    runner::{self, Outcome, RunConfig, RunResult},
+    tui,
 };
 use clap::{Args, Parser, Subcommand};
 use std::{
     fs::OpenOptions,
-    io::{Read, Write},
+    io::{IsTerminal, Read, Write},
     path::PathBuf,
     process::ExitCode,
     time::{Duration, Instant},
@@ -44,6 +46,15 @@ enum Action {
         /// Build and report the context and its token estimate without calling the model.
         #[arg(long)]
         dry_run: bool,
+        /// Console format for the live stream on stderr.
+        #[arg(long, value_enum, default_value_t = OutputFormat::Text)]
+        format: OutputFormat,
+        /// When to use ANSI color on stderr.
+        #[arg(long, value_enum, default_value_t = ColorChoice::Auto)]
+        color: ColorChoice,
+        /// Run the audit in an interactive terminal UI.
+        #[arg(long)]
+        tui: bool,
         #[command(flatten)]
         llm: LlmOptions,
         #[command(flatten)]
@@ -240,9 +251,12 @@ async fn execute(cli: Cli) -> Result<bool> {
             target,
             root,
             instruction,
+            dry_run,
+            format,
+            color,
+            tui: use_tui,
             llm,
             limits,
-            dry_run,
         } => {
             llm.validate()?;
             let root = root.canonicalize()?;
@@ -258,8 +272,8 @@ async fn execute(cli: Cli) -> Result<bool> {
                     "estimated context of {estimated_tokens} tokens exceeds the {max} token limit; narrow the target"
                 );
             }
+            let file = destination(&limits.output)?;
             if dry_run {
-                let file = destination(&limits.output)?;
                 emit(
                     &serde_json::json!({
                         "dry_run": true,
@@ -270,32 +284,82 @@ async fn execute(cli: Cli) -> Result<bool> {
                         "instruction_bytes": instruction.len(),
                         "model": llm.model,
                         "auth": llm.auth.as_str(),
+                        "wire_api": llm.effective_wire().as_str(),
                     }),
                     file,
                 )?;
                 return Ok(true);
             }
-            let file = destination(&limits.output)?;
-            let mut args = llm.arguments();
-            args.extend(["--timeout-ms".into(), limits.timeout_ms.to_string()]);
-            let config = RunConfig {
-                executable: std::env::current_exe()?,
-                args,
-                root,
-                timeout: Duration::from_millis(limits.timeout_ms),
-                max_output_bytes: limits.max_output_bytes as usize,
-            };
+            let case_id = "audit".to_owned();
             let request = Request {
                 schema_version: VERSION,
-                case_id: "audit".into(),
-                target,
+                case_id: case_id.clone(),
+                target: target.clone(),
                 instruction,
             };
-            let run = tokio::select! {
-                run = runner::run(&config, request) => run,
-                signal = tokio::signal::ctrl_c() => {
-                    signal?;
-                    anyhow::bail!("audit interrupted; no complete report emitted");
+            let timeout = Duration::from_millis(limits.timeout_ms);
+            let start = Instant::now();
+            let run = if use_tui {
+                if !std::io::stderr().is_terminal() {
+                    bail!("--tui requires a terminal; omit --tui or choose a --format");
+                }
+                let app = tui::App::new(target.clone(), llm.model.clone());
+                match tui::run_audit(app, llm.clone(), request, context, timeout).await {
+                    Ok(response) => RunResult {
+                        case_id,
+                        outcome: Outcome::Success,
+                        elapsed_ms: start.elapsed().as_millis() as u64,
+                        exit_code: Some(0),
+                        error: None,
+                        findings: response.findings,
+                    },
+                    Err(error) => RunResult {
+                        case_id,
+                        outcome: Outcome::ProviderError,
+                        elapsed_ms: start.elapsed().as_millis() as u64,
+                        exit_code: None,
+                        error: Some(format!("{error:#}")),
+                        findings: Vec::new(),
+                    },
+                }
+            } else {
+                let is_tty = std::io::stderr().is_terminal();
+                let use_color = color.resolve(is_tty);
+                let stderr = std::io::stderr();
+                let mut renderer = output::Renderer::new(format, use_color, is_tty, stderr.lock());
+                let result = tokio::time::timeout(
+                    timeout,
+                    provider::audit_with(&llm, &request, &context, timeout, &mut renderer),
+                )
+                .await;
+                match result {
+                    Ok(Ok(response)) => {
+                        let _ = renderer.finish(&response);
+                        RunResult {
+                            case_id,
+                            outcome: Outcome::Success,
+                            elapsed_ms: start.elapsed().as_millis() as u64,
+                            exit_code: Some(0),
+                            error: None,
+                            findings: response.findings,
+                        }
+                    }
+                    Ok(Err(error)) => RunResult {
+                        case_id,
+                        outcome: Outcome::ProviderError,
+                        elapsed_ms: start.elapsed().as_millis() as u64,
+                        exit_code: None,
+                        error: Some(format!("{error:#}")),
+                        findings: Vec::new(),
+                    },
+                    Err(_) => RunResult {
+                        case_id,
+                        outcome: Outcome::Timeout,
+                        elapsed_ms: start.elapsed().as_millis() as u64,
+                        exit_code: None,
+                        error: Some("audit exceeded wall-clock deadline".into()),
+                        findings: Vec::new(),
+                    },
                 }
             };
             let success = run.outcome == Outcome::Success;

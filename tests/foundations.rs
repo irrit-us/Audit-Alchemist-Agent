@@ -8,7 +8,11 @@ use audit_harness::{
     },
     progress::Progress,
     protocol::{Finding, Severity},
-    provider::{auth, responses::SseParser, retry},
+    provider::{
+        auth, retry,
+        sse::SseLines,
+        wire::{WireApi, WireStream},
+    },
 };
 use std::time::Duration;
 
@@ -150,15 +154,20 @@ fn progress_tracks_failed_cases() {
 }
 
 #[test]
-fn sse_parser_streams_deltas_for_codex() {
-    let mut parser = SseParser::default();
-    parser
+fn sse_and_wire_stream_decode_deltas() {
+    let mut lines = SseLines::new();
+    let payloads = lines
         .push(b"data: {\"type\":\"response.output_text.delta\",\"delta\":\"hi\"}\n\n")
         .unwrap();
-    parser.push(b"data: [DONE]\n\n").unwrap();
-    let output = parser.finish().unwrap();
-    assert!(output.completed);
-    assert_eq!(output.text, "hi");
+    assert_eq!(payloads.len(), 1);
+    let mut stream = WireStream::new(WireApi::Responses);
+    let mut sink = ();
+    for payload in payloads {
+        stream.handle_data(&payload, &mut sink).unwrap();
+    }
+    stream.handle_data("[DONE]", &mut sink).unwrap();
+    let (text, _usage) = stream.finish().unwrap();
+    assert_eq!(text, "hi");
 }
 
 #[test]

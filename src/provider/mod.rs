@@ -1,28 +1,36 @@
-//! Model adapters: a plain chat-completions client and a Sign In With ChatGPT
-//! (Codex responses) client.
+//! Model adapters for mainstream LLM API shapes.
 //!
-//! Both adapters receive the same finite source context and must return the
-//! same versioned JSON findings. Credentials are resolved through [`auth`]
-//! and are never logged or written to reports.
+//! The adapter builds a request for the selected [`WireApi`], streams the
+//! response, normalizes deltas into [`StreamEvent`]s for the console/TUI
+//! sink, and returns the same versioned JSON findings as before. Credentials
+//! are resolved through [`auth`] and are never logged or written to reports.
+//!
+//! Supported wires: OpenAI-compatible chat completions, the OpenAI Responses
+//! API (also used by the Codex backend), and the Anthropic Messages API.
 
 pub mod auth;
-pub mod responses;
+pub mod events;
 pub mod retry;
+pub mod sse;
+pub mod wire;
 
 use crate::{
-    context::{self, ContextBudget},
+    context::{self, Context, ContextBudget},
     protocol::{Request, Response, VERSION},
 };
-use anyhow::{bail, ensure, Context as _, Result};
+use anyhow::{ensure, Context as _, Result};
 use clap::Args;
-use serde::Deserialize;
 use serde_json::Value;
 use std::{
     path::{Path, PathBuf},
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
-use self::responses::SseParser;
+use self::{
+    events::{EventSink, StreamEvent},
+    sse::SseLines,
+    wire::{WireApi, WireStream},
+};
 
 pub use crate::context::{snapshot, Source};
 
@@ -30,10 +38,10 @@ pub const SYSTEM_PROMPT: &str = include_str!("../../prompts/audit.txt");
 /// Upper bound on any single HTTP response body we will buffer.
 const MAX_RESPONSE_BYTES: usize = 2 * 1024 * 1024;
 
-/// Which credential source and wire protocol to use.
+/// Which credential source to use.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
 pub enum AuthKind {
-    /// Bearer token from an environment variable, sent to a chat-completions endpoint.
+    /// Bearer token from an environment variable.
     ApiKey,
     /// Reuse a Codex CLI ChatGPT login against the Codex responses backend.
     Codex,
@@ -51,16 +59,19 @@ impl AuthKind {
 
 #[derive(Debug, Clone, Args)]
 pub struct LlmOptions {
-    /// Full URL of a chat-completions compatible API (HTTPS, or localhost HTTP).
+    /// Full provider URL: a chat-completions, Responses, or Messages endpoint.
     /// Required with `--auth api-key`; optional override for Codex.
     #[arg(long)]
     pub endpoint: Option<String>,
     #[arg(long)]
     pub model: String,
+    /// Wire format of the endpoint when `--auth api-key` is used.
+    #[arg(long, value_enum, default_value_t = WireApi::ChatCompletions)]
+    pub wire_api: WireApi,
     /// Name of the environment variable holding the bearer token.
     #[arg(long, default_value = "AUDIT_API_KEY")]
     pub api_key_env: String,
-    /// Credential source and wire protocol.
+    /// Credential source.
     #[arg(long, value_enum, default_value_t = AuthKind::ApiKey)]
     pub auth: AuthKind,
     /// Path to the Codex auth.json. Defaults to `$CODEX_HOME/auth.json`.
@@ -88,6 +99,14 @@ pub struct LlmOptions {
 }
 
 impl LlmOptions {
+    /// The wire format actually used: Codex always speaks the Responses API.
+    pub fn effective_wire(&self) -> WireApi {
+        match self.auth {
+            AuthKind::Codex => WireApi::Responses,
+            AuthKind::ApiKey => self.wire_api,
+        }
+    }
+
     /// Validate configuration and, where cheap, credential availability.
     ///
     /// This never performs network I/O; token refresh happens later in the
@@ -140,6 +159,8 @@ impl LlmOptions {
             "agent".into(),
             "--model".into(),
             self.model.clone(),
+            "--wire-api".into(),
+            self.wire_api.as_str().into(),
             "--api-key-env".into(),
             self.api_key_env.clone(),
             "--auth".into(),
@@ -170,7 +191,7 @@ impl LlmOptions {
     }
 }
 
-/// Validate an endpoint URL: no embedded credentials, path, query, or fragment.
+/// Validate an endpoint URL: no embedded credentials, query, or fragment.
 fn parse_endpoint(endpoint: &str) -> Result<reqwest::Url> {
     let url = reqwest::Url::parse(endpoint).context("invalid endpoint URL")?;
     ensure!(
@@ -289,25 +310,40 @@ async fn send_retrying(
     }
 }
 
-#[derive(Deserialize)]
-struct Completion {
-    choices: Vec<Choice>,
-}
-#[derive(Deserialize)]
-struct Choice {
-    message: Message,
-    finish_reason: Option<String>,
-}
-#[derive(Deserialize)]
-struct Message {
-    content: String,
-}
-
+/// Audit one case, building context from `root`. Used by the `agent` adapter.
 pub async fn audit(
     options: &LlmOptions,
     request: &Request,
     root: &Path,
     timeout: Duration,
+) -> Result<Response> {
+    options.validate()?;
+    ensure!(
+        !request.instruction.trim().is_empty() && request.instruction.len() <= 65_536,
+        "invalid instruction"
+    );
+    let context = context::build(
+        root,
+        &request.target,
+        &ContextBudget::new(options.max_source_bytes as usize),
+    )?;
+    if let Some(max) = options.max_source_tokens {
+        ensure!(
+            context.estimated_tokens() <= max as usize,
+            "estimated context of {} tokens exceeds the {max} token limit; narrow the target",
+            context.estimated_tokens()
+        );
+    }
+    audit_with(options, request, &context, timeout, &mut ()).await
+}
+
+/// Audit one case using an already-assembled context, streaming to `sink`.
+pub async fn audit_with(
+    options: &LlmOptions,
+    request: &Request,
+    context: &Context,
+    timeout: Duration,
+    sink: &mut dyn EventSink,
 ) -> Result<Response> {
     options.validate()?;
     ensure!(
@@ -318,135 +354,126 @@ pub async fn audit(
         !request.instruction.trim().is_empty() && request.instruction.len() <= 65_536,
         "invalid instruction"
     );
-    let context = context::build(
-        root,
-        &request.target,
-        &ContextBudget::new(options.max_source_bytes as usize),
-    )?;
-    let estimated_tokens = context.estimated_tokens();
-    if let Some(max) = options.max_source_tokens {
-        ensure!(
-            estimated_tokens <= max as usize,
-            "estimated context of {estimated_tokens} tokens exceeds the {max} token limit; narrow the target"
-        );
-    }
     tracing::info!(
         files = context.files(),
         bytes = context.total_bytes(),
-        estimated_tokens,
+        estimated_tokens = context.estimated_tokens(),
+        wire = options.effective_wire().as_str(),
         "assembled audit context"
     );
     let user = serde_json::to_string(
         &serde_json::json!({"instruction": request.instruction, "sources": &context.sources}),
     )?;
-    let content = match options.auth {
-        AuthKind::ApiKey => {
-            let endpoint = options
-                .endpoint
-                .as_deref()
-                .context("--endpoint is required with --auth api-key")?;
-            complete_chat(options, parse_endpoint(endpoint)?, &user, timeout).await?
-        }
-        AuthKind::Codex => complete_codex(options, &user, timeout).await?,
-    };
-    let findings: Response = serde_json::from_str(&content)
+    let text = complete(options, &user, timeout, sink).await?;
+    let findings: Response = serde_json::from_str(&text)
         .context("model must return a JSON response without Markdown fences")?;
     findings.validate()?;
     for finding in &findings.findings {
         context.validate_finding(finding)?;
     }
+    sink.on_event(&StreamEvent::Done);
     Ok(findings)
 }
 
-/// Plain chat-completions request against a bearer-protected endpoint.
-async fn complete_chat(
+/// Send one streaming request and return the accumulated answer text.
+async fn complete(
     options: &LlmOptions,
-    url: reqwest::Url,
     user: &str,
     timeout: Duration,
+    sink: &mut dyn EventSink,
 ) -> Result<String> {
-    let client = client(timeout)?;
-    let key = std::env::var(&options.api_key_env)?;
-    let body = serde_json::json!({
-        "model": options.model,
-        "temperature": 0,
-        "max_tokens": options.max_tokens,
-        "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": user}
-        ]
-    });
     let deadline = Instant::now() + timeout;
-    let mut response = send_retrying(retry_policy(options), deadline, || {
-        client
-            .post(url.clone())
-            .timeout(remaining(deadline))
-            .bearer_auth(&key)
-            .json(&body)
-    })
-    .await?;
-    ensure!(
-        response.status().is_success(),
-        "LLM API returned HTTP {}",
-        response.status().as_u16()
-    );
-    let bytes = bounded_body(&mut response, MAX_RESPONSE_BYTES).await?;
-    let completion: Completion =
-        serde_json::from_slice(&bytes).context("invalid chat-completions response")?;
-    ensure!(
-        completion.choices.len() == 1,
-        "expected exactly one completion choice"
-    );
-    let choice = &completion.choices[0];
-    ensure!(
-        choice.finish_reason.as_deref() == Some("stop"),
-        "LLM did not finish normally"
-    );
-    Ok(choice.message.content.clone())
-}
-
-/// Codex `/responses` request authenticated with a ChatGPT login.
-async fn complete_codex(options: &LlmOptions, user: &str, timeout: Duration) -> Result<String> {
-    let mode = auth::AuthMode::Codex {
-        auth_file: options.codex_auth_file.clone(),
-    };
     let client = client(timeout)?;
-    let url = format!("{}/responses", options.codex_base_url.trim_end_matches('/'));
-    let body = serde_json::json!({
-        "model": options.model,
-        "instructions": SYSTEM_PROMPT,
-        "input": [{"role": "user", "content": [{"type": "input_text", "text": user}]}],
-        "max_output_tokens": options.max_tokens,
-        "stream": true,
-        "store": false
-    });
-
-    let deadline = Instant::now() + timeout;
+    let wire = options.effective_wire();
+    let body = wire::request_body(
+        wire,
+        &options.model,
+        SYSTEM_PROMPT,
+        user,
+        options.max_tokens,
+    );
     let policy = retry_policy(options);
 
-    let credentials = auth::resolve(&mode).await?;
-    let response = send_retrying(policy, deadline, || {
-        codex_request(&client, &url, &credentials, &body, deadline)
-    })
-    .await?;
-    let response = if response.status().as_u16() == 401 {
-        // The token can expire between our proactive check and the request;
-        // refresh once and retry a single time. This is authentication
-        // recovery, not a retry of a failed model call.
-        let fresh = auth::resolve_fresh(&mode).await?;
-        send_retrying(policy, deadline, || {
-            codex_request(&client, &url, &fresh, &body, deadline)
-        })
-        .await?
-    } else {
-        response
+    let (text, usage) = match options.auth {
+        AuthKind::ApiKey => {
+            let url = options
+                .endpoint
+                .as_deref()
+                .context("--endpoint is required with --auth api-key")?;
+            let key = std::env::var(&options.api_key_env)?;
+            let response = send_retrying(policy, deadline, || {
+                api_key_request(&client, wire, url, &key, &body, deadline)
+            })
+            .await?;
+            ensure!(
+                response.status().is_success(),
+                "LLM API returned HTTP {}",
+                response.status().as_u16()
+            );
+            read_stream(response, wire, sink).await?
+        }
+        AuthKind::Codex => {
+            let url = format!("{}/responses", options.codex_base_url.trim_end_matches('/'));
+            let mode = auth::AuthMode::Codex {
+                auth_file: options.codex_auth_file.clone(),
+            };
+            let credentials = auth::resolve(&mode).await?;
+            let response = send_retrying(policy, deadline, || {
+                codex_request(&client, &url, &credentials, &body, deadline)
+            })
+            .await?;
+            let response = if response.status().as_u16() == 401 {
+                // The token can expire between our proactive check and the
+                // request; refresh once and retry a single time. This is
+                // authentication recovery, not a retry of a failed model call.
+                let fresh = auth::resolve_fresh(&mode).await?;
+                send_retrying(policy, deadline, || {
+                    codex_request(&client, &url, &fresh, &body, deadline)
+                })
+                .await?
+            } else {
+                response
+            };
+            ensure!(
+                response.status().is_success(),
+                "Codex responses returned HTTP {}",
+                response.status().as_u16()
+            );
+            read_stream(response, WireApi::Responses, sink).await?
+        }
     };
-    ensure!(
-        response.status().is_success(),
-        "Codex responses returned HTTP {}",
-        response.status().as_u16()
-    );
-    read_codex_stream(response).await
+
+    if !usage.is_empty() {
+        tracing::info!(
+            prompt_tokens = usage.prompt_tokens,
+            completion_tokens = usage.completion_tokens,
+            total_tokens = usage.total_tokens,
+            reasoning_tokens = usage.reasoning_tokens,
+            "model usage"
+        );
+    }
+    Ok(text)
+}
+
+fn api_key_request(
+    client: &reqwest::Client,
+    wire: WireApi,
+    url: &str,
+    key: &str,
+    body: &Value,
+    deadline: Instant,
+) -> reqwest::RequestBuilder {
+    let request = client
+        .post(url)
+        .timeout(remaining(deadline))
+        .header("Accept", "text/event-stream");
+    let request = match wire {
+        WireApi::Anthropic => request
+            .header("x-api-key", key)
+            .header("anthropic-version", "2023-06-01"),
+        WireApi::ChatCompletions | WireApi::Responses => request.bearer_auth(key),
+    };
+    request.json(body)
 }
 
 fn codex_request(
@@ -471,43 +498,29 @@ fn codex_request(
     request
 }
 
-async fn bounded_body(response: &mut reqwest::Response, limit: usize) -> Result<Vec<u8>> {
-    let mut bytes = Vec::new();
-    while let Some(chunk) = response.chunk().await.context("read HTTP body")? {
-        ensure!(
-            bytes.len() + chunk.len() <= limit,
-            "LLM API response exceeds {} bytes",
-            limit
-        );
-        bytes.extend_from_slice(&chunk);
-    }
-    Ok(bytes)
-}
-
-async fn read_codex_stream(mut response: reqwest::Response) -> Result<String> {
-    let mut parser = SseParser::default();
+/// Read a streaming response, emitting normalized events into `sink`.
+async fn read_stream(
+    mut response: reqwest::Response,
+    wire: WireApi,
+    sink: &mut dyn EventSink,
+) -> Result<(String, events::Usage)> {
+    let mut lines = SseLines::new();
+    let mut stream = WireStream::new(wire);
     let mut total = 0usize;
-    while let Some(chunk) = response.chunk().await.context("read Codex stream")? {
+    while let Some(chunk) = response.chunk().await.context("read model stream")? {
         total += chunk.len();
         ensure!(
             total <= MAX_RESPONSE_BYTES,
-            "Codex stream exceeds {MAX_RESPONSE_BYTES} bytes"
+            "model stream exceeds {MAX_RESPONSE_BYTES} bytes"
         );
-        parser.push(&chunk)?;
+        for data in lines.push(&chunk)? {
+            stream.handle_data(&data, sink)?;
+        }
     }
-    let output = parser.finish()?;
-    if let Some(error) = output.error {
-        bail!("Codex response failed: {error}");
+    for data in lines.finish()? {
+        stream.handle_data(&data, sink)?;
     }
-    ensure!(
-        output.completed,
-        "Codex stream ended before response.completed"
-    );
-    ensure!(
-        !output.text.trim().is_empty(),
-        "Codex response contained no output text"
-    );
-    Ok(output.text)
+    stream.finish()
 }
 
 /// A best-effort unique identifier for the `session_id` header.
@@ -536,8 +549,11 @@ mod tests {
     }
 
     #[test]
-    fn auth_kind_spelling_matches_clap() {
+    fn auth_kind_and_wire_spellings_match_clap() {
         assert_eq!(AuthKind::ApiKey.as_str(), "api-key");
         assert_eq!(AuthKind::Codex.as_str(), "codex");
+        assert_eq!(WireApi::ChatCompletions.as_str(), "chat-completions");
+        assert_eq!(WireApi::Responses.as_str(), "responses");
+        assert_eq!(WireApi::Anthropic.as_str(), "anthropic");
     }
 }
