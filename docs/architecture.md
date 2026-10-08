@@ -17,10 +17,13 @@ invoke tools, and no module executes supplied source.
 | Context | `src/context/mod.rs` | Deterministic snapshot assembly, token estimate, finding validation |
 | Credentials | `src/provider/auth.rs`, `src/provider/auth/token.rs` | API keys and Sign In With ChatGPT/Codex login and refresh |
 | Transport policy | `src/provider/retry.rs` | Transient-failure classification and jittered backoff |
-| Streaming | `src/provider/responses.rs` | Codex `/responses` Server-Sent Events parser |
-| Adapters | `src/provider/mod.rs` | chat-completions and Codex Responses clients |
+| Wire formats | `src/provider/wire.rs` | Request bodies and stream decoders for chat-completions, Responses, and Anthropic |
+| Streaming | `src/provider/sse.rs`, `src/provider/events.rs` | Incremental SSE reader and normalized events/usage |
+| Adapters | `src/provider/mod.rs` | Credentialed clients for every wire format, with deadline and retry |
 | Supervision | `src/runner.rs` | External agent process execution, deadlines, and cleanup |
 | Evaluation | `src/dataset.rs`, `src/evaluate.rs`, `src/progress.rs` | Dataset loading, exact scoring, batch progress |
+| Console | `src/output.rs` | `text`, `markdown`, `cot`, `body`, and `jsonl` renderers |
+| TUI | `src/tui.rs` | Interactive `ratatui` view over the event stream |
 | Entry points | `src/main.rs`, `src/bin/demo-agent.rs` | CLI orchestration and the deterministic fixture |
 
 ## Data flow
@@ -30,13 +33,15 @@ invoke tools, and no module executes supplied source.
 2. For each case, `runner::run` spawns the built-in `agent` subcommand (or an
    external benchmark agent) with a `protocol::Request` on stdin and reads one
    JSON response from stdout.
-3. Inside the built-in agent, `context::build` assembles the source snapshot
-   through `context::tools`; `provider::audit` resolves credentials, sends one
-   request (with bounded retries via `provider::retry`), and parses the result
-   (`provider::responses` for Codex). Findings are validated against the exact
-   snapshot before being returned.
-4. `evaluate::score` matches reported findings against labels and suppresses
-   duplicates. `progress` counts started, completed, and failed cases.
+3. Inside `provider::audit`, `context::build` is fed to a `provider::wire`
+   request for the selected `--wire-api`, credentials come from `provider::auth`,
+   the response streams through `provider::sse`, and `provider::wire` normalizes
+   every delta into `provider::events::StreamEvent`s. `provider::retry` bounds
+   transient failures. Findings are validated against the exact snapshot before
+   being returned.
+4. The `audit` command renders the events through `output` (or `tui`) on stderr
+   and emits the JSON report on stdout. `evaluate` scores findings with
+   `evaluate::score`; `progress` counts started, completed, and failed cases.
 5. The report is written to stdout or `--output`; `tracing` progress goes to
    stderr only.
 

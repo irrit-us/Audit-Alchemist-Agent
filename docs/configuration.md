@@ -20,6 +20,7 @@ All configuration is explicit and typed. Commands and flags are defined with
 | Flag | Default | Notes |
 | --- | --- | --- |
 | `--model <ID>` | required | Provider model identifier. |
+| `--wire-api <WIRE>` | `chat-completions` | `chat-completions`, `responses`, or `anthropic`; forced to `responses` with `--auth codex`. |
 | `--auth <MODE>` | `api-key` | `api-key` uses an environment variable; `codex` uses a Codex ChatGPT login. |
 | `--endpoint <URL>` | — | Full chat-completions URL. Required with `--auth api-key`; optional override for `codex`. |
 | `--api-key-env <NAME>` | `AUDIT_API_KEY` | Environment variable holding the bearer token. |
@@ -42,6 +43,27 @@ See [Authentication](authentication.md) for the credential details.
 A byte bound is not a tokenizer estimate. `--max-source-tokens` optionally caps
 the estimate used by `--dry-run` and the agent; the byte bound remains the hard
 limit.
+
+### Console output (`audit`)
+
+The machine-readable report always goes to stdout or `--output`; these flags
+control the live stream and findings summary on stderr.
+
+| Flag | Default | Values |
+| --- | --- | --- |
+| `--format <FORMAT>` | `text` | `quiet`, `text`, `markdown`, `cot`, `body`, `json`, `jsonl` |
+| `--color <WHEN>` | `auto` | `auto`, `always`, `never` |
+| `--tui` | off | Interactive terminal UI (requires a TTY) |
+
+| Format | Behavior |
+| --- | --- |
+| `quiet` | No stderr output. |
+| `text` | Findings summary after the run. |
+| `markdown` | Findings as Markdown. |
+| `cot` | Reasoning stream (dim) followed by the answer. |
+| `body` | Answer body only, one timed line at a time with terminal control. |
+| `json` | No stderr output (the JSON report is on stdout). |
+| `jsonl` | One JSON stream event per line. |
 
 ### Retries
 

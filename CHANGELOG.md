@@ -7,6 +7,17 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- **Mainstream wire formats.** `--wire-api` selects `chat-completions`
+  (OpenAI-compatible), `responses` (OpenAI Responses), or `anthropic`
+  (Anthropic Messages). All deltas are normalized into text, reasoning, and
+  usage events.
+- **Console output formats.** `audit --format` supports `quiet`, `text`,
+  `markdown`, `cot` (readable chain of thought), `body` (per-line timed answer
+  with terminal control), `json`, and `jsonl`; `--color` chooses ANSI color and
+  `--tui` opens an interactive `ratatui` terminal UI.
+- **`provider_error` outcome** for a failed model request from the now
+  in-process `audit` path; `evaluate` and `benchmark` still supervise external
+  agents.
 - **Sign In With ChatGPT support.** `--auth codex` reuses a Codex CLI login at
   `$CODEX_HOME/auth.json`, refreshes the access token through the public OAuth
   token endpoint near expiry, and calls the Codex `/responses` backend with

@@ -66,6 +66,26 @@ reference an included file and an existing line. See
 [Configuration](docs/configuration.md) for every flag and limit, and
 [Authentication](docs/authentication.md) for credential handling.
 
+## Terminal output and providers
+
+`audit` streams to stderr while the JSON report stays on stdout:
+
+```sh
+cargo run --locked -- audit --root datasets/smoke --target sources/command_unsafe.py \
+  --endpoint https://YOUR-PROVIDER/v1/messages --wire-api anthropic --model YOUR-MODEL \
+  --format cot --color always
+
+cargo run --locked -- audit --root datasets/smoke --target sources/command_unsafe.py \
+  --endpoint https://YOUR-PROVIDER/v1/chat/completions --model YOUR-MODEL --tui
+```
+
+`--format` selects `quiet`, `text`, `markdown`, `cot` (readable chain of thought),
+`body` (per-line timed answer with terminal control), `json`, or `jsonl`.
+`--wire-api` selects `chat-completions` (OpenAI-compatible, covering DeepSeek,
+Groq, Azure, and local servers), `responses` (OpenAI Responses), or `anthropic`
+(Anthropic Messages). `--tui` opens an interactive terminal view. See
+[Configuration](docs/configuration.md).
+
 ## Documentation
 
 | Document | Contents |
@@ -91,9 +111,9 @@ cargo test --locked --all-targets
 
 Tests cover protocol rejection, dataset and path validation, source bounds,
 exact scoring, subprocess failures/timeouts/output limits, context and token
-budgets, credential parsing, retry policy, SSE parsing, concurrent progress, the
-deterministic demo, and a local HTTP fixture. No real network API calls are
-needed.
+budgets, credential parsing, retry policy, wire decoders for all three formats,
+console renderers, TUI frames, concurrent progress, the deterministic demo, and
+a local HTTP fixture. No real network API calls are needed.
 
 ## License
 
