@@ -38,8 +38,9 @@ through unexpected findings and exact matches.
 Exact line matching is intentionally strict; assess near misses separately before
 changing matching policy. Each case can perform multiple model/tool turns within
 the configured call, context, and time limits. Failed
-cases lower precision/recall but do not change a completed evaluation's exit
-status.
+cases retain expected findings as misses and therefore can lower recall;
+precision still depends on reported predictions. Failures do not change a
+completed evaluation's exit status.
 
 ## Smoke set
 
@@ -54,7 +55,11 @@ That result predates the tool loop and does not measure its discovery quality.
 
 Record the model, prompt, dataset revision, limits, and repeat runs when
 comparing changes. Temperature zero does not guarantee reproducibility across
-providers. API usage and cost, and automatic source hashes, are not collected;
-pin code and dataset commits for comparisons. The deterministic
+providers. Run journals collect provider-reported token usage, but missing
+usage currently appears as zero and is not a billing estimate. Evaluation
+reports do not aggregate token/cost comparisons or automatic source hashes;
+pin code and dataset commits for comparisons. Follow the
+[optimization comparison procedure](harness-design.md#how-to-assess-an-optimization)
+before claiming quality or efficiency gains. The deterministic
 `demo-agent` fixture recognizes three simple source patterns and is a plumbing
 check, not evidence of LLM discovery quality.

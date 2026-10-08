@@ -1,6 +1,6 @@
 ---
 name: poc-validation
-description: Build and run a minimal local reproduction, distinguish observed behavior from hypotheses, and diagnose failed or timed-out tests.
+description: Build controlled local PoCs and diagnose failed or timed-out reproductions.
 ---
 
 # PoC validation
@@ -11,4 +11,4 @@ Write the smallest input that crosses the suspected boundary. Run it with Bash a
 
 A timeout, compilation error, or missing dependency does not confirm the vulnerability. Read the error, change one cause at a time, and stop unchanged retries. A sanitizer finding establishes its reported memory violation, not automatically an exploit primitive or end-to-end impact. Do not describe a PoC as executed unless a tool result records the execution.
 
-Use native-debugging for crash state or tmux-debugging when an installed terminal debugger needs controlled interactive input. If execution cannot settle the claim, state the limitation and rely only on the code evidence actually established.
+Use debugger-selection when choosing a runtime-appropriate debugger. Use foundry-debugging for Solidity tests, node-inspector for JavaScript breakpoints, pwntools-debugging for binary I/O, native-debugging for crash state, or tmux-debugging when an installed terminal debugger needs controlled interactive input. If execution cannot settle the claim, state the limitation and rely only on the code evidence actually established.

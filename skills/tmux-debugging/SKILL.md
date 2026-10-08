@@ -1,6 +1,6 @@
 ---
 name: tmux-debugging
-description: Operate an installed tmux session for local interactive debugging with explicit pane targeting and bounded output capture.
+description: Control an existing tmux pane for interactive debugging and output capture.
 ---
 
 # tmux debugging

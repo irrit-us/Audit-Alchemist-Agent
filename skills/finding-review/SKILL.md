@@ -1,6 +1,6 @@
 ---
 name: finding-review
-description: Review evidence, deduplicate root causes, calibrate impact, and produce the harness JSON finding schema without inventing PoC results.
+description: Review finding evidence, duplicate root causes, impact, and final JSON.
 ---
 
 # Finding review

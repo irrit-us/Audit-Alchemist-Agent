@@ -1,6 +1,6 @@
 ---
 name: code-audit
-description: Map an unfamiliar repository and trace attacker-controlled input to security-sensitive operations before choosing focused tests.
+description: Map unfamiliar code and trace attacker input to security-sensitive operations.
 ---
 
 # Code audit

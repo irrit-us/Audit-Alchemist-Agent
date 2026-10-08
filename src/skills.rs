@@ -9,6 +9,73 @@ struct Skill {
 
 const SKILLS: &[Skill] = &[
     Skill {
+        body: include_str!("../skills/debugger-selection/SKILL.md"),
+        resources: &[
+            (
+                "references/native.md",
+                include_str!("../skills/debugger-selection/references/native.md"),
+            ),
+            (
+                "references/javascript.md",
+                include_str!("../skills/debugger-selection/references/javascript.md"),
+            ),
+            (
+                "references/managed.md",
+                include_str!("../skills/debugger-selection/references/managed.md"),
+            ),
+            (
+                "references/dynamic.md",
+                include_str!("../skills/debugger-selection/references/dynamic.md"),
+            ),
+            (
+                "references/go-shell.md",
+                include_str!("../skills/debugger-selection/references/go-shell.md"),
+            ),
+        ],
+    },
+    Skill {
+        body: include_str!("../skills/foundry-debugging/SKILL.md"),
+        resources: &[
+            (
+                "references/compatibility.md",
+                include_str!("../skills/foundry-debugging/references/compatibility.md"),
+            ),
+            (
+                "scripts/RawDebug.sol",
+                include_str!("../skills/foundry-debugging/scripts/RawDebug.sol"),
+            ),
+            (
+                "scripts/TypedDebug.t.sol",
+                include_str!("../skills/foundry-debugging/scripts/TypedDebug.t.sol"),
+            ),
+            (
+                "scripts/forge_trace.py",
+                include_str!("../skills/foundry-debugging/scripts/forge_trace.py"),
+            ),
+        ],
+    },
+    Skill {
+        body: include_str!("../skills/gdb-debugging/SKILL.md"),
+        resources: &[(
+            "scripts/capture.gdb",
+            include_str!("../skills/gdb-debugging/scripts/capture.gdb"),
+        )],
+    },
+    Skill {
+        body: include_str!("../skills/node-inspector/SKILL.md"),
+        resources: &[(
+            "scripts/inspect.mjs",
+            include_str!("../skills/node-inspector/scripts/inspect.mjs"),
+        )],
+    },
+    Skill {
+        body: include_str!("../skills/pwntools-debugging/SKILL.md"),
+        resources: &[(
+            "scripts/tube_probe.py",
+            include_str!("../skills/pwntools-debugging/scripts/tube_probe.py"),
+        )],
+    },
+    Skill {
         body: include_str!("../skills/code-audit/SKILL.md"),
         resources: &[],
     },

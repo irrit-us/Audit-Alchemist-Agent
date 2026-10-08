@@ -12,7 +12,7 @@ All configuration is explicit and typed. Commands and flags are defined with
 | `benchmark` | Run another executable that implements the JSON stdin/stdout protocol. Repeat `--agent-arg=VALUE` for literal arguments. |
 | `validate` | Check dataset schema, paths, labels, and source lines without running an agent. |
 | `doctor` | Check Bash execution and optional local tools without credentials. |
-| `skills [NAME]` | List built-in skill metadata, or read a skill; use `--resource` for a registered reference. |
+| `skills [NAME]` | List/read built-in skills; `--resource` selects a script/reference and `--output` exports its raw contents to a new file. |
 | `inspect-trace PATH` | Summarize a live or completed JSONL run journal. |
 | `agent` | Internal protocol adapter: read one request from stdin, return one JSON response. The working directory is the source root. |
 

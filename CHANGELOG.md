@@ -5,8 +5,25 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Shortened the default audit prompt, skill descriptions, and contributor entry
+  point. Detailed guidance stays on demand; skill loading is driven by need.
+
 ### Added
 
+- **Harness design constraints** with primary-source research, contributor
+  guidance, enforcement/test mappings, and prioritized reliability/evaluation gaps.
+
+- **Debugger selection guidance** for 17 programming languages, with preferred
+  mature tools, runtime/platform distinctions, focused on-demand references,
+  launch examples, and upstream documentation links.
+
+- **Specialized debugging skills** for Foundry, GDB, Node Inspector, and pwntools,
+  with independently loadable scripts. `load_skill` supports `save_to`, and
+  `skills --resource --output` exports exact resources without overwriting files.
+  Foundry includes typed cheatcode tests and an import-free VM/console fallback
+  for Solidity 0.6–0.8 compatibility; optional tool discovery includes Forge and Node.
 - **Operational monitoring**: bounded per-run JSONL journals, five-second
   heartbeats, model/HTTP/retry/tool timings and outcomes, cumulative usage,
   cancellation summaries, and `inspect-trace` for live or interrupted runs.

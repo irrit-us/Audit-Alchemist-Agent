@@ -1,5 +1,22 @@
 # Validation
 
+## Debugging skills and concise defaults: 2026-10-08
+
+Validated on Windows with Rust 1.95.0 (MSVC): all 81 Rust tests, formatting,
+strict Clippy, and `git diff --check` passed. All ten skills passed frontmatter
+validation. Debugger scripts ran 11 checks: nine passed; native GDB and pwntools
+checks were skipped because those dependencies were absent. Node Inspector and
+opt-in Foundry tests ran, including import-free helpers under Solidity 0.6.12
+and 0.8.26 and typed helpers against the local forge-std test checkout. Linux CI
+installs GDB and pwntools for its script checks; this record is a local result.
+
+The audit prompt shrank from 3,475 to 1,882 UTF-8 bytes and the compact ten-skill
+catalog from 1,863 to 1,195 bytes (about 42% combined). AGENTS.md shrank from
+2,506 to 1,293 bytes. Measurements normalize line endings and exclude source
+context, tool definitions, provider framing, and on-demand resources. These
+are text-size reductions, not tokenizer measurements or demonstrated audit
+quality gains. No live-model quality evaluation was performed for this change.
+
 ## Tool reliability follow-up: 2026-10-08
 
 The second pass uses the same Windows/MSVC/Git Bash environment and validation

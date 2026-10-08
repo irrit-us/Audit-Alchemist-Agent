@@ -66,7 +66,8 @@ error even when the tool successfully returned stdout/stderr. Missing
 dependencies and failed PoCs remain available to the agent for recovery.
 
 Run `audit-harness doctor --root .` without credentials to execute a fixed
-Bash probe and discover optional rg, Git, Python, GDB, LLDB, and tmux commands.
+Bash probe and discover optional rg, Git, Python, Forge, Cast, Node, GDB, LLDB,
+and tmux commands.
 Missing optional programs are reported without failing Bash readiness. The
 command installs nothing and makes no model request. Use `AUDIT_BASH` to select
 a Bash executable when automatic discovery is unsuitable. `RUST_LOG=info`
@@ -74,18 +75,23 @@ enables existing component diagnostics; tracing is written to stderr.
 
 ## Built-in skills
 
-Five skills are compiled into the executable:
+Ten skills are compiled into the executable:
 
 | Skill | Use |
 | --- | --- |
+| `debugger-selection` | Preferred tools for 17 languages, with runtime/platform and unattended-execution guidance |
 | `code-audit` | Repository discovery and input-to-operation tracing |
 | `poc-validation` | Minimal reproductions, controls, and failed-test diagnosis |
 | `native-debugging` | Native crash analysis and focused GDB/pwndbg inspection |
 | `tmux-debugging` | Explicit pane targeting and bounded interactive debugging |
 | `finding-review` | Evidence, root-cause deduplication, and final JSON review |
+| `foundry-debugging` | Forge traces, typed cheatcodes, and import-free VM/console calls |
+| `gdb-debugging` | A standalone GDB crash/breakpoint capture script |
+| `node-inspector` | A separate Node Inspector controller with breakpoints and expression evaluation |
+| `pwntools-debugging` | Byte-exact local process I/O with prompt checks and bounded receives |
 
 Only names and descriptions enter the initial prompt. The agent consults a
-matching skill through `load_skill {"name":"native-debugging"}` and can fetch
+skill when guidance is needed through `load_skill {"name":"native-debugging"}` and can fetch
 its focused reference with `{"name":"native-debugging","resource":"references/pwndbg.md"}`.
 Skill loads count toward `--max-tool-calls`, like other tools. Bash, writes,
 edits, searches, and source reads remain fully available. Loading a skill does
@@ -96,6 +102,64 @@ For human inspection, use `audit-harness skills` or
 These commands work from any directory without model credentials. Exact
 registered resources are served from the binary, so workspace files cannot
 replace built-in instructions and resource names cannot traverse the filesystem.
+
+### Choosing a debugger
+
+Load `debugger-selection` for a tool-selection table covering Python, JavaScript,
+TypeScript, C, C++, Rust, Go, Java, Kotlin, C#, Swift, Ruby, PHP, Dart, R, Bash,
+and Solidity. Its five focused references supply launch examples, interactive
+requirements, compatible alternatives, and links to upstream documentation.
+The existing Foundry, GDB, Node Inspector, and pwntools skills supply executable
+helpers where available. Recommendations do not imply those tools are installed.
+
+```sh
+audit-harness skills debugger-selection
+audit-harness skills debugger-selection --resource references/managed.md
+```
+
+### On-demand script execution
+
+Create a scratch directory through Bash, then export only the needed resource:
+
+```json
+{"name":"node-inspector","resource":"scripts/inspect.mjs","save_to":".audit-debug/inspect.mjs"}
+```
+
+`load_skill` with `save_to` writes the exact bundled resource to a new file
+inside the audit root and returns its path and byte count. It does not repeat
+the script source in the model context. Existing files and missing parent
+directories are rejected. Without `save_to`, the resource is returned as text
+for inspection. No script executes merely because a skill was loaded.
+
+The equivalent CLI export is:
+
+```sh
+audit-harness skills node-inspector --resource scripts/inspect.mjs --output .audit-debug/inspect.mjs
+node .audit-debug/inspect.mjs --break app.js:42 --expression 'request.path' -- app.js
+```
+
+Each helper is independent and is run with the installed interpreter/debugger
+through Bash. They inherit the existing tool timeout, output bounds, and
+process cleanup. The binary bundles scripts, not third-party tool installations.
+Node's helper requires global WebSocket support (Node 22.4+); GDB's capture
+requires GDB Python support; the tube helper requires pwntools in its selected
+Python environment. Forge uses the project's compiler and remappings.
+
+Foundry compatibility is based on compiler/import and runtime-selector support,
+not equal Forge/forge-std version numbers. The typed test uses `Test.vm` and
+`console` when compatible. The fallback library supports Solidity 0.6–0.8 and
+calls the cheatcode VM (`0x7109709ECfa91a80626fF3989D68f67F5b1DD12D`) and the
+separate console address (`0x000000000000000000636F6e736F6c652e6c6f67`) directly.
+It verifies a known VM return shape and preserves reverts from unsupported
+selectors. Direct ABI calls avoid incompatible library imports; they do not
+add missing runtime functionality. See the skill's compatibility reference.
+
+Run `python -B tests/debug_scripts.py` for script tests. Missing optional runtimes
+are reported as skips. Set `AUDIT_TEST_FOUNDRY=1` to run Forge compiler fixtures
+(which may download solc), and `AUDIT_TEST_FORGE_STD` to a local forge-std checkout
+for the typed test. Local validation covered Forge 1.8.1, solc 0.6.12 and 0.8.26,
+Node 24.18.0, and forge-std commit `0258fe875e1d8e207c1eb7175e542ea32356773c`.
+Linux CI installs GDB and pwntools for their native smoke tests.
 
 The debugger, tmux, and reporting guidance adapts selected MIT-licensed
 [codex-auditor skills](https://github.com/0RAYS/codex-auditor/tree/5974e700bf5b44f10d885bb238dd8bcab8f42145/skills).

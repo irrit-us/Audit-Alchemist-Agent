@@ -37,6 +37,9 @@ enum Action {
         name: Option<String>,
         #[arg(long, requires = "name")]
         resource: Option<String>,
+        /// Export the exact raw resource to a new file instead of printing JSON.
+        #[arg(long, requires_all = ["name", "resource"])]
+        output: Option<PathBuf>,
     },
     /// Check Bash execution and discover optional local debugging tools.
     Doctor {
@@ -246,12 +249,26 @@ async fn benchmark(
 
 async fn execute(cli: Cli) -> Result<bool> {
     match cli.command {
-        Action::Skills { name, resource } => {
+        Action::Skills {
+            name,
+            resource,
+            output,
+        } => {
             let value = match name {
                 Some(name) => audit_harness::skills::load(&name, resource.as_deref())?,
                 None => audit_harness::skills::catalog(),
             };
-            emit(&value, None)?;
+            if let Some(mut file) = destination(&output)? {
+                file.write_all(
+                    value["content"]
+                        .as_str()
+                        .context("missing skill resource")?
+                        .as_bytes(),
+                )?;
+                file.flush()?;
+            } else {
+                emit(&value, None)?;
+            }
             Ok(true)
         }
         Action::InspectTrace { path } => {

@@ -10,7 +10,8 @@ Start with the [README](../README.md) for installation and a first run.
 | [Authentication](authentication.md) | API-key and Sign In With ChatGPT (Codex) credentials |
 | [Protocol](protocol.md) | Version 1 agent request/response and dataset contract |
 | [Evaluation](evaluation.md) | Matching, scoring, metrics, and reproducibility |
-| [Constraints](constraints.md) | Public constraints and design-decision rationale |
+| [Constraints](constraints.md) | Required harness invariants, existing checks, and enforcement gaps |
+| [Harness design research](harness-design.md) | Primary-source findings, project applications, and optimization acceptance criteria |
 | [Validation](validation.md) | Recorded smoke-set run and local checks |
 | [Reports](reports/deepseek-evaluation.json) | Committed evaluation artifact |
 

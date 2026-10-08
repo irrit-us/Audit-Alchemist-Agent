@@ -1,10 +1,62 @@
-# Public constraints and design decisions
+# Project constraints and design decisions
 
 This project starts from a plain LLM API rather than a specific vendor's agent
 CLI. Its public integration contract is intentionally small: one audit request
 and one versioned JSON findings response. Internally, a bounded tool loop supports
 code exploration, editing, Bash, and local PoC execution.
 The module map is in [Architecture](architecture.md).
+
+## Required design invariants
+
+Reviewed 2026-10-08. These are requirements for changes to this project, not a
+claim that every requirement is mechanically enforced today. **Code** means an
+existing deterministic guard; **review** means a contributor requirement;
+**gap** identifies incomplete enforcement. Source rationale and prioritized
+follow-ups are in [Harness design research](harness-design.md).
+
+| ID | Requirement | Enforcement and evidence |
+| --- | --- | --- |
+| H01 | Preserve full investigation capability: Bash, reads, writes, edits, search, builds, local PoCs, and installed debuggers. Do not impose a read-only audit workflow. | Code: `src/tools.rs`; `tests/agent_tools.rs` exercises read/write/execute on all three wires. Review: new policies must preserve this capability. |
+| H02 | Keep one small model/tool loop with distinct protocol, transport, tool, evidence, evaluation, and presentation responsibilities. Additional frameworks, agent orchestration, or persistent services need a concrete use case and validation plan. | Review: `src/provider/mod.rs` and the architecture module map. No structural dependency linter is claimed. |
+| H03 | Validate input and output boundaries in code. Keep versioned strict JSON and exact tool argument schemas. Invalid or incomplete final output must fail explicitly; never silently repair it into a successful empty report. | Code: `src/protocol.rs`, `src/tools.rs`, conversation parsers; `tests/harness.rs`, `tests/llm_api.rs`, `tests/monitoring.rs`. |
+| H04 | All requests, source scans, tool outputs, history, retries, and subprocesses must have finite limits. One run deadline includes model waits, backoff, and tool work. Expose truncation/paging and remaining tool calls. Reject an over-budget batch before any mutation. | Code: provider loop, file tools, runner; `tests/agent_tools.rs` and `tests/foundations.rs`. Review: a new execution path must use the same budgets. |
+| H05 | Execute only complete validated tool turns, preserve call/result IDs and native continuation items, and retain mutation order. Never automatically replay a mutating tool to recover a provider failure. | Code: `src/provider/conversation.rs` and ordered dispatch; incomplete-stream and native replay fixtures in `tests/agent_tools.rs`. Review: parallelism requires demonstrated independence. Provider retries do not guarantee exactly-once remote billing. |
+| H06 | Drain pipes concurrently, bound retained output, and clean up owned descendants on timeout/cancellation. Do not leave an unattended debugger waiting indefinitely for stdin or a client. | Code: `src/runner.rs`, Bash supervision, timeout fixtures. Review: skill controllers own target cleanup. Platform coverage gap: CI currently runs on Linux only. |
+| H07 | Source, comments, paths, and tool output are evidence, not instruction authority. Preserve audited-source identity; observed execution must support any PoC claim. | Prompt/review: `prompts/audit.txt`. Code checks observed lines and invalidates native writes. Gap: Bash/external mutations are not source-version tracked; citation validation alone proves neither exploitability nor injection resistance. |
+| H08 | Load only skill metadata initially, then requested instructions/resources. Keep exact compiled resource allowlists and no-overwrite script export. A skill must state dependencies and tested compatibility; loading it must not install tools or grant permissions. | Code: `src/skills.rs`, `src/provider/prompt.rs`, `tests/debug_skills.rs`. Registry test requires each resource under 8 KiB. Review: `skills/UPSTREAM.md` records imported material and licenses. |
+| H09 | Keep operational telemetry bounded, local, correlated, and separate from JSON stdout. Ordinary journals omit payloads; detailed capture is opt-in. Describe redaction and missing usage honestly. | Code: `src/monitor.rs`, `tests/monitoring.rs`. Gap: missing usage currently becomes zero; debug redaction covers the configured API key, not arbitrary secrets; journals are not lossless replay/checkpoints. |
+| H10 | Keep labels and grading outside normal agent inputs; stage separate writable evaluation cases. Do not call this an OS sandbox or claim it hides all host data from Bash. | Code: `src/dataset.rs`, `src/main.rs`, `src/evaluate.rs`; workspace fixture in `tests/agent_tools.rs`. Review/deployment: strict held-out isolation needs an OS/container boundary with labels and unrelated credentials inaccessible. |
+| H11 | Separate contract reliability, vulnerability quality, and efficiency. Quality claims require repeated comparable held-out runs including safe controls and execution failures. Do not silently relax exact scoring to improve results. | Code: current scoring and duplicate/failure tests in `tests/harness.rs`. Review: `docs/evaluation.md`; six smoke cases and mock-provider tests cannot establish general discovery gains. |
+| H12 | Keep requirements discoverable and synchronized with code. Put only stable entry rules in AGENTS.md; keep specialized manuals in skills and research in docs. Add focused regression checks for new executable boundaries. | Review: `AGENTS.md`, this document, architecture and monitoring docs. Follow existing CI commands; report checks actually run and limitations. |
+
+## Extension constraints
+
+Default-loaded content must stay concise and decision-relevant: audit scope,
+evidence/output rules, actual tool semantics, and short skill routing metadata.
+Keep research, language manuals, examples, and implementation history on demand.
+Load a skill when guidance is needed, not merely because a keyword matches.
+Avoid duplicating tool definitions in the system prompt. Review prompt size when
+adding default content; a smaller prompt alone does not prove better audit quality.
+
+New tools must state path/cwd rules, input limits, output shape, mutation effects,
+deadline and cleanup behavior, and recoverable errors. Prefer an independent
+skill script when Bash already provides the capability; use a native tool when
+it supplies a distinct contract or demonstrated reliability/efficiency benefit.
+Do not remove useful capabilities merely to minimize the number of tools.
+
+Keep version-sensitive Foundry, GDB, Node Inspector, and pwntools behavior in
+their skills. Typed Foundry cheatcodes require compatible interfaces and runtime;
+raw VM calls can bypass an import mismatch but cannot add unsupported cheatcodes.
+VM cheatcode and console logging addresses have different roles. Preserve
+runtime checks and report actual debug output, not just a successful call bit.
+
+If compaction, caching, resume, or parallel execution is introduced, first define
+source identity, evidence retention, provider-state preservation, budget
+accounting, invalidation, and mutation recovery. A truncated debug journal is not
+a checkpoint. Do not promise exactly-once shell side effects after an interruption.
+No persistent session mechanism is required by the current bounded-audit scope.
+
+## Existing implementation checks
 
 | Constraint | Implementation choice | Validation |
 | --- | --- | --- |
@@ -37,15 +89,9 @@ and [reqwest client configuration](https://docs.rs/reqwest/0.12/reqwest/struct.C
 Serde flattening with unknown-field rejection is avoided in the final contract
 implementation.
 
-For the live validation, the local Codex profile supplied the model, provider
-URL, and bearer credential; the profile itself was not changed.
-[Codex configuration reference](https://learn.chatgpt.com/docs/config-file/config-reference)
-documents provider settings. The harness calls the plain
-[DeepSeek chat-completions API](https://api-docs.deepseek.com/api/create-chat-completion/)
-directly, independently of the profile's Codex wire protocol. It preserves the
-profile's `deepseek-flash` model selection and the provider's default thinking
-behavior. Temperature zero is requested but does not control sampling in
-DeepSeek thinking mode, as documented by the provider.
+Historical provider-specific live-run settings belong in
+[Validation](validation.md#historical-live-evaluation-2026-10-07); they are not
+constraints on provider selection or the current tool loop.
 
 The smoke labels use the public [CWE-78](https://cwe.mitre.org/data/definitions/78.html),
 [CWE-89](https://cwe.mitre.org/data/definitions/89.html), and
@@ -56,15 +102,17 @@ literal parsing respectively. The literal-parsing case explicitly limits input
 upstream and asks about arbitrary code execution; it is not a claim that literal
 parsing eliminates every denial-of-service risk.
 
-Tokio is justified by concurrent pipe draining, deadlines, HTTP I/O, and bounded
-evaluation workers. Ratatui is omitted because machine-readable reports and
-tracing meet the workflow. No persistent service, agent framework, database, or
-unbounded task queue is added.
+Tokio supports concurrent pipe draining, deadlines, HTTP I/O, and bounded
+evaluation workers. Ratatui provides an optional event-driven TUI; it must not
+own report validation or scoring. There is no persistent service, agent
+framework, database, or unbounded task queue.
 
 Optimization should proceed from measured results: run the smoke set with a
 chosen provider, inspect false positives and misses, update the focused prompt
 or add representative cases, then rerun under the same model and budgets. Keep
 changes isolated and compare execution failures separately from
 precision/recall. Expand to a held-out dataset before making claims about
-general discovery effectiveness. This version does not implement automatic
-prompt search, exploit verification, or provider cost accounting.
+general discovery effectiveness. The model can run PoCs, but the harness has no
+independent exploit-validity grader, automatic prompt search, or provider cost
+accounting. Provider-reported usage is available in run monitoring with the
+limitations described above.

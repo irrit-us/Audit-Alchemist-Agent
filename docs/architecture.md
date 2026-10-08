@@ -17,6 +17,8 @@ The library separates provider protocols, tool execution, and evidence validatio
 | Prompt | `src/provider/prompt.rs`, `prompts/audit.txt` | JSON-escaped instructions/numbered source and evidence-driven audit guidance |
 | Agent tools | `src/tools.rs` | Bash, paged reads, writes, exact edits, listing, batched search, observed-line validation |
 | Conversation | `src/provider/conversation.rs` | Streamed tool calls and provider-native history replay, including reasoning state |
+| Skills | `src/skills.rs`, `skills/` | Compiled metadata catalog, on-demand guidance, and exact script resources |
+| Monitoring | `src/monitor.rs` | Bounded local run journals, operational events, debug capture, and trace inspection |
 | Credentials | `src/provider/auth.rs`, `src/provider/auth/token.rs` | API keys and Sign In With ChatGPT/Codex login and refresh |
 | Transport policy | `src/provider/retry.rs` | Transient-failure classification and jittered backoff |
 | Wire formats | `src/provider/wire.rs` | Request bodies and stream decoders for chat-completions, Responses, and Anthropic |
@@ -82,5 +84,6 @@ or evidence of measured audit-quality improvements.
 Native replay follows [OpenAI function calling](https://developers.openai.com/api/docs/guides/function-calling)
 and [Anthropic tool definitions](https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools).
 
-See [Constraints](constraints.md) for the decision table and [Configuration](configuration.md)
-for the resulting flags.
+See [Constraints](constraints.md) for required invariants and enforcement status,
+[Harness design research](harness-design.md) for the research and follow-up gaps,
+and [Configuration](configuration.md) for the resulting flags.
