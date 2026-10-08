@@ -62,6 +62,8 @@ impl AuthKind {
 
 #[derive(Debug, Clone, Args)]
 pub struct LlmOptions {
+    #[arg(skip)]
+    pub settings: crate::config::AgentSettings,
     #[command(flatten)]
     pub monitoring: crate::monitor::MonitorOptions,
     /// Full provider URL: a chat-completions, Responses, or Messages endpoint.
@@ -475,7 +477,12 @@ async fn audit_session(
         "unsupported request version"
     );
     options.validate_context(context)?;
-    let prompt = prompt::prepare(&request.instruction, &request.target, context)?;
+    let prompt = prompt::prepare_with(
+        &request.instruction,
+        &request.target,
+        context,
+        &options.settings,
+    )?;
     tracing::info!(
         files = context.files(),
         bytes = context.total_bytes(),
@@ -486,14 +493,36 @@ async fn audit_session(
     );
     let deadline = Instant::now() + timeout;
     let client = client(timeout)?;
-    let mut conversation = Conversation::new(
+    let mcp_started = Instant::now();
+    let servers: Vec<_> = options
+        .settings
+        .mcp
+        .iter()
+        .filter(|(_, c)| c.enabled)
+        .map(|(n, _)| n)
+        .collect();
+    if !servers.is_empty() {
+        sink.on_event(&crate::monitor::operation(
+            "mcp_start",
+            serde_json::json!({"servers":servers}),
+        ));
+    }
+    let mut mcp = crate::mcp::McpTools::connect(&options.settings.mcp, root).await?;
+    if !servers.is_empty() {
+        sink.on_event(&crate::monitor::operation("mcp_ready", serde_json::json!({"tool_count":mcp.definitions().len(),"elapsed_ms":mcp_started.elapsed().as_millis() as u64})));
+    }
+    let mut definitions = options.settings.definitions();
+    definitions.extend(mcp.definitions());
+    let mut conversation = Conversation::with_tools(
         options.effective_wire(),
         &options.model,
-        SYSTEM_PROMPT,
+        &prompt.system,
         &prompt.user,
         options.max_tokens,
+        definitions,
     );
-    let mut tools = crate::tools::WorkspaceTools::new(root, context)?;
+    let mut tools =
+        crate::tools::WorkspaceTools::configured(root, context, options.settings.clone())?;
     let mut used = 0usize;
     let mut turn_number = 0u32;
     loop {
@@ -532,6 +561,7 @@ async fn audit_session(
             for finding in &findings.findings {
                 tools.validate_finding(finding)?;
             }
+            mcp.shutdown().await;
             sink.on_event(&StreamEvent::Done);
             return Ok(findings);
         }
@@ -553,9 +583,14 @@ async fn audit_session(
             });
             debug_capture(options, sink, "tool_arguments", || call.arguments.clone());
             let tool_started = Instant::now();
-            let mut result = tools
-                .execute(&call.name, &call.arguments, remaining(deadline))
-                .await;
+            let mut result = if mcp.contains(&call.name) {
+                mcp.execute(&call.name, &call.arguments, remaining(deadline))
+                    .await
+            } else {
+                tools
+                    .execute(&call.name, &call.arguments, remaining(deadline))
+                    .await
+            };
             result["remaining_tool_calls"] =
                 serde_json::json!(options.max_tool_calls as usize - used);
             sink.on_event(&StreamEvent::ToolEnd {

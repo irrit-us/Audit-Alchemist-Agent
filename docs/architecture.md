@@ -5,6 +5,10 @@ uses a bounded model/tool loop to explore source, create and run PoCs, and emit
 evidence-backed JSON findings. It supports console streaming and an optional TUI
 without requiring an agent framework or persistent service.
 
+The primary deployment is a CLI node inside a caller-owned workflow. An explicit
+TOML file configures the node; the caller owns scheduling and cross-node state.
+The optional TUI consumes the same events and does not own execution policy.
+
 ## Layers
 
 The library separates provider protocols, tool execution, and evidence validation.
@@ -12,6 +16,8 @@ The library separates provider protocols, tool execution, and evidence validatio
 | Layer | Module | Responsibility |
 | --- | --- | --- |
 | Contract | `src/protocol.rs` | Versioned request/response types and path/CWE validation |
+| Configuration | `src/config.rs`, CLI parser | Explicit versioned TOML, path resolution, CLI overrides, and evaluation snapshots |
+| MCP | `src/mcp.rs` | Opt-in stdio servers, bounded discovery/calls, namespaced tools, and subprocess cleanup |
 | Source access | `src/context/tools.rs` | Bounded, read-only filesystem operations inside a canonical root |
 | Context | `src/context/mod.rs` | Deterministic snapshot assembly, token estimate, finding validation |
 | Prompt | `src/provider/prompt.rs`, `prompts/audit.txt` | JSON-escaped instructions/numbered source and evidence-driven audit guidance |
@@ -32,11 +38,13 @@ The library separates provider protocols, tool execution, and evidence validatio
 
 ## Data flow
 
-1. `main` parses the CLI and loads the dataset with `dataset::load`, which
+1. `main` applies explicit TOML defaults and CLI overrides, then loads the dataset with `dataset::load`, which
    validates schema, targets, labels, and source lines.
 2. For each case, `runner::run` spawns the built-in `agent` subcommand (or an
    external benchmark agent) with a `protocol::Request` on stdin and reads one
    JSON response from stdout.
+   Evaluation forwards resolved prompts, skills, tools, and MCP settings in a
+   temporary configuration snapshot; paths retain their file-relative meaning.
 3. `context::initial` supplies a small target file, or leaves directories and
    oversized files for tool exploration. `provider::audit_with` runs the model
    under one deadline. `conversation` decodes tool calls and preserves native
@@ -44,6 +52,9 @@ The library separates provider protocols, tool execution, and evidence validatio
    `tools` executes calls in order and returns bounded results; failures are
    available to the model for correction. The loop ends with a validated JSON
    report or an explicit limit/provider error. Findings must cite observed lines.
+   Enabled MCP stdio servers initialize and advertise selected tool schemas
+   before the first model turn. Their calls share the native tool budget and
+   monitoring events. No MCP instruction text is added to the system prompt.
 4. The `audit` command renders the events through `output` (or `tui`) on stderr
    and emits the JSON report on stdout. `evaluate` scores findings with
    `evaluate::score`; `progress` counts started, completed, and failed cases.

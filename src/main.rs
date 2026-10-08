@@ -10,7 +10,7 @@ use audit_harness::{
     runner::{self, Outcome, RunConfig, RunResult},
     tui,
 };
-use clap::{Args, Parser, Subcommand};
+use clap::{Args, CommandFactory, FromArgMatches, Parser, Subcommand};
 use std::{
     fs::OpenOptions,
     io::{IsTerminal, Read, Write},
@@ -26,12 +26,19 @@ use tokio::task::JoinSet;
     about = "Lightweight LLM vulnerability auditor and evaluation harness"
 )]
 struct Cli {
+    /// Explicit standalone TOML node configuration; CLI flags override it.
+    #[arg(long, global = true)]
+    config: Option<PathBuf>,
+    #[arg(skip)]
+    settings: audit_harness::config::AgentSettings,
     #[command(subcommand)]
     command: Action,
 }
 
 #[derive(Subcommand)]
 enum Action {
+    /// Validate configuration without credentials, network, or MCP startup.
+    CheckConfig,
     /// List built-in skills or read one skill/resource without model credentials.
     Skills {
         name: Option<String>,
@@ -60,7 +67,7 @@ enum Action {
         )]
         instruction: String,
         /// Build and report the context and its token estimate without calling the model.
-        #[arg(long)]
+        #[arg(long, num_args = 0..=1, default_missing_value = "true", require_equals = true)]
         dry_run: bool,
         /// Console format for the live stream on stderr.
         #[arg(long, value_enum, default_value_t = OutputFormat::Text)]
@@ -69,7 +76,7 @@ enum Action {
         #[arg(long, value_enum, default_value_t = ColorChoice::Auto)]
         color: ColorChoice,
         /// Run the audit in an interactive terminal UI.
-        #[arg(long)]
+        #[arg(long, num_args = 0..=1, default_missing_value = "true", require_equals = true)]
         tui: bool,
         #[command(flatten)]
         llm: LlmOptions,
@@ -249,14 +256,22 @@ async fn benchmark(
 
 async fn execute(cli: Cli) -> Result<bool> {
     match cli.command {
+        Action::CheckConfig => {
+            ensure!(cli.config.is_some(), "check-config requires --config");
+            emit(
+                &serde_json::json!({"valid":true,"tools":cli.settings.definitions().iter().map(|v| &v["name"]).collect::<Vec<_>>(),"skills":cli.settings.catalog(),"mcp_servers":cli.settings.mcp.iter().filter(|(_, c)| c.enabled).map(|(n, _)| n).collect::<Vec<_>>()}),
+                None,
+            )?;
+            Ok(true)
+        }
         Action::Skills {
             name,
             resource,
             output,
         } => {
             let value = match name {
-                Some(name) => audit_harness::skills::load(&name, resource.as_deref())?,
-                None => audit_harness::skills::catalog(),
+                Some(name) => cli.settings.load_skill(&name, resource.as_deref())?,
+                None => cli.settings.catalog(),
             };
             if let Some(mut file) = destination(&output)? {
                 file.write_all(
@@ -276,7 +291,11 @@ async fn execute(cli: Cli) -> Result<bool> {
             Ok(true)
         }
         Action::Doctor { root } => {
-            let report = audit_harness::tools::doctor(&root).await?;
+            let report = audit_harness::tools::doctor_with(
+                &root,
+                cli.settings.tools.bash_program.as_deref(),
+            )
+            .await?;
             let ready = report["ready"] == true;
             emit(&report, None)?;
             Ok(ready)
@@ -301,7 +320,12 @@ async fn execute(cli: Cli) -> Result<bool> {
             limits,
         } => {
             llm.validate()?;
+            let snapshot = llm.settings.snapshot()?;
             let mut args = llm.arguments()?;
+            args.extend([
+                "--config".into(),
+                snapshot.path().to_string_lossy().into_owned(),
+            ]);
             args.extend(["--timeout-ms".into(), limits.timeout_ms.to_string()]);
             benchmark(dataset, std::env::current_exe()?, args, limits, true).await
         }
@@ -327,7 +351,8 @@ async fn execute(cli: Cli) -> Result<bool> {
             )?;
             let estimated_tokens = context.estimated_tokens();
             llm.validate_context(&context)?;
-            let prompt = provider::prompt::prepare(&instruction, &target, &context)?;
+            let prompt =
+                provider::prompt::prepare_with(&instruction, &target, &context, &llm.settings)?;
             let file = destination(&limits.output)?;
             if dry_run {
                 emit(
@@ -338,8 +363,9 @@ async fn execute(cli: Cli) -> Result<bool> {
                         "bytes": context.total_bytes(),
                         "estimated_tokens": estimated_tokens,
                         "estimated_prompt_tokens": prompt.estimated_tokens(),
-                        "tools": audit_harness::tools::definitions().iter().map(|tool| tool["name"].clone()).collect::<Vec<_>>(),
-                        "skills": audit_harness::skills::catalog(),
+                        "tools": llm.settings.definitions().iter().map(|tool| tool["name"].clone()).collect::<Vec<_>>(),
+                        "skills": llm.settings.catalog(),
+                        "mcp_servers":llm.settings.mcp.iter().filter(|(_, c)| c.enabled).map(|(n, _)| n).collect::<Vec<_>>(),
                         "max_tool_calls": llm.max_tool_calls,
                         "instruction_bytes": instruction.len(),
                         "model": llm.model,
@@ -449,6 +475,94 @@ async fn execute(cli: Cli) -> Result<bool> {
     }
 }
 
+fn parse_cli() -> Result<Cli> {
+    let args: Vec<_> = std::env::args_os().collect();
+    // Bootstrap locates the global path even when TOML supplies required flags.
+    // The final parse remains strict and uses Clap's normal validators/precedence.
+    let bootstrap = Cli::command().ignore_errors(true).get_matches_from(&args);
+    let path = bootstrap.get_one::<PathBuf>("config");
+    let Some(path) = path else {
+        return Ok(Cli::parse_from(args));
+    };
+    let config = audit_harness::config::FileConfig::load(path)?;
+    let mut command = Cli::command();
+    for (key, value) in &config.cli {
+        let known = command.get_subcommands().any(|c| {
+            c.get_arguments()
+                .any(|a| a.get_id().as_str() == key && a.get_long().is_some())
+        });
+        ensure!(
+            known && key != "config" && key != "help" && key != "version",
+            "unknown configured CLI option: {key}"
+        );
+        for sub in command.get_subcommands_mut() {
+            let Some(arg) = sub
+                .get_arguments()
+                .find(|a| a.get_id().as_str() == key)
+                .cloned()
+            else {
+                continue;
+            };
+            let values: Vec<String> = match value {
+                toml::Value::Boolean(v)
+                    if matches!(
+                        arg.get_action(),
+                        clap::ArgAction::SetTrue | clap::ArgAction::SetFalse
+                    ) =>
+                {
+                    vec![v.to_string()]
+                }
+                toml::Value::String(v)
+                    if matches!(
+                        arg.get_action(),
+                        clap::ArgAction::Set | clap::ArgAction::Append
+                    ) =>
+                {
+                    vec![v.clone()]
+                }
+                toml::Value::Integer(v) if matches!(arg.get_action(), clap::ArgAction::Set) => {
+                    vec![v.to_string()]
+                }
+                toml::Value::Array(v) if matches!(arg.get_action(), clap::ArgAction::Append) => v
+                    .iter()
+                    .map(|v| {
+                        v.as_str()
+                            .map(str::to_owned)
+                            .context("CLI list must contain strings")
+                    })
+                    .collect::<Result<_>>()?,
+                _ => bail!("invalid TOML type for CLI option {key}"),
+            };
+            // Validate each supplied value even when an explicit flag overrides it.
+            let probe = clap::Command::new("config").arg(
+                clap::Arg::new("value")
+                    .num_args(1)
+                    .allow_hyphen_values(true)
+                    .value_parser(arg.get_value_parser().clone()),
+            );
+            for value in &values {
+                probe
+                    .clone()
+                    .try_get_matches_from(["config", value])
+                    .with_context(|| format!("invalid configured CLI option {key}"))?;
+            }
+            *sub = sub
+                .clone()
+                .mut_arg(key, |arg| arg.required(false).default_values(values));
+        }
+    }
+    let matches = command.get_matches_from(args);
+    let mut cli = Cli::from_arg_matches(&matches)?;
+    cli.settings = config.settings();
+    match &mut cli.command {
+        Action::Audit { llm, .. } | Action::Agent { llm, .. } | Action::Evaluate { llm, .. } => {
+            llm.settings = cli.settings.clone()
+        }
+        _ => {}
+    }
+    Ok(cli)
+}
+
 #[tokio::main]
 async fn main() -> ExitCode {
     tracing_subscriber::fmt()
@@ -458,7 +572,11 @@ async fn main() -> ExitCode {
         .with_writer(std::io::stderr)
         .with_ansi(false)
         .init();
-    match execute(Cli::parse()).await {
+    let result = match parse_cli() {
+        Ok(cli) => execute(cli).await,
+        Err(error) => Err(error),
+    };
+    match result {
         Ok(true) => ExitCode::SUCCESS,
         Ok(false) => ExitCode::from(2),
         Err(error) => {

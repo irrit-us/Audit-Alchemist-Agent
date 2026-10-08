@@ -18,7 +18,7 @@ pub struct MonitorOptions {
     #[arg(long)]
     pub trace_dir: Option<PathBuf>,
     /// Include bounded model requests, responses, and tool payloads (may contain sensitive code).
-    #[arg(long, requires = "trace_dir")]
+    #[arg(long, requires_if("true", "trace_dir"), num_args = 0..=1, default_missing_value = "true", require_equals = true)]
     pub debug_trace: bool,
 }
 

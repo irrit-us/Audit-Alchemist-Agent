@@ -28,8 +28,26 @@ pub struct Conversation {
 
 impl Conversation {
     pub fn new(wire: WireApi, model: &str, system: &str, user: &str, max_tokens: u32) -> Self {
+        Self::with_tools(
+            wire,
+            model,
+            system,
+            user,
+            max_tokens,
+            crate::tools::definitions(),
+        )
+    }
+
+    pub fn with_tools(
+        wire: WireApi,
+        model: &str,
+        system: &str,
+        user: &str,
+        max_tokens: u32,
+        tools: Vec<Value>,
+    ) -> Self {
         let mut body = wire::request_body(wire, model, system, user, max_tokens);
-        body["tools"] = Value::Array(crate::tools::definitions().into_iter().map(|tool| match wire {
+        body["tools"] = Value::Array(tools.into_iter().map(|tool| match wire {
             WireApi::ChatCompletions => json!({"type":"function","function":tool}),
             WireApi::Responses => json!({"type":"function","name":tool["name"],"description":tool["description"],"parameters":tool["parameters"],"strict":false}),
             WireApi::Anthropic => json!({"name":tool["name"],"description":tool["description"],"input_schema":tool["parameters"]}),

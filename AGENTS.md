@@ -6,6 +6,7 @@ or [the documentation index](docs/index.md).
 
 ## Rules for changes
 
+- Keep workflow nodes lightweight and task-specific: CLI first, explicit TOML configuration, CLI integration coverage before optional UI work.
 - Preserve raw Bash commands, writes, PoCs, and debugger access; host execution is not sandboxed.
 - Enforce contracts, budgets, cleanup, and evidence validation in code.
   Preserve provider continuation, mutation order, and JSON stdout.

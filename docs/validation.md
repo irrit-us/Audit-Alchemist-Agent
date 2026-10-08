@@ -1,5 +1,20 @@
 # Validation
 
+## CLI node configuration and MCP: 2026-10-08
+
+All 98 Rust tests passed locally on Windows/MSVC, including real CLI tests for
+TOML precedence, config-relative paths, boolean overrides, custom skill loading,
+disabled-tool dispatch, evaluation snapshots, MCP continuation on all three
+provider wires, and whole-run cancellation during server initialization.
+Local MCP fixtures exercise pagination, stderr draining, server requests,
+tool errors, malformed/oversized messages, protocol failures, request timeouts,
+and descendant cleanup. Formatting and strict Clippy passed. The debugger suite
+passed seven checks, with four skips for optional GDB/pwntools/Foundry checks.
+The example TOML validates and dry-runs without credentials or MCP startup.
+Python 3 is required only for the test fixture and is provisioned in both Rust CI
+jobs; the harness gains no Python runtime dependency. No live MCP service or
+live-model discovery-quality evaluation was performed in this round.
+
 ## Windows HTTP fixture correction: 2026-10-08
 
 The first matrix run exposed `WouldBlock` in the Windows mock-provider request

@@ -8,6 +8,11 @@ context, output, and runtime limits, with streaming console output and an option
 
 Built with clap, serde, tracing, Tokio, and reqwest.
 
+Designed primarily for CLI nodes within workflows. Use one explicit
+[TOML configuration](docs/configuration.md#standalone-toml) for prompts, skills,
+tools, opt-in MCP stdio servers, provider settings, and budgets. CLI flags take
+precedence; default context stays concise.
+
 ## Quick start
 
 Install stable Rust, then build and run the deterministic fixture:

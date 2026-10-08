@@ -47,12 +47,21 @@ pub fn definitions() -> Vec<Value> {
 
 pub struct WorkspaceTools {
     root: SourceRoot,
+    settings: crate::config::AgentSettings,
     // Only lines actually supplied through initial context/read_file may be cited.
     observed: BTreeMap<String, BTreeSet<u32>>,
 }
 
 impl WorkspaceTools {
     pub fn new(root: &Path, initial: &SourceContext) -> Result<Self> {
+        Self::configured(root, initial, Default::default())
+    }
+
+    pub fn configured(
+        root: &Path,
+        initial: &SourceContext,
+        settings: crate::config::AgentSettings,
+    ) -> Result<Self> {
         let mut observed = BTreeMap::new();
         for source in &initial.sources {
             observed.insert(
@@ -62,6 +71,7 @@ impl WorkspaceTools {
         }
         Ok(Self {
             root: SourceRoot::open(root)?,
+            settings,
             observed,
         })
     }
@@ -86,6 +96,7 @@ impl WorkspaceTools {
     }
 
     async fn invoke(&mut self, name: &str, arguments: &str, timeout: Duration) -> Result<Value> {
+        ensure!(self.settings.tool_enabled(name), "tool is disabled");
         match name {
             "load_skill" => {
                 #[derive(Deserialize)]
@@ -100,7 +111,9 @@ impl WorkspaceTools {
                     args.save_to.is_none() || args.resource.is_some(),
                     "save_to requires an explicit resource"
                 );
-                let skill = crate::skills::load(&args.name, args.resource.as_deref())?;
+                let skill = self
+                    .settings
+                    .load_skill(&args.name, args.resource.as_deref())?;
                 if let Some(relative) = args.save_to {
                     let path = self.write_path(&relative)?;
                     let content = skill["content"]
@@ -130,8 +143,17 @@ impl WorkspaceTools {
                 let args: Args = serde_json::from_str(arguments)?;
                 ensure!(!args.command.trim().is_empty(), "command is empty");
                 ensure!(args.timeout_ms != Some(0), "timeout_ms must be positive");
-                let timeout = timeout.min(Duration::from_millis(args.timeout_ms.unwrap_or(30_000)));
-                bash(self.root.path(), &args.command, timeout).await
+                let timeout = timeout.min(Duration::from_millis(
+                    args.timeout_ms
+                        .unwrap_or(self.settings.tools.bash_timeout_ms),
+                ));
+                bash_with(
+                    self.root.path(),
+                    &args.command,
+                    timeout,
+                    self.settings.tools.bash_program.as_deref(),
+                )
+                .await
             }
             "read_file" => {
                 #[derive(Deserialize)]
@@ -337,8 +359,13 @@ async fn capture(
     }
 }
 
-async fn bash(root: &Path, script: &str, timeout: Duration) -> Result<Value> {
-    let mut command = Command::new(bash_program());
+async fn bash_with(
+    root: &Path,
+    script: &str,
+    timeout: Duration,
+    program: Option<&Path>,
+) -> Result<Value> {
+    let mut command = Command::new(program.map(Path::to_path_buf).unwrap_or_else(bash_program));
     // Pass the original script as one argument: Bash owns parsing and shell options.
     command
         .args(["--noprofile", "--norc", "-c", script])
@@ -395,11 +422,15 @@ async fn bash(root: &Path, script: &str, timeout: Duration) -> Result<Value> {
 
 /// No model request or credential access; executes only a fixed diagnostic script.
 pub async fn doctor(root: &Path) -> Result<Value> {
+    doctor_with(root, None).await
+}
+
+pub async fn doctor_with(root: &Path, program: Option<&Path>) -> Result<Value> {
     let root = root
         .canonicalize()
         .context("resolve diagnostic working directory")?;
     let command = r#"printf 'bash=%s\n' "$BASH_VERSION"; for tool in rg git python python3 forge cast node gdb lldb tmux; do if command -v "$tool" >/dev/null 2>&1; then printf '%s=available\n' "$tool"; else printf '%s=missing\n' "$tool"; fi; done"#;
-    let result = match bash(&root, command, Duration::from_secs(5)).await {
+    let result = match bash_with(&root, command, Duration::from_secs(5), program).await {
         Ok(value) => value,
         Err(error) => json!({"error":format!("{error:#}")}),
     };

@@ -1,0 +1,44 @@
+# Explicit configuration for one workflow node. Paths are relative to this file.
+schema_version = 1
+
+[cli]
+model = "YOUR-MODEL"
+endpoint = "https://YOUR-PROVIDER/v1/chat/completions"
+root = "../datasets/smoke"
+target = "sources/command_unsafe.py"
+instruction = "Audit attacker-controlled command input. Confirm findings with a small PoC."
+timeout_ms = 60000
+max_tool_calls = 32
+format = "quiet"
+
+# Omit these sections to use the concise built-in prompt, tools, and skill catalog.
+[prompts]
+append = "Stay focused on the assigned target and its reachable dependencies."
+
+[tools]
+enabled = ["bash", "read_file", "write_file", "edit_file", "list_files", "search", "load_skill"]
+bash_timeout_ms = 30000
+
+# Optional custom guidance is exposed by metadata and loaded only when requested.
+[skills]
+enabled = ["poc-validation", "local-checks"]
+
+[[skills.custom]]
+name = "local-checks"
+description = "Task-specific validation guidance."
+content = "Record the triggering input, observed output, and exact source location."
+
+[skills.custom.resources]
+"scripts/check.sh" = "printf 'Replace this example with a task-specific check.\n'\n"
+
+# No server starts unless explicitly enabled. Use a real local stdio server.
+[mcp.local]
+enabled = false
+command = "YOUR-MCP-SERVER"
+args = []
+timeout_ms = 10000
+max_message_bytes = 1048576
+# tools = ["exact_remote_tool_name"]
+# cwd = "../datasets/smoke"
+# [mcp.local.env_from]
+# SERVER_TOKEN = "MY_SERVER_TOKEN"

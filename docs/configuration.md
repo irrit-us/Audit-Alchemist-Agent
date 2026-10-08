@@ -3,10 +3,116 @@
 All configuration is explicit and typed. Commands and flags are defined with
 `clap` derive; run any command with `--help` for the authoritative list.
 
+## Standalone TOML
+
+The CLI is the primary workflow interface. Supply one file explicitly; the
+harness does not search the working directory, user directory, or environment
+for configuration. Copy [examples/node.toml](../examples/node.toml), then run:
+
+```sh
+audit-harness check-config --config examples/node.toml
+audit-harness audit --config examples/node.toml --dry-run
+audit-harness audit --config examples/node.toml --model YOUR-MODEL
+audit-harness agent --config node.toml < request.json
+```
+
+`schema_version = 1` is required. Precedence is built-in defaults, then TOML,
+then explicit CLI flags. Boolean overrides accept `--dry-run=false`,
+`--tui=false`, and `--debug-trace=false`; bare flags still mean true.
+Unknown keys, duplicate selections, invalid CLI values, and unknown schema
+versions fail before model/server execution. CLI values in TOML are validated
+even if a CLI flag overrides them. `check-config` validates local structure,
+resources, selections, and value ranges without credentials, network access,
+or MCP startup; it does not prove endpoint, executable, or server availability.
+Dry runs also leave MCP servers stopped and report configured server names,
+not undiscovered remote tool schemas.
+
+| Section | Fields and behavior |
+| --- | --- |
+| `[cli]` | Named CLI flags with underscores: `model`, `endpoint`, `auth`, `wire_api`, `instruction`, `target`, context/tool/retry/time budgets, `trace_dir`, `debug_trace`, output flags, etc. Strings, integers, booleans, or string arrays for repeated `agent_arg`. Only options belonging to the invoked command are applied. Positional arguments and `config` itself are not file settings. |
+| `[prompts]` | `system` or `system_file` replaces the built-in system prompt. `append` or `append_file` adds guidance. Each pair is mutually exclusive; each resource is nonempty UTF-8, at most 64 KiB. Rust output/evidence validation and budgets still apply. A replacement prompt must explain the response contract to the model. |
+| `[tools]` | `enabled` selects exact native tool names; omission enables all seven, `[]` disables all. Dispatch rejects disabled tools even if a model invents a call. `bash_program` selects an executable path; `bash_timeout_ms` defaults to 30000, range 1–3600000. Bash still takes a raw command string and optional per-call timeout, capped by the run deadline. |
+| `[skills]` | `enabled` selects exact built-in/custom names; omission exposes all, `[]` exposes none. Disabling `load_skill` also hides the catalog. |
+| `[[skills.custom]]` | Unique `name` (ASCII letters/digits/underscore/hyphen, 1–48 bytes), `description` (1–256 bytes), and either `content` or `file` (UTF-8, at most 8 KiB). Built-in names cannot be shadowed. `[skills.custom.resources]` maps exact relative resource names to inline strings, each at most 8 KiB. Maximum 64 custom skills and 32 resources per skill. |
+| `[mcp.NAME]` | A stdio server, described below. Disabled unless `enabled = true`. |
+
+Skill bodies and resources are resolved locally when the file is loaded, but
+only metadata enters initial model context. `load_skill` retrieves the requested
+body/resource. `skills` listing, reading, and exporting honor the same config.
+Resource export preserves the existing new-file-only behavior.
+
+Paths owned by the file (`root`, `dataset`, `output`, `trace_dir`,
+`codex_auth_file`, prompt/skill files, Bash executable, MCP cwd, and MCP commands
+containing path components) resolve relative to its directory. A bare MCP command
+uses PATH. `target` remains relative to the audit root; MCP `args` are literal
+arguments with no path rewriting or shell expansion. Explicit CLI paths retain
+their existing working-directory semantics. The config file and its resolved
+representation are each limited to 1 MiB. No includes or implicit config layering.
+
+`evaluate` freezes resolved agent settings in a temporary file and forwards it
+to each child along with effective provider/budget flags. The snapshot survives
+until workers finish and is then removed. An MCP server without `cwd` starts in
+each staged audit workspace; an explicit `cwd` remains an intentional override.
+`benchmark` runs the external agent exactly as configured through `agent_arg`;
+it does not inject this harness's prompts/tools into another executable.
+
+### MCP stdio servers
+
+```toml
+[mcp.analysis]
+enabled = true
+command = "/opt/analysis/bin/server"
+args = ["--stdio"]
+tools = ["lookup_symbol", "trace_callers"]
+timeout_ms = 10000
+max_message_bytes = 1048576
+
+[mcp.analysis.env_from]
+SERVER_TOKEN = "ANALYSIS_TOKEN"
+```
+
+`command` is required; `args` defaults to `[]`, `cwd` to the audit root, and
+`tools` to all discovered tools (`[]` advertises none). `env_from` maps a child
+environment name to an existing parent environment variable; a missing value
+fails startup. The child also inherits the host environment and permissions.
+Keep credential values out of the file and command arguments. Tool selection
+controls dispatch, not OS access by Bash or server processes.
+
+This implementation supports **stdio tools**, with newline-delimited JSON-RPC,
+initialization/version negotiation, paginated `tools/list`, and `tools/call`.
+It requests protocol `2025-11-25` and accepts `2024-11-05`, `2025-03-26`,
+`2025-06-18`, or `2025-11-25`. It exposes no sampling, elicitation, roots,
+resource, prompt, HTTP/SSE transport, or interactive authorization capability.
+Server requests for unsupported client methods receive `-32601`; ping receives
+an empty result. Server instructions are not injected into model prompts.
+
+Tools appear as `mcp_NAME__REMOTE_NAME`, limited to 64 ASCII letters, digits,
+underscores, and hyphens. Unrepresentable names, collisions, missing selected
+tools, or non-object input schemas fail discovery. Limits are 16 servers,
+128 discovered tools and 16 pages per server, 256 KiB of selected tool schemas
+per server, and a 1–3600000 ms request timeout (default 10000). Message limits
+are 1024–2097152 bytes (default 1048576). The complete model request still obeys
+`max_context_bytes`; returned tool text uses the existing 32 KiB truncation cap.
+
+MCP calls execute sequentially with native calls and count against the same
+tool budget and overall deadline. Tool-level `isError` becomes a model-visible
+error. Protocol/transport failures and timeouts close the affected session;
+mutating calls are not retried. Stderr is drained without retention; it never
+enters JSON stdout. On success, stdin closes and each child gets a brief exit
+grace period; process groups/Windows jobs clean up descendants on teardown,
+timeout, or cancellation. Operational journals record `mcp_start`, `mcp_ready`,
+and the existing tool events. Payload capture remains opt-in; arbitrary server
+secrets are not covered by the provider API-key redactor.
+
+Protocol references: [stdio transport](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports),
+[initialization and shutdown](https://modelcontextprotocol.io/specification/2025-11-25/basic/lifecycle),
+and [tool discovery/calls](https://modelcontextprotocol.io/specification/2025-11-25/server/tools).
+
 ## Commands
 
 | Command | Purpose |
 | --- | --- |
+| `check-config --config FILE` | Validate explicit local configuration and report selected capabilities without starting a model or MCP server. |
 | `audit` | Audit one file or directory with the built-in LLM agent. `--dry-run` reports the context without a request. |
 | `evaluate` | Run the built-in agent over a labeled dataset and score it. |
 | `benchmark` | Run another executable that implements the JSON stdin/stdout protocol. Repeat `--agent-arg=VALUE` for literal arguments. |

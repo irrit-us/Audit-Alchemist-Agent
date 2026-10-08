@@ -1,6 +1,8 @@
+pub mod config;
 pub mod context;
 pub mod dataset;
 pub mod evaluate;
+pub mod mcp;
 pub mod monitor;
 pub mod output;
 pub mod progress;

@@ -8,6 +8,7 @@ use std::fmt::Write as _;
 pub const SYSTEM_PROMPT: &str = include_str!("../../prompts/audit.txt");
 
 pub struct AuditPrompt {
+    pub system: String,
     pub user: String,
 }
 
@@ -15,13 +16,22 @@ impl AuditPrompt {
     /// Estimate the actual system/user text, including JSON and line labels.
     /// Provider framing and output tokens are excluded; this is not a tokenizer.
     pub fn estimated_tokens(&self) -> usize {
-        estimate_tokens(SYSTEM_PROMPT) + estimate_tokens(&self.user)
+        estimate_tokens(&self.system) + estimate_tokens(&self.user)
     }
 }
 
 /// Keep instructions separate from JSON-escaped, untrusted source. Line labels
 /// are presentation metadata; validation still uses the original snapshot.
 pub fn prepare(instruction: &str, target: &str, context: &Context) -> Result<AuditPrompt> {
+    prepare_with(instruction, target, context, &Default::default())
+}
+
+pub fn prepare_with(
+    instruction: &str,
+    target: &str,
+    context: &Context,
+    settings: &crate::config::AgentSettings,
+) -> Result<AuditPrompt> {
     ensure!(
         !instruction.trim().is_empty() && instruction.len() <= 65_536,
         "invalid instruction"
@@ -58,11 +68,12 @@ pub fn prepare(instruction: &str, target: &str, context: &Context) -> Result<Aud
         })
         .collect();
     Ok(AuditPrompt {
+        system: settings.system_prompt(),
         user: serde_json::to_string(&Input {
             instruction,
             target,
             sources,
-            skills: crate::skills::catalog(),
+            skills: settings.catalog(),
         })?,
     })
 }

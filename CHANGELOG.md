@@ -20,6 +20,12 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- Versioned standalone TOML configuration, explicit CLI overrides, custom on-demand
+  skills, native tool selection, and resolved evaluation configuration snapshots.
+- Opt-in MCP stdio tools on all three provider wires, with bounded discovery,
+  request deadlines, tool-budget accounting, monitoring, and process cleanup.
+- CLI-first workflow-node constraints and real CLI/MCP regression fixtures.
+
 - Process lifecycle, rejected-mutation, Unicode stream fragmentation, and
   all-provider tool rejection regression checks. Incomplete-stream tests now
   allow the full fixture tool budget, avoiding an unrelated failure masking bugs.
