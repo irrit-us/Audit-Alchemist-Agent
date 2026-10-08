@@ -1,11 +1,18 @@
 use audit_harness::{
+    context::snapshot,
     dataset::{Case, Dataset},
     evaluate::{aggregate, score},
-    llm::snapshot,
-    protocol::{Finding, FindingKey, Request, Response, Severity, VERSION},
-    runner::{run, Outcome, RunConfig, RunResult},
+    protocol::{Finding, FindingKey, Response, Severity, VERSION},
+    runner::{Outcome, RunResult},
 };
-use std::{path::PathBuf, time::Duration};
+#[cfg(unix)]
+use audit_harness::{
+    protocol::Request,
+    runner::{run, RunConfig},
+};
+use std::path::PathBuf;
+#[cfg(unix)]
+use std::time::Duration;
 
 fn key() -> FindingKey {
     FindingKey {
@@ -34,6 +41,7 @@ fn result(outcome: Outcome, findings: Vec<Finding>) -> RunResult {
         findings,
     }
 }
+#[cfg(unix)]
 fn request() -> Request {
     Request {
         schema_version: VERSION,

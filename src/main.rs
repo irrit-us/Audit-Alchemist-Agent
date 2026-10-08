@@ -1,9 +1,11 @@
 use anyhow::{ensure, Context, Result};
 use audit_harness::{
+    context::{self, ContextBudget},
     dataset,
     evaluate::{aggregate, score, Report},
-    llm::{self, LlmOptions},
+    progress::Progress,
     protocol::{Request, VERSION},
+    provider::{self, LlmOptions},
     runner::{self, Outcome, RunConfig},
 };
 use clap::{Args, Parser, Subcommand};
@@ -39,6 +41,9 @@ enum Action {
             default_value = "Audit attacker-controlled inputs for concrete vulnerabilities."
         )]
         instruction: String,
+        /// Build and report the context and its token estimate without calling the model.
+        #[arg(long)]
+        dry_run: bool,
         #[command(flatten)]
         llm: LlmOptions,
         #[command(flatten)]
@@ -137,6 +142,7 @@ async fn benchmark(
         max_output_bytes: limits.max_output_bytes as usize,
     };
     let start = Instant::now();
+    let progress = Progress::new(dataset.cases.len());
     let mut pending = dataset.cases.into_iter().enumerate();
     let mut tasks = JoinSet::new();
     let mut reports = Vec::new();
@@ -147,7 +153,9 @@ async fn benchmark(
                 break;
             };
             let config = config.clone();
+            let progress = progress.clone();
             tasks.spawn(async move {
+                progress.begin(&case.id);
                 let request = Request {
                     schema_version: VERSION,
                     case_id: case.id.clone(),
@@ -155,6 +163,12 @@ async fn benchmark(
                     instruction: case.instruction.clone(),
                 };
                 let run = runner::run(&config, request).await;
+                progress.finish(
+                    &case.id,
+                    run.outcome.as_str(),
+                    run.outcome != Outcome::Success,
+                    run.elapsed_ms,
+                );
                 (index, score(&case, run))
             });
         }
@@ -179,6 +193,7 @@ async fn benchmark(
     reports.sort_by_key(|(index, _)| *index);
     let cases: Vec<_> = reports.into_iter().map(|(_, report)| report).collect();
     let metrics = aggregate(&cases, start.elapsed().as_millis() as u64);
+    progress.summary();
     let success = metrics.failed_cases == 0;
     let report = Report {
         schema_version: VERSION,
@@ -227,10 +242,39 @@ async fn execute(cli: Cli) -> Result<bool> {
             instruction,
             llm,
             limits,
+            dry_run,
         } => {
             llm.validate()?;
             let root = root.canonicalize()?;
-            llm::snapshot(&root, &target, llm.max_source_bytes as usize)?;
+            let context = context::build(
+                &root,
+                &target,
+                &ContextBudget::new(llm.max_source_bytes as usize),
+            )?;
+            let estimated_tokens = context.estimated_tokens();
+            if let Some(max) = llm.max_source_tokens {
+                ensure!(
+                    estimated_tokens <= max as usize,
+                    "estimated context of {estimated_tokens} tokens exceeds the {max} token limit; narrow the target"
+                );
+            }
+            if dry_run {
+                let file = destination(&limits.output)?;
+                emit(
+                    &serde_json::json!({
+                        "dry_run": true,
+                        "target": target,
+                        "files": context.files(),
+                        "bytes": context.total_bytes(),
+                        "estimated_tokens": estimated_tokens,
+                        "instruction_bytes": instruction.len(),
+                        "model": llm.model,
+                        "auth": llm.auth.as_str(),
+                    }),
+                    file,
+                )?;
+                return Ok(true);
+            }
             let file = destination(&limits.output)?;
             let mut args = llm.arguments();
             args.extend(["--timeout-ms".into(), limits.timeout_ms.to_string()]);
@@ -268,7 +312,7 @@ async fn execute(cli: Cli) -> Result<bool> {
             ensure!(bytes.len() <= 131_072, "request exceeds 128 KiB");
             let request: Request =
                 serde_json::from_slice(&bytes).context("invalid agent request")?;
-            let response = llm::audit(
+            let response = provider::audit(
                 &llm,
                 &request,
                 &std::env::current_dir()?,

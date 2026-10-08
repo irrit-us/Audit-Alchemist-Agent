@@ -1,6 +1,6 @@
 //! Deterministic plumbing fixture, deliberately not a vulnerability discovery model.
 use audit_harness::{
-    llm::snapshot,
+    context::snapshot,
     protocol::{Finding, Request, Response, Severity, VERSION},
 };
 use std::io::Read;

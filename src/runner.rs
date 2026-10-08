@@ -32,6 +32,21 @@ pub enum Outcome {
     InvalidResponse,
 }
 
+impl Outcome {
+    /// Stable, lowercase label for progress logs and reports.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Outcome::Success => "success",
+            Outcome::Timeout => "timeout",
+            Outcome::SpawnError => "spawn_error",
+            Outcome::IoError => "io_error",
+            Outcome::OutputLimit => "output_limit",
+            Outcome::NonzeroExit => "nonzero_exit",
+            Outcome::InvalidResponse => "invalid_response",
+        }
+    }
+}
+
 #[derive(Debug, Serialize)]
 pub struct RunResult {
     pub case_id: String,
@@ -64,6 +79,7 @@ async fn bounded_read(mut reader: impl AsyncRead + Unpin, limit: usize) -> Resul
 }
 
 /// Kill ordinary descendants as well as the direct child on Unix. This is not a sandbox.
+#[cfg_attr(not(unix), allow(dead_code))]
 struct ProcessGroup(Option<u32>);
 impl Drop for ProcessGroup {
     fn drop(&mut self) {
