@@ -15,6 +15,12 @@ Python 3 is required only for the test fixture and is provisioned in both Rust C
 jobs; the harness gains no Python runtime dependency. No live MCP service or
 live-model discovery-quality evaluation was performed in this round.
 
+The first hosted Windows run exposed a fixture timing assumption: the 800 ms
+whole-run deadline could expire before Python finished cold startup. The
+cancellation fixture now allows startup time, asserts descendant readiness,
+and releases a would-be leak only after the CLI has exited. Production deadline
+and cleanup code did not change for this correction.
+
 ## Windows HTTP fixture correction: 2026-10-08
 
 The first matrix run exposed `WouldBlock` in the Windows mock-provider request

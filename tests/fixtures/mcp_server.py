@@ -23,8 +23,25 @@ def send(value):
 
 record({"started": True, "cwd": os.getcwd()})
 if mode in ("descendant", "cancel_init"):
-    subprocess.Popen([sys.executable, "-c", "import time,pathlib,sys;time.sleep(2);pathlib.Path(sys.argv[1]).write_text('leaked')", str(log) + ".leaked"],
+    # Signal actual child readiness; only write the leak marker after the test
+    # releases it. Startup speed must not decide whether cleanup was exercised.
+    child_script = """import time, pathlib, sys
+base = pathlib.Path(sys.argv[1])
+pathlib.Path(str(base) + '.child-ready').touch()
+deadline = time.monotonic() + 20
+while time.monotonic() < deadline:
+    if pathlib.Path(str(base) + '.release').exists():
+        pathlib.Path(str(base) + '.leaked').write_text('leaked')
+        break
+    time.sleep(0.01)
+"""
+    subprocess.Popen([sys.executable, "-c", child_script, str(log)],
                      stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    ready_deadline = time.monotonic() + 5
+    while not Path(str(log) + ".child-ready").exists():
+        if time.monotonic() >= ready_deadline:
+            raise RuntimeError("descendant did not become ready")
+        time.sleep(0.01)
 
 for line in sys.stdin:
     request = json.loads(line)

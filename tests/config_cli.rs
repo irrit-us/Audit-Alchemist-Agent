@@ -38,7 +38,8 @@ fn success(output: std::process::Output) -> Value {
 }
 fn mcp_config(root: &Path, mode: &str) -> String {
     let fixture = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/mcp_server.py");
-    format!("[mcp.fixture]\nenabled = true\ncommand = {:?}\nargs = [{:?}, {:?}, {:?}]\ntimeout_ms = 1500\ntools = [\"echo\"]\n", if cfg!(windows) { "python" } else { "python3" }, fixture.to_string_lossy(), mode, root.join("mcp.jsonl").to_string_lossy())
+    let timeout = if mode == "hang_init" { 1500 } else { 5000 };
+    format!("[mcp.fixture]\nenabled = true\ncommand = {:?}\nargs = [{:?}, {:?}, {:?}]\ntimeout_ms = {timeout}\ntools = [\"echo\"]\n", if cfg!(windows) { "python" } else { "python3" }, fixture.to_string_lossy(), mode, root.join("mcp.jsonl").to_string_lossy())
 }
 fn final_turn() -> String {
     format!(
@@ -397,7 +398,9 @@ async fn mcp_failures_are_bounded_and_poisoned_sessions_are_not_retried() {
         }
         tools.shutdown().await;
         if mode == "descendant" {
-            tokio::time::sleep(Duration::from_millis(2200)).await;
+            assert!(dir.path().join("mcp.jsonl.child-ready").exists());
+            std::fs::write(dir.path().join("mcp.jsonl.release"), "release").unwrap();
+            tokio::time::sleep(Duration::from_millis(1000)).await;
             assert!(!dir.path().join("mcp.jsonl.leaked").exists());
         }
     }
@@ -408,16 +411,18 @@ fn cli_deadline_cancels_mcp_initialization_and_its_descendants() {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path();
     std::fs::write(root.join("entry.py"), "print('fixture')\n").unwrap();
-    config(root, &format!("[cli]\nmodel = 'fixture'\ntarget = 'entry.py'\nendpoint = 'http://127.0.0.1:9/unused'\ntimeout_ms = 800\n{}", mcp_config(root, "cancel_init")));
+    config(root, &format!("[cli]\nmodel = 'fixture'\ntarget = 'entry.py'\nendpoint = 'http://127.0.0.1:9/unused'\ntimeout_ms = 5000\n{}", mcp_config(root, "cancel_init").replace("timeout_ms = 5000", "timeout_ms = 15000")));
     let start = Instant::now();
     let output = cli(root, "audit").output().unwrap();
     assert!(!output.status.success());
     let result: Value = serde_json::from_slice(&output.stdout).unwrap();
     assert_eq!(result["outcome"], "timeout", "{result}");
-    assert!(start.elapsed() < Duration::from_secs(4));
+    assert!(start.elapsed() < Duration::from_secs(10));
     let log = std::fs::read_to_string(root.join("mcp.jsonl")).unwrap();
     assert!(log.contains("initialize"));
-    thread::sleep(Duration::from_millis(2200));
+    assert!(root.join("mcp.jsonl.child-ready").exists());
+    std::fs::write(root.join("mcp.jsonl.release"), "release").unwrap();
+    thread::sleep(Duration::from_millis(1000));
     assert!(!root.join("mcp.jsonl.leaked").exists());
 }
 fn server(bodies: Vec<String>) -> (String, mpsc::Receiver<Value>, thread::JoinHandle<()>) {
