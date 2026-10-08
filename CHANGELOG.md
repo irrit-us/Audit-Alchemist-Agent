@@ -7,6 +7,15 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- **Operational monitoring**: bounded per-run JSONL journals, five-second
+  heartbeats, model/HTTP/retry/tool timings and outcomes, cumulative usage,
+  cancellation summaries, and `inspect-trace` for live or interrupted runs.
+- **Opt-in debug traces**: bounded request/response/tool payloads and error
+  chains, configured API-key redaction, and local `doctor` diagnostics.
+- **Built-in skills**: a compiled catalog and `load_skill` tool for code audits,
+  PoC validation, native debugging, tmux, and finding review. Selected
+  codex-auditor guidance is adapted with pinned MIT attribution.
+
 - **Native agent tool loop** for chat-completions, Responses/Codex, and Anthropic:
   Bash, paged source reads, file writes, exact edits, listing, and batched literal
   search. Provider reasoning state and tool-call IDs survive continuation.

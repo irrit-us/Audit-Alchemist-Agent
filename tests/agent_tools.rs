@@ -199,6 +199,7 @@ fn calls() -> Vec<Value> {
         json!({"id":"read-1","name":"read_file","arguments":json!({"path":"helper.py"}).to_string()}),
         json!({"id":"write-2","name":"write_file","arguments":json!({"path":"poc.sh","content":"printf 'poc-observed'\n"}).to_string()}),
         json!({"id":"bash-3","name":"bash","arguments":json!({"command":"bash poc.sh"}).to_string()}),
+        json!({"id":"skill-4","name":"load_skill","arguments":json!({"name":"poc-validation"}).to_string()}),
     ]
 }
 
@@ -351,6 +352,8 @@ fn run(
             "--format",
             "quiet",
         ])
+        .arg("--trace-dir")
+        .arg(root.join("traces"))
         .env("AUDIT_API_KEY", "fixture-key")
         .output()
         .unwrap()
@@ -367,7 +370,7 @@ fn all_wires_explore_write_run_poc_and_replay_native_tool_results() {
         )
         .unwrap();
         let (endpoint, rx, task) = server(vec![tool_turn(wire), final_turn(wire)]);
-        let output = run(wire, dir.path(), &endpoint, "3");
+        let output = run(wire, dir.path(), &endpoint, "4");
         assert!(
             output.status.success(),
             "{wire}: {} {}",
@@ -376,7 +379,7 @@ fn all_wires_explore_write_run_poc_and_replay_native_tool_results() {
         );
         task.join().unwrap();
         let first = rx.recv().unwrap();
-        assert_eq!(first["tools"].as_array().unwrap().len(), 6);
+        assert_eq!(first["tools"].as_array().unwrap().len(), 7);
         let second = rx.recv().unwrap();
         let history = if wire == "responses" {
             &second["input"]
@@ -384,16 +387,30 @@ fn all_wires_explore_write_run_poc_and_replay_native_tool_results() {
             &second["messages"]
         };
         assert!(history.to_string().contains("poc-observed"));
+        assert!(history.to_string().contains("# PoC validation"));
+        let trace = std::fs::read_dir(dir.path().join("traces"))
+            .unwrap()
+            .next()
+            .unwrap()
+            .unwrap()
+            .path();
+        let summary = audit_harness::monitor::inspect(&trace).unwrap();
+        assert_eq!(summary["summary"]["outcome"], "success");
+        assert_eq!(summary["summary"]["turns"], 2);
+        assert_eq!(summary["summary"]["tools"], 4);
+        let raw = std::fs::read_to_string(trace).unwrap();
+        assert!(!raw.contains("poc-observed"));
+        assert!(!raw.contains("fixture-key"));
         assert!(history.to_string().contains("exit_code"));
         assert!(history.to_string().contains("2:     return eval(name)"));
         match wire {
             "chat-completions" => {
-                assert_eq!(history[2]["tool_calls"].as_array().unwrap().len(), 3);
+                assert_eq!(history[2]["tool_calls"].as_array().unwrap().len(), 4);
                 assert_eq!(history[5]["tool_call_id"], "bash-3");
             }
             "responses" => {
                 assert_eq!(history[1]["encrypted_content"], "opaque-state");
-                assert_eq!(history[7]["call_id"], "bash-3");
+                assert_eq!(history[8]["call_id"], "bash-3");
             }
             "anthropic" => {
                 assert_eq!(history[1]["content"][0]["signature"], "signed-state");
@@ -440,7 +457,11 @@ fn dry_run_explores_directories_without_credentials_and_reports_prompt_cost() {
     );
     let report: Value = serde_json::from_slice(&output.stdout).unwrap();
     assert_eq!(report["files"], 0);
-    assert_eq!(report["tools"][0], "bash");
+    assert!(report["tools"].as_array().unwrap().contains(&json!("bash")));
+    assert!(report["tools"]
+        .as_array()
+        .unwrap()
+        .contains(&json!("load_skill")));
     assert!(report["estimated_prompt_tokens"].as_u64().unwrap() > 0);
 }
 

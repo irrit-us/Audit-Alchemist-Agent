@@ -37,6 +37,7 @@ pub fn prepare(instruction: &str, target: &str, context: &Context) -> Result<Aud
     struct Input<'a> {
         instruction: &'a str,
         target: &'a str,
+        skills: serde_json::Value,
         sources: Vec<PromptSource<'a>>,
     }
 
@@ -61,6 +62,7 @@ pub fn prepare(instruction: &str, target: &str, context: &Context) -> Result<Aud
             instruction,
             target,
             sources,
+            skills: crate::skills::catalog(),
         })?,
     })
 }

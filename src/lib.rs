@@ -1,10 +1,12 @@
 pub mod context;
 pub mod dataset;
 pub mod evaluate;
+pub mod monitor;
 pub mod output;
 pub mod progress;
 pub mod protocol;
 pub mod provider;
 pub mod runner;
+pub mod skills;
 pub mod tools;
 pub mod tui;

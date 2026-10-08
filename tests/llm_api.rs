@@ -102,6 +102,8 @@ fn audit(endpoint: &str) -> std::process::Output {
             endpoint,
             "--model",
             "fixture-model",
+            "--max-attempts",
+            "1",
             "--timeout-ms",
             "5000",
         ])

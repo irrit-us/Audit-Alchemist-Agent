@@ -96,6 +96,7 @@ Groq, Azure, and local servers), `responses` (OpenAI Responses), or `anthropic`
 | Document | Contents |
 | --- | --- |
 | [Architecture](docs/architecture.md) | Layers, modules, data flow, and design principles |
+| [Monitoring and skills](docs/monitoring.md) | Run journals, debugging, local diagnostics, and built-in guidance |
 | [Configuration](docs/configuration.md) | Commands, flags, limits, exit codes, and reports |
 | [Authentication](docs/authentication.md) | API-key and Sign In With ChatGPT (Codex) credentials |
 | [Protocol](docs/protocol.md) | Version 1 agent request/response and dataset contract |

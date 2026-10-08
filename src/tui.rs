@@ -89,6 +89,22 @@ impl App {
             StreamEvent::Text { text } => {
                 Self::push(&mut self.output, &mut self.partial_output, text);
             }
+            StreamEvent::Operation { name, details } => {
+                self.status = match name.as_str() {
+                    "heartbeat" => format!(
+                        "{} ({} ms)",
+                        details["phase"].as_str().unwrap_or("running"),
+                        details["elapsed_ms"]
+                    ),
+                    "retry" => format!(
+                        "retry {} in {} ms",
+                        details["next_attempt"], details["delay_ms"]
+                    ),
+                    "run_end" => details["outcome"].as_str().unwrap_or("finished").to_owned(),
+                    _ => name.replace('_', " "),
+                };
+            }
+            StreamEvent::Debug { .. } => {}
             StreamEvent::Usage(usage) => self.usage = *usage,
             StreamEvent::ToolStart { name, .. } => self.status = format!("running {name}"),
             StreamEvent::ToolEnd {

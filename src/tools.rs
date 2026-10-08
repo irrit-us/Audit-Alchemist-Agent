@@ -34,6 +34,7 @@ pub fn definitions() -> Vec<Value> {
         })
     };
     vec![
+        tool("load_skill", "Load built-in guidance by exact catalog name. Omit resource for SKILL.md, then request an exact available_resources path if needed. Skill content is compiled into the binary and does not depend on workspace files.", json!({"name":string(),"resource":string()}), json!(["name"])),
         tool("bash", "Run Bash in the audit root to explore code (rg/grep/git), build and run local PoCs, or invoke other installed tools. Commands run with host permissions; cwd and shell variables reset each call, files persist. No interactive stdin. Output is capped with an explicit truncation marker; narrow commands when truncated. Use timeout_ms for slow tests (capped by the run deadline).", json!({"command":string(),"timeout_ms":integer()}), json!(["command"])),
         tool("read_file", "Read UTF-8 text with 1-based line labels. Use offset and limit to page through files. Read the finding's source line with this tool before citing it. Streams the requested page without loading the whole file. Scan cap 64 MiB per call; output cap 32 KiB. total_lines is null until EOF. Paths are relative to the audit root.", json!({"path":string(),"offset":integer(),"limit":integer()}), json!(["path"])),
         tool("write_file", "Create or overwrite a UTF-8 file relative to the audit root, including PoCs and test fixtures. Parent directories must exist (use Bash mkdir -p). Read existing files before overwriting. Maximum content 1 MiB.", json!({"path":string(),"content":string()}), json!(["path","content"])),
@@ -85,6 +86,16 @@ impl WorkspaceTools {
 
     async fn invoke(&mut self, name: &str, arguments: &str, timeout: Duration) -> Result<Value> {
         match name {
+            "load_skill" => {
+                #[derive(Deserialize)]
+                #[serde(deny_unknown_fields)]
+                struct Args {
+                    name: String,
+                    resource: Option<String>,
+                }
+                let args: Args = serde_json::from_str(arguments)?;
+                crate::skills::load(&args.name, args.resource.as_deref())
+            }
             "bash" => {
                 #[derive(Deserialize)]
                 #[serde(deny_unknown_fields)]
@@ -355,6 +366,24 @@ async fn bash(root: &Path, script: &str, timeout: Duration) -> Result<Value> {
         }
     }
     Ok(report)
+}
+
+/// No model request or credential access; executes only a fixed diagnostic script.
+pub async fn doctor(root: &Path) -> Result<Value> {
+    let root = root
+        .canonicalize()
+        .context("resolve diagnostic working directory")?;
+    let command = r#"printf 'bash=%s\n' "$BASH_VERSION"; for tool in rg git python python3 gdb lldb tmux; do if command -v "$tool" >/dev/null 2>&1; then printf '%s=available\n' "$tool"; else printf '%s=missing\n' "$tool"; fi; done"#;
+    let result = match bash(&root, command, Duration::from_secs(5)).await {
+        Ok(value) => value,
+        Err(error) => json!({"error":format!("{error:#}")}),
+    };
+    let ready = result["exit_code"] == 0 && result.get("error").is_none();
+    Ok(
+        json!({"ready":ready,"os":std::env::consts::OS,"arch":std::env::consts::ARCH,
+        "bash":result,"optional_tools_required":false,
+        "note":"Missing optional tools do not disable auditing. AUDIT_BASH can select a Bash executable."}),
+    )
 }
 
 #[cfg(test)]

@@ -11,6 +11,9 @@ All configuration is explicit and typed. Commands and flags are defined with
 | `evaluate` | Run the built-in agent over a labeled dataset and score it. |
 | `benchmark` | Run another executable that implements the JSON stdin/stdout protocol. Repeat `--agent-arg=VALUE` for literal arguments. |
 | `validate` | Check dataset schema, paths, labels, and source lines without running an agent. |
+| `doctor` | Check Bash execution and optional local tools without credentials. |
+| `skills [NAME]` | List built-in skill metadata, or read a skill; use `--resource` for a registered reference. |
+| `inspect-trace PATH` | Summarize a live or completed JSONL run journal. |
 | `agent` | Internal protocol adapter: read one request from stdin, return one JSON response. The working directory is the source root. |
 
 ## Options
@@ -150,3 +153,10 @@ direct child. Descendants that deliberately detach can escape the group. This is
 execution supervision, not an OS security sandbox: external agents inherit the
 environment and have filesystem and network access. Use a container or a
 separate account when running untrusted agents.
+
+## Monitoring flags
+
+`audit`, `evaluate`, and `agent` accept `--trace-dir PATH` for bounded per-run
+JSONL journals. `--debug-trace` requires that directory and adds bounded
+request/response/tool payloads. See [Monitoring and skills](monitoring.md) for
+privacy, event fields, recovery, and diagnostic commands.

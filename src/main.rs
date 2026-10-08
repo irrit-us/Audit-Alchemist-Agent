@@ -32,6 +32,19 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Action {
+    /// List built-in skills or read one skill/resource without model credentials.
+    Skills {
+        name: Option<String>,
+        #[arg(long, requires = "name")]
+        resource: Option<String>,
+    },
+    /// Check Bash execution and discover optional local debugging tools.
+    Doctor {
+        #[arg(long, default_value = ".")]
+        root: PathBuf,
+    },
+    /// Summarize a completed or live JSONL run journal without displaying payloads.
+    InspectTrace { path: PathBuf },
     /// Audit a source file/directory through a plain LLM API.
     Audit {
         #[arg(long)]
@@ -233,6 +246,24 @@ async fn benchmark(
 
 async fn execute(cli: Cli) -> Result<bool> {
     match cli.command {
+        Action::Skills { name, resource } => {
+            let value = match name {
+                Some(name) => audit_harness::skills::load(&name, resource.as_deref())?,
+                None => audit_harness::skills::catalog(),
+            };
+            emit(&value, None)?;
+            Ok(true)
+        }
+        Action::InspectTrace { path } => {
+            emit(&audit_harness::monitor::inspect(&path)?, None)?;
+            Ok(true)
+        }
+        Action::Doctor { root } => {
+            let report = audit_harness::tools::doctor(&root).await?;
+            let ready = report["ready"] == true;
+            emit(&report, None)?;
+            Ok(ready)
+        }
         Action::Validate { dataset: path } => {
             let (dataset, _) = dataset::load(&path)?;
             emit(
@@ -253,7 +284,7 @@ async fn execute(cli: Cli) -> Result<bool> {
             limits,
         } => {
             llm.validate()?;
-            let mut args = llm.arguments();
+            let mut args = llm.arguments()?;
             args.extend(["--timeout-ms".into(), limits.timeout_ms.to_string()]);
             benchmark(dataset, std::env::current_exe()?, args, limits, true).await
         }
@@ -291,6 +322,7 @@ async fn execute(cli: Cli) -> Result<bool> {
                         "estimated_tokens": estimated_tokens,
                         "estimated_prompt_tokens": prompt.estimated_tokens(),
                         "tools": audit_harness::tools::definitions().iter().map(|tool| tool["name"].clone()).collect::<Vec<_>>(),
+                        "skills": audit_harness::skills::catalog(),
                         "max_tool_calls": llm.max_tool_calls,
                         "instruction_bytes": instruction.len(),
                         "model": llm.model,
@@ -328,7 +360,11 @@ async fn execute(cli: Cli) -> Result<bool> {
                     },
                     Err(error) => RunResult {
                         case_id,
-                        outcome: Outcome::ProviderError,
+                        outcome: if error.is::<provider::AuditTimeout>() {
+                            Outcome::Timeout
+                        } else {
+                            Outcome::ProviderError
+                        },
                         elapsed_ms: start.elapsed().as_millis() as u64,
                         exit_code: None,
                         error: Some(format!("{error:#}")),
@@ -340,13 +376,11 @@ async fn execute(cli: Cli) -> Result<bool> {
                 let use_color = color.resolve(is_tty);
                 let stderr = std::io::stderr();
                 let mut renderer = output::Renderer::new(format, use_color, is_tty, stderr.lock());
-                let result = tokio::time::timeout(
-                    timeout,
-                    provider::audit_with(&llm, &request, &context, &root, timeout, &mut renderer),
-                )
-                .await;
+                let result =
+                    provider::audit_with(&llm, &request, &context, &root, timeout, &mut renderer)
+                        .await;
                 match result {
-                    Ok(Ok(response)) => {
+                    Ok(response) => {
                         let _ = renderer.finish(&response);
                         RunResult {
                             case_id,
@@ -357,20 +391,16 @@ async fn execute(cli: Cli) -> Result<bool> {
                             findings: response.findings,
                         }
                     }
-                    Ok(Err(error)) => RunResult {
+                    Err(error) => RunResult {
                         case_id,
-                        outcome: Outcome::ProviderError,
+                        outcome: if error.is::<provider::AuditTimeout>() {
+                            Outcome::Timeout
+                        } else {
+                            Outcome::ProviderError
+                        },
                         elapsed_ms: start.elapsed().as_millis() as u64,
                         exit_code: None,
                         error: Some(format!("{error:#}")),
-                        findings: Vec::new(),
-                    },
-                    Err(_) => RunResult {
-                        case_id,
-                        outcome: Outcome::Timeout,
-                        elapsed_ms: start.elapsed().as_millis() as u64,
-                        exit_code: None,
-                        error: Some("audit exceeded wall-clock deadline".into()),
                         findings: Vec::new(),
                     },
                 }

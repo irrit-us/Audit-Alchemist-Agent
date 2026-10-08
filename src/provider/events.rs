@@ -2,8 +2,8 @@
 //!
 //! Every supported wire format is normalized into the same events so the
 //! console renderers and the TUI do not need to know which provider produced
-//! them. Tokens are reported as deltas; the final assistant text is the
-//! concatenation of [`StreamEvent::Text`] payloads.
+//! them. Usage updates are cumulative within each request and the run monitor
+//! aggregates them across turns. Text events are streaming deltas.
 
 use serde::Serialize;
 
@@ -31,9 +31,9 @@ impl Usage {
         self.completion_tokens = self.completion_tokens.max(other.completion_tokens);
         self.total_tokens = self.total_tokens.max(other.total_tokens);
         self.reasoning_tokens = self.reasoning_tokens.max(other.reasoning_tokens);
-        if self.total_tokens == 0 && !other.is_empty() {
-            self.total_tokens = self.prompt_tokens.saturating_add(self.completion_tokens);
-        }
+        self.total_tokens = self
+            .total_tokens
+            .max(self.prompt_tokens.saturating_add(self.completion_tokens));
     }
 }
 
@@ -56,6 +56,13 @@ pub enum StreamEvent {
         is_error: bool,
         elapsed_ms: u64,
     },
+    /// Content-free lifecycle, retry, timing, and heartbeat metadata.
+    Operation {
+        name: String,
+        details: serde_json::Value,
+    },
+    /// Explicitly opted-in payload capture; intercepted by the run monitor.
+    Debug { stage: String, content: String },
     /// The stream completed normally.
     Done,
 }

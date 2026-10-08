@@ -62,6 +62,8 @@ impl AuthKind {
 
 #[derive(Debug, Clone, Args)]
 pub struct LlmOptions {
+    #[command(flatten)]
+    pub monitoring: crate::monitor::MonitorOptions,
     /// Full provider URL: a chat-completions, Responses, or Messages endpoint.
     /// Required with `--auth api-key`; optional override for Codex.
     #[arg(long)]
@@ -191,7 +193,7 @@ impl LlmOptions {
         Ok(())
     }
 
-    pub fn arguments(&self) -> Vec<String> {
+    pub fn arguments(&self) -> Result<Vec<String>> {
         let mut args = vec![
             "agent".into(),
             "--model".into(),
@@ -228,7 +230,15 @@ impl LlmOptions {
         if let Some(file) = &self.codex_auth_file {
             args.extend(["--codex-auth-file".into(), file.display().to_string()]);
         }
-        args
+        if let Some(path) = &self.monitoring.trace_dir {
+            // Resolve before evaluation changes the child working directory.
+            let absolute = std::path::absolute(path).context("resolve trace directory")?;
+            args.extend(["--trace-dir".into(), absolute.display().to_string()]);
+        }
+        if self.monitoring.debug_trace {
+            args.push("--debug-trace".into());
+        }
+        Ok(args)
     }
 }
 
@@ -300,6 +310,7 @@ fn retry_after(headers: &reqwest::header::HeaderMap) -> Option<Duration> {
 async fn send_retrying(
     policy: retry::RetryPolicy,
     deadline: Instant,
+    sink: &mut dyn EventSink,
     mut build: impl FnMut() -> reqwest::RequestBuilder,
 ) -> Result<reqwest::Response> {
     let mut attempt = 0u32;
@@ -308,6 +319,10 @@ async fn send_retrying(
         match build().send().await {
             Ok(response) => {
                 let status = response.status().as_u16();
+                sink.on_event(&crate::monitor::operation(
+                    "http_response",
+                    serde_json::json!({"attempt":attempt+1,"status":status}),
+                ));
                 if final_attempt || !retry::retryable_status(status) {
                     return Ok(response);
                 }
@@ -326,6 +341,10 @@ async fn send_retrying(
                     delay_ms = wait.as_millis() as u64,
                     "retrying transient LLM API response"
                 );
+                sink.on_event(&crate::monitor::operation("retry", serde_json::json!({
+                    "attempt":attempt + 1,"next_attempt":attempt + 2,"delay_ms":wait.as_millis() as u64,
+                    "reason":"transient_http","status":status
+                })));
                 tokio::time::sleep(wait).await;
                 attempt += 1;
             }
@@ -344,6 +363,10 @@ async fn send_retrying(
                     delay_ms = wait.as_millis() as u64,
                     "retrying LLM API connection failure"
                 );
+                sink.on_event(&crate::monitor::operation("retry", serde_json::json!({
+                    "attempt":attempt + 1,"next_attempt":attempt + 2,"delay_ms":wait.as_millis() as u64,
+                    "reason":"transport"
+                })));
                 tokio::time::sleep(wait).await;
                 attempt += 1;
             }
@@ -380,13 +403,63 @@ pub async fn audit_with(
     timeout: Duration,
     sink: &mut dyn EventSink,
 ) -> Result<Response> {
-    tokio::time::timeout(
-        timeout,
-        audit_session(options, request, context, root, timeout, sink),
-    )
-    .await
-    .context("audit exceeded wall-clock deadline")?
+    let mut monitor =
+        crate::monitor::Monitor::new(&options.monitoring, &options.api_key_env, sink)?;
+    monitor.start(
+        &options.model,
+        options.effective_wire().as_str(),
+        timeout.as_millis() as u64,
+        &request.case_id,
+        &request.target,
+    );
+    let (sender, mut receiver) = tokio::sync::mpsc::unbounded_channel();
+    let mut queue = crate::monitor::QueueSink(sender);
+    let began = Instant::now();
+    let mut result = {
+        let session = audit_session(options, request, context, root, timeout, &mut queue);
+        tokio::pin!(session);
+        let timer = tokio::time::sleep(timeout);
+        tokio::pin!(timer);
+        let mut heartbeat = tokio::time::interval_at(
+            tokio::time::Instant::now() + Duration::from_secs(5),
+            Duration::from_secs(5),
+        );
+        heartbeat.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+        loop {
+            tokio::select! {
+                result = &mut session => break result,
+                _ = &mut timer => break Err(anyhow::Error::new(AuditTimeout)),
+                Some(event) = receiver.recv() => monitor.on_event(&event),
+                _ = heartbeat.tick() => monitor.heartbeat(),
+            }
+        }
+    };
+    if began.elapsed() >= timeout {
+        result = Err(AuditTimeout.into());
+    }
+    while let Ok(event) = receiver.try_recv() {
+        monitor.on_event(&event);
+    }
+    let outcome = match &result {
+        Ok(_) => "success",
+        Err(error) if error.is::<AuditTimeout>() => "timeout",
+        Err(_) => "error",
+    };
+    if let Err(error) = &result {
+        debug_capture(options, &mut monitor, "error", || format!("{error:#}"));
+    }
+    monitor.finish(outcome)?;
+    result
 }
+
+#[derive(Debug)]
+pub struct AuditTimeout;
+impl std::fmt::Display for AuditTimeout {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("audit exceeded wall-clock deadline")
+    }
+}
+impl std::error::Error for AuditTimeout {}
 
 async fn audit_session(
     options: &LlmOptions,
@@ -422,16 +495,36 @@ async fn audit_session(
     );
     let mut tools = crate::tools::WorkspaceTools::new(root, context)?;
     let mut used = 0usize;
+    let mut turn_number = 0u32;
     loop {
+        if Instant::now() >= deadline {
+            return Err(AuditTimeout.into());
+        }
+        let request_bytes = serde_json::to_vec(&conversation.body)?.len();
         ensure!(
-            Instant::now() < deadline,
-            "audit exceeded wall-clock deadline"
-        );
-        ensure!(
-            serde_json::to_vec(&conversation.body)?.len() <= options.max_context_bytes as usize,
+            request_bytes <= options.max_context_bytes as usize,
             "conversation exceeds --max-context-bytes; narrow the target or raise the limit"
         );
+        turn_number += 1;
+        sink.on_event(&crate::monitor::operation(
+            "turn_start",
+            serde_json::json!({
+                "turn":turn_number,"request_bytes":request_bytes,
+                "remaining_tool_calls":options.max_tool_calls as usize - used
+            }),
+        ));
+        debug_capture(options, sink, "request", || conversation.body.to_string());
+        let started = Instant::now();
         let turn = complete(options, &client, &conversation.body, deadline, sink).await?;
+        sink.on_event(&StreamEvent::Usage(turn.usage));
+        sink.on_event(&crate::monitor::operation(
+            "turn_end",
+            serde_json::json!({
+                "turn":turn_number,"elapsed_ms":started.elapsed().as_millis() as u64,
+                "text_bytes":turn.text.len(),"tool_calls":turn.calls.len(),"usage":turn.usage
+            }),
+        ));
+        debug_capture(options, sink, "response", || turn.text.clone());
         if turn.calls.is_empty() {
             let findings: Response = serde_json::from_str(&turn.text)
                 .context("model must return a JSON response without Markdown fences")?;
@@ -449,16 +542,16 @@ async fn audit_session(
         let mut results = Vec::new();
         // Preserve call order: a later call may run a PoC created by an earlier one.
         for call in &turn.calls {
-            ensure!(
-                Instant::now() < deadline,
-                "audit exceeded wall-clock deadline"
-            );
+            if Instant::now() >= deadline {
+                return Err(AuditTimeout.into());
+            }
             used += 1;
             tracing::info!(tool = %call.name, call = used, "executing audit tool");
             sink.on_event(&StreamEvent::ToolStart {
                 name: call.name.clone(),
                 call_id: call.id.clone(),
             });
+            debug_capture(options, sink, "tool_arguments", || call.arguments.clone());
             let tool_started = Instant::now();
             let mut result = tools
                 .execute(&call.name, &call.arguments, remaining(deadline))
@@ -468,15 +561,45 @@ async fn audit_session(
             sink.on_event(&StreamEvent::ToolEnd {
                 name: call.name.clone(),
                 call_id: call.id.clone(),
-                is_error: result.get("error").is_some(),
+                is_error: result.get("error").is_some()
+                    || result
+                        .get("exit_code")
+                        .and_then(Value::as_i64)
+                        .is_some_and(|code| code != 0),
                 elapsed_ms: tool_started.elapsed().as_millis() as u64,
             });
+            sink.on_event(&crate::monitor::operation(
+                "tool_result",
+                serde_json::json!({
+                    "call_id":call.id,"name":call.name,"exit_code":result.get("exit_code"),
+                    "timed_out":result.get("timed_out"),"truncated":result.get("truncated"),
+                    "result_bytes":serde_json::to_vec(&result)?.len()
+                }),
+            ));
+            debug_capture(options, sink, "tool_result", || result.to_string());
             results.push(crate::tools::bounded_output(
                 &serde_json::to_string(&result)?,
                 crate::tools::OUTPUT_BYTES,
             ));
         }
         conversation.append(&turn, &results)?;
+    }
+}
+
+fn debug_capture(
+    options: &LlmOptions,
+    sink: &mut dyn EventSink,
+    stage: &str,
+    content: impl FnOnce() -> String,
+) {
+    if options.monitoring.debug_trace {
+        let key = std::env::var(&options.api_key_env)
+            .ok()
+            .filter(|s| !s.is_empty());
+        sink.on_event(&StreamEvent::Debug {
+            stage: stage.into(),
+            content: crate::monitor::debug_payload(&content(), key.as_deref()),
+        });
     }
 }
 
@@ -498,7 +621,7 @@ async fn complete(
                 .as_deref()
                 .context("--endpoint is required with --auth api-key")?;
             let key = std::env::var(&options.api_key_env)?;
-            let response = send_retrying(policy, deadline, || {
+            let response = send_retrying(policy, deadline, sink, || {
                 api_key_request(client, wire, url, &key, body, deadline)
             })
             .await?;
@@ -517,7 +640,7 @@ async fn complete(
                 auth_file: options.codex_auth_file.clone(),
             };
             let credentials = auth::resolve(&mode).await?;
-            let response = send_retrying(policy, deadline, || {
+            let response = send_retrying(policy, deadline, sink, || {
                 codex_request(client, &url, &credentials, body, deadline)
             })
             .await?;
@@ -526,7 +649,7 @@ async fn complete(
                 // request; refresh once and retry a single time. This is
                 // authentication recovery, not a retry of a failed model call.
                 let fresh = auth::resolve_fresh(&mode).await?;
-                send_retrying(policy, deadline, || {
+                send_retrying(policy, deadline, sink, || {
                     codex_request(client, &url, &fresh, body, deadline)
                 })
                 .await?
@@ -607,7 +730,14 @@ async fn read_stream(
     let mut lines = SseLines::new();
     let mut stream = TurnDecoder::new(wire);
     let mut total = 0usize;
+    let started = Instant::now();
     while let Some(chunk) = response.chunk().await.context("read model stream")? {
+        if total == 0 && !chunk.is_empty() {
+            sink.on_event(&crate::monitor::operation(
+                "stream_start",
+                serde_json::json!({"after_headers_ms":started.elapsed().as_millis() as u64}),
+            ));
+        }
         total += chunk.len();
         ensure!(
             total <= MAX_RESPONSE_BYTES,
@@ -620,11 +750,15 @@ async fn read_stream(
     for data in lines.finish()? {
         stream.handle_data(&data, sink)?;
     }
+    sink.on_event(&crate::monitor::operation(
+        "stream_end",
+        serde_json::json!({"bytes":total,"elapsed_ms":started.elapsed().as_millis() as u64}),
+    ));
     stream.finish()
 }
 
 /// A best-effort unique identifier for the `session_id` header.
-fn session_id() -> String {
+pub(crate) fn session_id() -> String {
     use std::sync::atomic::{AtomicU64, Ordering};
     static COUNTER: AtomicU64 = AtomicU64::new(0);
     let nanos = SystemTime::now()
@@ -638,6 +772,34 @@ fn session_id() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn evaluation_forwards_an_absolute_trace_path_and_debug_flag() {
+        use clap::Parser;
+        #[derive(Parser)]
+        struct Options {
+            #[command(flatten)]
+            llm: LlmOptions,
+        }
+        let options = Options::parse_from([
+            "test",
+            "--model",
+            "fixture",
+            "--trace-dir",
+            "relative-traces",
+            "--debug-trace",
+        ]);
+        let args = options.llm.arguments().unwrap();
+        let path = args
+            .windows(2)
+            .find(|pair| pair[0] == "--trace-dir")
+            .unwrap();
+        assert_eq!(
+            Path::new(&path[1]),
+            std::path::absolute("relative-traces").unwrap()
+        );
+        assert!(args.iter().any(|arg| arg == "--debug-trace"));
+    }
 
     #[test]
     fn endpoint_validation_rejects_credentials_and_plain_http() {

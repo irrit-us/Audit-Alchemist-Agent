@@ -168,6 +168,21 @@ impl<W: Write> Renderer<W> {
                 )?;
                 self.out.flush()
             }
+            (
+                OutputFormat::Text
+                | OutputFormat::Markdown
+                | OutputFormat::Cot
+                | OutputFormat::Body,
+                StreamEvent::Operation { name, details },
+            ) if matches!(
+                name.as_str(),
+                "heartbeat" | "retry" | "run_start" | "run_end" | "trace_truncated"
+            ) =>
+            {
+                self.flush_line(true)?;
+                writeln!(self.out, "[{name}] {details}")?;
+                self.out.flush()
+            }
             (OutputFormat::Text | OutputFormat::Markdown, _) => Ok(()),
             (OutputFormat::Body, StreamEvent::Text { text }) => self.push(Channel::Text, text),
             (OutputFormat::Cot, StreamEvent::Text { text }) => self.push(Channel::Text, text),
