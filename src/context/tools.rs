@@ -1,12 +1,11 @@
 //! Read-only, bounded tool invocation over an untrusted source tree.
 //!
-//! The auditor never executes target code. These are the only filesystem tools
-//! it may call: resolving a path inside a canonical root, reading UTF-8 source
+//! These helpers provide source access for the broader model-facing toolset:
+//! resolving a path inside a canonical root, reading UTF-8 source
 //! with a hard byte cap, listing source files, and searching lines. Every
 //! operation is deterministic, refuses paths that escape the root, does not
 //! follow symlinks discovered during traversal, and fails rather than silently
-//! truncating. Keeping the toolset small and read-only is a deliberate design
-//! choice for a task-specific vulnerability auditor.
+//! truncating. Shell execution and editing live in `crate::tools`.
 
 use crate::protocol::relative_path;
 use anyhow::{ensure, Context, Result};
@@ -124,6 +123,9 @@ impl SourceRoot {
     /// Symlinks are followed by `canonicalize`, so a link that points outside
     /// the root is rejected by the containment check.
     pub fn resolve(&self, relative: &str) -> Result<PathBuf> {
+        if relative == "." {
+            return Ok(self.root.clone());
+        }
         relative_path(relative)?;
         let path = self
             .root
@@ -202,7 +204,28 @@ impl SourceRoot {
         needle: &str,
         limits: SearchLimits,
     ) -> Result<Vec<LineMatch>> {
-        ensure!(!needle.is_empty(), "search needle is empty");
+        self.search_many(target, &[needle], limits)
+    }
+
+    /// Search for any of 1..=64 literal substrings in a single traversal.
+    ///
+    /// Each matching line is returned once in path/line order, even if several
+    /// needles match. Limits apply to the entire operation, not each needle.
+    /// An incomplete search is an error, never an apparently complete result.
+    pub fn search_many(
+        &self,
+        target: &str,
+        needles: &[&str],
+        limits: SearchLimits,
+    ) -> Result<Vec<LineMatch>> {
+        ensure!(
+            !needles.is_empty() && needles.len() <= 64,
+            "search requires 1..=64 literal needles"
+        );
+        ensure!(
+            needles.iter().all(|needle| !needle.is_empty()),
+            "search needle is empty"
+        );
         let entries = self.walk(
             target,
             WalkLimits {
@@ -213,13 +236,17 @@ impl SourceRoot {
         let mut matches = Vec::new();
         let mut used = 0usize;
         for entry in entries {
-            if used >= limits.max_bytes {
-                break;
-            }
-            let file = self.read(&entry.path, limits.max_bytes - used)?;
+            let file = self
+                .read(&entry.path, limits.max_bytes - used)
+                .with_context(|| {
+                    format!(
+                        "search could not read {}; narrow the target or raise the byte limit",
+                        entry.path
+                    )
+                })?;
             used += file.content.len();
             for (index, text) in file.content.lines().enumerate() {
-                if text.contains(needle) {
+                if needles.iter().any(|needle| text.contains(needle)) {
                     matches.push(LineMatch {
                         path: file.path.clone(),
                         line: index as u32 + 1,
@@ -227,7 +254,7 @@ impl SourceRoot {
                     });
                     ensure!(
                         matches.len() <= limits.max_matches,
-                        "search exceeds {} matches",
+                        "search exceeds {} matches; narrow the target or needles",
                         limits.max_matches
                     );
                 }
@@ -241,7 +268,7 @@ impl SourceRoot {
 pub fn read_utf8(path: &Path, max_bytes: usize) -> Result<String> {
     let mut bytes = Vec::new();
     fs::File::open(path)?
-        .take(max_bytes as u64 + 1)
+        .take((max_bytes as u64).saturating_add(1))
         .read_to_end(&mut bytes)?;
     ensure!(bytes.len() <= max_bytes, "file exceeds byte limit");
     String::from_utf8(bytes).context("source is not UTF-8")

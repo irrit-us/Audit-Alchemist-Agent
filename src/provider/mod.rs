@@ -1,6 +1,6 @@
 //! Model adapters for mainstream LLM API shapes.
 //!
-//! The adapter builds a request for the selected [`WireApi`], streams the
+//! The adapter runs a bounded tool loop for the selected [`WireApi`], streams each
 //! response, normalizes deltas into [`StreamEvent`]s for the console/TUI
 //! sink, and returns the same versioned JSON findings as before. Credentials
 //! are resolved through [`auth`] and are never logged or written to reports.
@@ -9,7 +9,9 @@
 //! API (also used by the Codex backend), and the Anthropic Messages API.
 
 pub mod auth;
+pub mod conversation;
 pub mod events;
+pub mod prompt;
 pub mod retry;
 pub mod sse;
 pub mod wire;
@@ -27,14 +29,15 @@ use std::{
 };
 
 use self::{
+    conversation::{Conversation, Turn, TurnDecoder},
     events::{EventSink, StreamEvent},
     sse::SseLines,
-    wire::{WireApi, WireStream},
+    wire::WireApi,
 };
 
 pub use crate::context::{snapshot, Source};
 
-pub const SYSTEM_PROMPT: &str = include_str!("../../prompts/audit.txt");
+pub use prompt::SYSTEM_PROMPT;
 /// Upper bound on any single HTTP response body we will buffer.
 const MAX_RESPONSE_BYTES: usize = 2 * 1024 * 1024;
 
@@ -96,9 +99,43 @@ pub struct LlmOptions {
     /// Ceiling for retry backoff and server `Retry-After` hints.
     #[arg(long, default_value_t = 8_000, value_parser = clap::value_parser!(u64).range(0..=600_000))]
     pub retry_max_ms: u64,
+    /// Maximum tool executions across the audit (a batch counts each call).
+    #[arg(long, default_value_t = 32, value_parser = clap::value_parser!(u32).range(1..=256))]
+    pub max_tool_calls: u32,
+    /// Hard byte cap on the serialized model request, including tool history.
+    #[arg(long, default_value_t = 2_097_152, value_parser = clap::value_parser!(u32).range(4096..=16_777_216))]
+    pub max_context_bytes: u32,
 }
 
 impl LlmOptions {
+    /// Enforce source bounds even for callers supplying an assembled context.
+    /// Raw source tokens keep their existing meaning; prompt overhead is
+    /// reported separately by `prompt::AuditPrompt::estimated_tokens`.
+    pub fn validate_context(&self, context: &Context) -> Result<()> {
+        ensure!(
+            context.files() <= context::MAX_FILES,
+            "audit context must contain at most {} source files",
+            context::MAX_FILES
+        );
+        let bytes = context.sources.iter().try_fold(0usize, |bytes, source| {
+            bytes
+                .checked_add(source.content.len())
+                .context("source byte count overflow")
+        })?;
+        ensure!(
+            bytes <= self.max_source_bytes as usize,
+            "source snapshot exceeds byte limit; narrow the target"
+        );
+        if let Some(max) = self.max_source_tokens {
+            ensure!(
+                context.estimated_tokens() <= max as usize,
+                "estimated context of {} tokens exceeds the {max} token limit; narrow the target",
+                context.estimated_tokens()
+            );
+        }
+        Ok(())
+    }
+
     /// The wire format actually used: Codex always speaks the Responses API.
     pub fn effective_wire(&self) -> WireApi {
         match self.auth {
@@ -177,6 +214,10 @@ impl LlmOptions {
             self.retry_base_ms.to_string(),
             "--retry-max-ms".into(),
             self.retry_max_ms.to_string(),
+            "--max-tool-calls".into(),
+            self.max_tool_calls.to_string(),
+            "--max-context-bytes".into(),
+            self.max_context_bytes.to_string(),
         ];
         if let Some(tokens) = self.max_source_tokens {
             args.extend(["--max-source-tokens".into(), tokens.to_string()]);
@@ -322,19 +363,12 @@ pub async fn audit(
         !request.instruction.trim().is_empty() && request.instruction.len() <= 65_536,
         "invalid instruction"
     );
-    let context = context::build(
+    let context = context::initial(
         root,
         &request.target,
         &ContextBudget::new(options.max_source_bytes as usize),
     )?;
-    if let Some(max) = options.max_source_tokens {
-        ensure!(
-            context.estimated_tokens() <= max as usize,
-            "estimated context of {} tokens exceeds the {max} token limit; narrow the target",
-            context.estimated_tokens()
-        );
-    }
-    audit_with(options, request, &context, timeout, &mut ()).await
+    audit_with(options, request, &context, root, timeout, &mut ()).await
 }
 
 /// Audit one case using an already-assembled context, streaming to `sink`.
@@ -342,6 +376,23 @@ pub async fn audit_with(
     options: &LlmOptions,
     request: &Request,
     context: &Context,
+    root: &Path,
+    timeout: Duration,
+    sink: &mut dyn EventSink,
+) -> Result<Response> {
+    tokio::time::timeout(
+        timeout,
+        audit_session(options, request, context, root, timeout, sink),
+    )
+    .await
+    .context("audit exceeded wall-clock deadline")?
+}
+
+async fn audit_session(
+    options: &LlmOptions,
+    request: &Request,
+    context: &Context,
+    root: &Path,
     timeout: Duration,
     sink: &mut dyn EventSink,
 ) -> Result<Response> {
@@ -350,51 +401,97 @@ pub async fn audit_with(
         request.schema_version == VERSION,
         "unsupported request version"
     );
-    ensure!(
-        !request.instruction.trim().is_empty() && request.instruction.len() <= 65_536,
-        "invalid instruction"
-    );
+    options.validate_context(context)?;
+    let prompt = prompt::prepare(&request.instruction, &request.target, context)?;
     tracing::info!(
         files = context.files(),
         bytes = context.total_bytes(),
         estimated_tokens = context.estimated_tokens(),
+        estimated_prompt_tokens = prompt.estimated_tokens(),
         wire = options.effective_wire().as_str(),
         "assembled audit context"
     );
-    let user = serde_json::to_string(
-        &serde_json::json!({"instruction": request.instruction, "sources": &context.sources}),
-    )?;
-    let text = complete(options, &user, timeout, sink).await?;
-    let findings: Response = serde_json::from_str(&text)
-        .context("model must return a JSON response without Markdown fences")?;
-    findings.validate()?;
-    for finding in &findings.findings {
-        context.validate_finding(finding)?;
+    let deadline = Instant::now() + timeout;
+    let client = client(timeout)?;
+    let mut conversation = Conversation::new(
+        options.effective_wire(),
+        &options.model,
+        SYSTEM_PROMPT,
+        &prompt.user,
+        options.max_tokens,
+    );
+    let mut tools = crate::tools::WorkspaceTools::new(root, context)?;
+    let mut used = 0usize;
+    loop {
+        ensure!(
+            Instant::now() < deadline,
+            "audit exceeded wall-clock deadline"
+        );
+        ensure!(
+            serde_json::to_vec(&conversation.body)?.len() <= options.max_context_bytes as usize,
+            "conversation exceeds --max-context-bytes; narrow the target or raise the limit"
+        );
+        let turn = complete(options, &client, &conversation.body, deadline, sink).await?;
+        if turn.calls.is_empty() {
+            let findings: Response = serde_json::from_str(&turn.text)
+                .context("model must return a JSON response without Markdown fences")?;
+            findings.validate()?;
+            for finding in &findings.findings {
+                tools.validate_finding(finding)?;
+            }
+            sink.on_event(&StreamEvent::Done);
+            return Ok(findings);
+        }
+        ensure!(
+            used + turn.calls.len() <= options.max_tool_calls as usize,
+            "agent exhausted --max-tool-calls without a final report"
+        );
+        let mut results = Vec::new();
+        // Preserve call order: a later call may run a PoC created by an earlier one.
+        for call in &turn.calls {
+            ensure!(
+                Instant::now() < deadline,
+                "audit exceeded wall-clock deadline"
+            );
+            used += 1;
+            tracing::info!(tool = %call.name, call = used, "executing audit tool");
+            sink.on_event(&StreamEvent::ToolStart {
+                name: call.name.clone(),
+                call_id: call.id.clone(),
+            });
+            let tool_started = Instant::now();
+            let mut result = tools
+                .execute(&call.name, &call.arguments, remaining(deadline))
+                .await;
+            result["remaining_tool_calls"] =
+                serde_json::json!(options.max_tool_calls as usize - used);
+            sink.on_event(&StreamEvent::ToolEnd {
+                name: call.name.clone(),
+                call_id: call.id.clone(),
+                is_error: result.get("error").is_some(),
+                elapsed_ms: tool_started.elapsed().as_millis() as u64,
+            });
+            results.push(crate::tools::bounded_output(
+                &serde_json::to_string(&result)?,
+                crate::tools::OUTPUT_BYTES,
+            ));
+        }
+        conversation.append(&turn, &results)?;
     }
-    sink.on_event(&StreamEvent::Done);
-    Ok(findings)
 }
 
 /// Send one streaming request and return the accumulated answer text.
 async fn complete(
     options: &LlmOptions,
-    user: &str,
-    timeout: Duration,
+    client: &reqwest::Client,
+    body: &Value,
+    deadline: Instant,
     sink: &mut dyn EventSink,
-) -> Result<String> {
-    let deadline = Instant::now() + timeout;
-    let client = client(timeout)?;
+) -> Result<Turn> {
     let wire = options.effective_wire();
-    let body = wire::request_body(
-        wire,
-        &options.model,
-        SYSTEM_PROMPT,
-        user,
-        options.max_tokens,
-    );
     let policy = retry_policy(options);
 
-    let (text, usage) = match options.auth {
+    let turn = match options.auth {
         AuthKind::ApiKey => {
             let url = options
                 .endpoint
@@ -402,7 +499,7 @@ async fn complete(
                 .context("--endpoint is required with --auth api-key")?;
             let key = std::env::var(&options.api_key_env)?;
             let response = send_retrying(policy, deadline, || {
-                api_key_request(&client, wire, url, &key, &body, deadline)
+                api_key_request(client, wire, url, &key, body, deadline)
             })
             .await?;
             ensure!(
@@ -413,13 +510,15 @@ async fn complete(
             read_stream(response, wire, sink).await?
         }
         AuthKind::Codex => {
-            let url = format!("{}/responses", options.codex_base_url.trim_end_matches('/'));
+            let url = options.endpoint.clone().unwrap_or_else(|| {
+                format!("{}/responses", options.codex_base_url.trim_end_matches('/'))
+            });
             let mode = auth::AuthMode::Codex {
                 auth_file: options.codex_auth_file.clone(),
             };
             let credentials = auth::resolve(&mode).await?;
             let response = send_retrying(policy, deadline, || {
-                codex_request(&client, &url, &credentials, &body, deadline)
+                codex_request(client, &url, &credentials, body, deadline)
             })
             .await?;
             let response = if response.status().as_u16() == 401 {
@@ -428,7 +527,7 @@ async fn complete(
                 // authentication recovery, not a retry of a failed model call.
                 let fresh = auth::resolve_fresh(&mode).await?;
                 send_retrying(policy, deadline, || {
-                    codex_request(&client, &url, &fresh, &body, deadline)
+                    codex_request(client, &url, &fresh, body, deadline)
                 })
                 .await?
             } else {
@@ -443,6 +542,7 @@ async fn complete(
         }
     };
 
+    let usage = turn.usage;
     if !usage.is_empty() {
         tracing::info!(
             prompt_tokens = usage.prompt_tokens,
@@ -452,7 +552,7 @@ async fn complete(
             "model usage"
         );
     }
-    Ok(text)
+    Ok(turn)
 }
 
 fn api_key_request(
@@ -503,9 +603,9 @@ async fn read_stream(
     mut response: reqwest::Response,
     wire: WireApi,
     sink: &mut dyn EventSink,
-) -> Result<(String, events::Usage)> {
+) -> Result<Turn> {
     let mut lines = SseLines::new();
-    let mut stream = WireStream::new(wire);
+    let mut stream = TurnDecoder::new(wire);
     let mut total = 0usize;
     while let Some(chunk) = response.chunk().await.context("read model stream")? {
         total += chunk.len();

@@ -95,6 +95,68 @@ fn search_reports_matches_with_limits() {
 }
 
 #[test]
+fn search_never_silently_skips_files_at_an_exact_byte_boundary() {
+    let dir = fixture();
+    let root = SourceRoot::open(dir.path()).unwrap();
+    assert!(root
+        .search(
+            "pkg",
+            "main",
+            SearchLimits {
+                max_bytes: "print('a')\n".len(),
+                ..SearchLimits::default()
+            }
+        )
+        .is_err());
+    assert!(root
+        .search(
+            "pkg",
+            "main",
+            SearchLimits {
+                max_bytes: 0,
+                ..SearchLimits::default()
+            }
+        )
+        .is_err());
+    let matches = root
+        .search_many("pkg", &["print", "main", "print"], SearchLimits::default())
+        .unwrap();
+    assert_eq!(matches.len(), 2);
+    assert_eq!(matches[0].path, "pkg/a.py");
+    assert_eq!(matches[1].path, "pkg/sub/b.rs");
+    let matches = root
+        .search(
+            "pkg/a.py",
+            "print",
+            SearchLimits {
+                max_bytes: "print('a')\n".len(),
+                ..SearchLimits::default()
+            },
+        )
+        .unwrap();
+    assert_eq!(matches.len(), 1);
+}
+
+#[test]
+fn initial_context_defers_large_targets_to_tools() {
+    let dir = fixture();
+    let budget = ContextBudget::new(1);
+    assert!(context::initial(dir.path(), "pkg", &budget)
+        .unwrap()
+        .is_empty());
+    assert!(context::initial(dir.path(), "pkg/a.py", &budget)
+        .unwrap()
+        .is_empty());
+    assert_eq!(
+        context::initial(dir.path(), "pkg/a.py", &ContextBudget::new(100))
+            .unwrap()
+            .files(),
+        1
+    );
+    assert!(context::initial(dir.path(), "../outside", &budget).is_err());
+}
+
+#[test]
 fn context_budget_and_finding_validation() {
     let dir = fixture();
     let budget = ContextBudget {
@@ -109,6 +171,7 @@ fn context_budget_and_finding_validation() {
         "print('a')\n".len() + "fn main() {}\n".len()
     );
     context.validate_finding(&finding("pkg/a.py", 1)).unwrap();
+    assert!(context.validate_finding(&finding("pkg/a.py", 0)).is_err());
     assert!(context.validate_finding(&finding("pkg/a.py", 99)).is_err());
     assert!(context.validate_finding(&finding("missing.py", 1)).is_err());
 

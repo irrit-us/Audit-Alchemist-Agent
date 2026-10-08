@@ -1,4 +1,31 @@
-# Validation: 2026-10-07
+# Validation
+
+## Tool-loop validation: 2026-10-08
+
+Validated locally on Windows with Rust 1.95.0 (MSVC) and Git Bash:
+
+```text
+cargo +1.95.0-x86_64-pc-windows-msvc fmt --all -- --check
+cargo +1.95.0-x86_64-pc-windows-msvc clippy --locked --all-targets -- -D warnings
+cargo +1.95.0-x86_64-pc-windows-msvc test --locked --all-targets
+64 tests passed (37 unit, 27 integration)
+```
+
+The local HTTP fixtures verify a complete read-file → write-PoC → Bash-execution
+→ final-finding exchange for chat-completions, Responses, and Anthropic. Checks
+cover fragmented tool arguments, native result IDs, encrypted Responses reasoning,
+Anthropic thinking signatures, final-answer phase selection, duplicate-call
+rejection, incomplete streams, tool-call limits, paged citation provenance,
+nonzero Bash exits, output truncation, timeout descendant cleanup, writable
+evaluation isolation, and credential-free directory previews. The exact search
+byte-boundary regression is covered. Existing protocol, scoring, provider, and
+deterministic smoke tests also pass.
+
+No live-model requests were used for this change. These checks establish tool
+and protocol behavior, not improved vulnerability discovery quality or token
+efficiency. The Linux-specific process tests were not run on this Windows host.
+
+## Historical live evaluation: 2026-10-07
 
 > Historical record. This run predates the bounded transport retries and the
 > Sign In With ChatGPT adapter; it remains the recorded chat-completions smoke

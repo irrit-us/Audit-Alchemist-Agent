@@ -138,6 +138,36 @@ impl<W: Write> Renderer<W> {
                 writeln!(self.out)?;
                 self.out.flush()
             }
+            (
+                OutputFormat::Text
+                | OutputFormat::Markdown
+                | OutputFormat::Cot
+                | OutputFormat::Body,
+                StreamEvent::ToolStart { name, .. },
+            ) => {
+                self.flush_line(true)?;
+                writeln!(self.out, "[tool] {name}")?;
+                self.out.flush()
+            }
+            (
+                OutputFormat::Text
+                | OutputFormat::Markdown
+                | OutputFormat::Cot
+                | OutputFormat::Body,
+                StreamEvent::ToolEnd {
+                    name,
+                    is_error,
+                    elapsed_ms,
+                    ..
+                },
+            ) => {
+                writeln!(
+                    self.out,
+                    "[tool] {name}: {} ({elapsed_ms} ms)",
+                    if *is_error { "error" } else { "complete" }
+                )?;
+                self.out.flush()
+            }
             (OutputFormat::Text | OutputFormat::Markdown, _) => Ok(()),
             (OutputFormat::Body, StreamEvent::Text { text }) => self.push(Channel::Text, text),
             (OutputFormat::Cot, StreamEvent::Text { text }) => self.push(Channel::Text, text),

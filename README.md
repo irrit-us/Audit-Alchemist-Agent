@@ -2,8 +2,9 @@
 
 A lightweight, task-specific vulnerability discovery agent built on a plain LLM
 API, with a Rust CLI harness for bounded execution and small-dataset evaluation.
-It makes one model call per target, reads source without executing it, and emits
-evidence-backed JSON findings. There is no agent framework or terminal UI.
+It explores code through native tools, writes and runs local PoCs with Bash,
+and emits evidence-backed JSON findings. Its agent loop has explicit tool-call,
+context, output, and runtime limits, with streaming console output and an optional TUI.
 
 Built with clap, serde, tracing, Tokio, and reqwest.
 
@@ -48,7 +49,7 @@ Preview the context and token estimate without spending a request:
 
 ```sh
 cargo run --locked -- audit --dry-run \
-  --root datasets/smoke --target sources/command_unsafe.py
+  --root datasets/smoke --target sources/command_unsafe.py --model YOUR-MODEL
 ```
 
 Evaluate the built-in agent over a labeled dataset and score it:
@@ -60,9 +61,13 @@ cargo run --locked -- evaluate \
   --model YOUR-MODEL --jobs 2 --output evaluation.json
 ```
 
-`audit` snapshots the target only, skips dependency/build directories and nested
-symlinks, and fails rather than silently truncating source. Findings must
-reference an included file and an existing line. See
+`audit` starts with a small target file or explores directories on demand using
+`bash`, `read_file`, `write_file`, `edit_file`, `list_files`, and `search`.
+Bash runs in `--root` with host permissions; use a suitable development environment
+for PoC execution. On Windows, Git Bash is detected automatically; set `AUDIT_BASH`
+to select another Bash executable. Findings must cite lines supplied through the
+initial context or `read_file`. `evaluate` gives each case a separate temporary
+workspace so PoC writes do not contaminate other cases. See
 [Configuration](docs/configuration.md) for every flag and limit, and
 [Authentication](docs/authentication.md) for credential handling.
 

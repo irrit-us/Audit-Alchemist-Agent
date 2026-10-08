@@ -1,9 +1,9 @@
 # Public constraints and design decisions
 
 This project starts from a plain LLM API rather than a specific vendor's agent
-CLI. Its public integration contract is intentionally small: one source
-snapshot, one request, one versioned JSON response. The task is static
-vulnerability discovery; models do not invoke tools or execute supplied source.
+CLI. Its public integration contract is intentionally small: one audit request
+and one versioned JSON findings response. Internally, a bounded tool loop supports
+code exploration, editing, Bash, and local PoC execution.
 The module map is in [Architecture](architecture.md).
 
 | Constraint | Implementation choice | Validation |
@@ -12,13 +12,13 @@ The module map is in [Architecture](architecture.md).
 | Inputs and outputs need stable contracts | serde structs, required fields, schema versions, unknown-field rejection | Roundtrip and rejection tests |
 | Source context and model output are finite | Source/file bounds, requested token limit, HTTP response bound | Snapshot and HTTP fixture tests |
 | Pipes can deadlock if input/output are sequential | Concurrent stdin write, stdout/stderr reads, and process wait | Process fixture tests |
-| Dropping a Tokio child does not normally stop it | kill-on-drop, deadline, Unix process groups, explicit direct-child wait | Timeout and descendant cleanup tests |
+| Dropping a Tokio child does not normally stop it | kill-on-drop, deadline, Unix process groups, Windows jobs, explicit direct-child wait | Timeout and descendant cleanup tests |
 | Progress must not corrupt machine-readable results | tracing subscriber writes to stderr | End-to-end JSON parsing |
 | Evaluation must separate detection quality from execution failures | Exact finding-key matching, failed-case misses, duplicate suppression | Scoring and demo tests |
-| Labels must not leak into model context | Prompt contains only instruction and selected source snapshot | HTTP request inspection |
+| Evaluation labels must be excluded from normal agent inputs | Prompt omits labels; per-case writable copies exclude the manifest (not a host-access sandbox) | HTTP request and workspace inspection |
 | Provider selection and credentials are deployment-specific | Full endpoint, model ID, named key environment variable | No credential required for local tests |
-| Auditing needs bounded, read-only access to untrusted source | `context::tools` confines resolve/read/walk/search to a canonical root with entry, file, and byte caps | Tool and symlink tests |
-| Model context must be finite and traceable to exact bytes | `context` builds a deterministic snapshot and rejects findings outside it | Context budget and finding tests |
+| Auditing requires exploration and executable PoCs | `tools` exposes Bash/read/write/edit/list/search with output and runtime caps | Native tool-loop and PoC fixtures for all wires |
+| Model context must be finite and findings must cite inspected source | Hard request byte cap; initial context and read_file register observed lines | Context budget, paging, and finding tests |
 | Batch progress must not corrupt results or affect scoring | Lock-free `progress` counters emitted through tracing on stderr | Concurrent progress tests |
 | A ChatGPT subscription must be usable without a second stored secret | `provider::auth` reuses and refreshes `$CODEX_HOME/auth.json` through the public OAuth token endpoint | Credential parsing and selection tests |
 | Concurrent refreshes must not corrupt the shared credential file | Advisory lock, atomic token-field write-back, redacting `Debug`, no tokens in reports | Lock and token-merge tests |

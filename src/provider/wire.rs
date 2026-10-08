@@ -153,8 +153,8 @@ impl WireStream {
             }
         }
         if let Some(reason) = choice.get("finish_reason").and_then(Value::as_str) {
-            // Only `stop` is a normal completion; length/content_filter are not.
-            if reason != "stop" {
+            // Tool calls continue the agent loop; truncation/filtering must fail.
+            if reason != "stop" && reason != "tool_calls" {
                 self.error = Some(format!("model stopped with finish_reason {reason}"));
             }
         }
@@ -222,8 +222,8 @@ impl WireStream {
             }
             "message_delta" => {
                 if let Some(reason) = event.pointer("/delta/stop_reason").and_then(Value::as_str) {
-                    if reason == "max_tokens" {
-                        self.error = Some("model stopped with stop_reason max_tokens".to_owned());
+                    if reason != "end_turn" && reason != "tool_use" {
+                        self.error = Some(format!("model stopped with stop_reason {reason}"));
                     }
                 }
                 if let Some(usage) = event.get("usage") {

@@ -7,6 +7,15 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- **Native agent tool loop** for chat-completions, Responses/Codex, and Anthropic:
+  Bash, paged source reads, file writes, exact edits, listing, and batched literal
+  search. Provider reasoning state and tool-call IDs survive continuation.
+- **Execution budgets**: `--max-tool-calls`, `--max-context-bytes`, bounded tool
+  output, one overall deadline, and Windows process jobs for descendant cleanup.
+- **On-demand discovery** for directory/large-file targets, numbered prompt
+  context, credential-free dry runs, tool progress events, and isolated writable
+  evaluation copies without the dataset manifest.
+
 - **Mainstream wire formats.** `--wire-api` selects `chat-completions`
   (OpenAI-compatible), `responses` (OpenAI Responses), or `anthropic`
   (Anthropic Messages). All deltas are normalized into text, reasoning, and
@@ -36,6 +45,11 @@ All notable changes to this project are documented here. The format follows
   plus this changelog.
 
 ### Changed
+
+- Audit guidance now encourages exploration and local PoC validation; final
+  findings must cite an initially supplied or explicitly read source line.
+- Search no longer silently stops when an exact byte budget is exhausted.
+- Dataset containment checks canonicalize both sides for Windows compatibility.
 
 - Source is grouped into `src/context/` (source access and context) and
   `src/provider/` (credentials, transport policy, streaming, and adapters).

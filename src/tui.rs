@@ -90,6 +90,19 @@ impl App {
                 Self::push(&mut self.output, &mut self.partial_output, text);
             }
             StreamEvent::Usage(usage) => self.usage = *usage,
+            StreamEvent::ToolStart { name, .. } => self.status = format!("running {name}"),
+            StreamEvent::ToolEnd {
+                name,
+                is_error,
+                elapsed_ms,
+                ..
+            } => {
+                self.output.push(format!(
+                    "[tool] {name}: {} ({elapsed_ms} ms)",
+                    if *is_error { "error" } else { "complete" }
+                ));
+                self.status = "running".into();
+            }
             StreamEvent::Done => {
                 if !self.partial_reasoning.is_empty() {
                     self.reasoning
@@ -235,6 +248,7 @@ pub async fn run_audit(
     options: LlmOptions,
     request: Request,
     context: Context,
+    root: std::path::PathBuf,
     timeout: Duration,
 ) -> Result<Response> {
     let (tx, rx) = mpsc::channel::<StreamEvent>();
@@ -242,7 +256,7 @@ pub async fn run_audit(
     // Poll the provider future and the UI loop together so the sink does not
     // need to be `Send`.
     let mut future = std::pin::pin!(provider::audit_with(
-        &options, &request, &context, timeout, &mut sink
+        &options, &request, &context, &root, timeout, &mut sink
     ));
 
     let mut terminal = setup()?;

@@ -35,14 +35,45 @@ See [Authentication](authentication.md) for the credential details.
 | --- | --- | --- |
 | `--max-source-bytes <N>` | `262144` (256 KiB) | 1–1048576 |
 | `--max-source-tokens <N>` | disabled | 1–8388608; cap on the `ceil(bytes / 4)` estimate |
+| `--max-tool-calls <N>` | `32` | 1–256 tool executions per audit; a batch counts each call |
+| `--max-context-bytes <N>` | `2097152` (2 MiB) | 4096–16777216 bytes for each serialized request, including tools and history |
 | `--max-tokens <N>` | `4096` | 1–32768 requested output tokens |
 | `--timeout-ms <N>` | `60000` | 1–3600000 wall-clock deadline |
 | `--max-output-bytes <N>` | `1048576` (1 MiB) | 1–16777216 stdout/stderr cap per run |
 | `--jobs <N>` | `1` | 1–32 evaluation workers |
 
-A byte bound is not a tokenizer estimate. `--max-source-tokens` optionally caps
-the estimate used by `--dry-run` and the agent; the byte bound remains the hard
-limit.
+A byte bound is not a tokenizer estimate. `--max-source-bytes` controls initial
+file preloading; directories and larger files are explored on demand.
+`--max-source-tokens` caps the initial raw-source estimate. `--dry-run` also reports
+`estimated_prompt_tokens` for system/user text with JSON and line labels (excluding
+tool schemas/provider framing), and the available tools. Dry runs need a model
+name but no credentials or endpoint. Estimates can undercount or overcount.
+`--max-context-bytes` is the hard request bound. `--max-tokens` applies to each
+model turn; the wall-clock deadline covers the entire audit, including tools.
+
+### Agent tools
+
+| Tool | Use and bounds |
+| --- | --- |
+| `bash` | Run commands, rg/grep, builds, tests, and local PoCs in the audit root. Defaults to a 30-second timeout, with `timeout_ms` capped by the remaining audit time. Both output pipes are drained with bounded storage; truncated output is explicitly marked. |
+| `read_file` | Read UTF-8 files up to 1 MiB, with 1-based `offset`/`limit` paging (default 200 lines), line labels, and `next_offset`. |
+| `write_file` | Create/overwrite UTF-8 files up to 1 MiB; parent directories must exist. |
+| `edit_file` | Replace a unique, exact `old_text` match; missing/ambiguous matches return an actionable error. |
+| `list_files` | List up to 128 supported source files; prune build/dependency directories. Use Bash for broader listings and other file types. |
+| `search` | Match any of 1–64 literal needles in one scan; at most 128 files, 1 MiB scanned, and 200 matches. A budget overflow fails instead of silently skipping files. |
+
+Tool results are bounded around 32 KiB plus truncation metadata. Calls execute in
+the model's order so a PoC can be written and then run in one batch. Errors return
+to the model for correction; malformed/incomplete provider streams never execute
+tools. A final response must satisfy the versioned JSON contract and cite an
+observed source line. Tool start/end events appear on stderr and in the TUI.
+
+Bash is available by default and runs with host permissions, including filesystem
+and network access; root-relative file helpers and process limits are not a sandbox.
+Set `AUDIT_BASH` to a Bash executable path (no embedded flags). Windows uses Git
+Bash under Program Files when available; otherwise Bash must be on PATH. Shell
+variables and cwd changes reset per call; files persist. Unix process groups and
+Windows kill-on-close jobs clean up ordinary child processes on timeout/cancellation.
 
 ### Console output (`audit`)
 

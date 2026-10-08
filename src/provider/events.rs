@@ -47,6 +47,15 @@ pub enum StreamEvent {
     Text { text: String },
     /// Updated token accounting.
     Usage(Usage),
+    /// A tool execution began; arguments are not copied into event logs.
+    ToolStart { name: String, call_id: String },
+    /// A tool execution finished; the model receives its bounded result.
+    ToolEnd {
+        name: String,
+        call_id: String,
+        is_error: bool,
+        elapsed_ms: u64,
+    },
     /// The stream completed normally.
     Done,
 }

@@ -6,4 +6,5 @@ pub mod progress;
 pub mod protocol;
 pub mod provider;
 pub mod runner;
+pub mod tools;
 pub mod tui;

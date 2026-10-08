@@ -135,6 +135,7 @@ async fn benchmark(
     executable: PathBuf,
     args: Vec<String>,
     limits: Limits,
+    isolate: bool,
 ) -> Result<bool> {
     let (dataset, root) = dataset::load(&path)?;
     let executable = if executable.components().count() > 1 {
@@ -163,9 +164,18 @@ async fn benchmark(
             let Some((index, case)) = pending.next() else {
                 break;
             };
-            let config = config.clone();
+            let mut config = config.clone();
+            let workspace = if isolate {
+                Some(dataset::stage_workspace(&config.root, &path)?)
+            } else {
+                None
+            };
+            if let Some(workspace) = &workspace {
+                config.root = workspace.path().to_owned();
+            }
             let progress = progress.clone();
             tasks.spawn(async move {
+                let _workspace = workspace;
                 progress.begin(&case.id);
                 let request = Request {
                     schema_version: VERSION,
@@ -236,7 +246,7 @@ async fn execute(cli: Cli) -> Result<bool> {
             agent,
             agent_arg,
             limits,
-        } => benchmark(dataset, agent, agent_arg, limits).await,
+        } => benchmark(dataset, agent, agent_arg, limits, false).await,
         Action::Evaluate {
             dataset,
             llm,
@@ -245,7 +255,7 @@ async fn execute(cli: Cli) -> Result<bool> {
             llm.validate()?;
             let mut args = llm.arguments();
             args.extend(["--timeout-ms".into(), limits.timeout_ms.to_string()]);
-            benchmark(dataset, std::env::current_exe()?, args, limits).await
+            benchmark(dataset, std::env::current_exe()?, args, limits, true).await
         }
         Action::Audit {
             target,
@@ -258,20 +268,18 @@ async fn execute(cli: Cli) -> Result<bool> {
             llm,
             limits,
         } => {
-            llm.validate()?;
+            if !dry_run {
+                llm.validate()?;
+            }
             let root = root.canonicalize()?;
-            let context = context::build(
+            let context = context::initial(
                 &root,
                 &target,
                 &ContextBudget::new(llm.max_source_bytes as usize),
             )?;
             let estimated_tokens = context.estimated_tokens();
-            if let Some(max) = llm.max_source_tokens {
-                ensure!(
-                    estimated_tokens <= max as usize,
-                    "estimated context of {estimated_tokens} tokens exceeds the {max} token limit; narrow the target"
-                );
-            }
+            llm.validate_context(&context)?;
+            let prompt = provider::prompt::prepare(&instruction, &target, &context)?;
             let file = destination(&limits.output)?;
             if dry_run {
                 emit(
@@ -281,6 +289,9 @@ async fn execute(cli: Cli) -> Result<bool> {
                         "files": context.files(),
                         "bytes": context.total_bytes(),
                         "estimated_tokens": estimated_tokens,
+                        "estimated_prompt_tokens": prompt.estimated_tokens(),
+                        "tools": audit_harness::tools::definitions().iter().map(|tool| tool["name"].clone()).collect::<Vec<_>>(),
+                        "max_tool_calls": llm.max_tool_calls,
                         "instruction_bytes": instruction.len(),
                         "model": llm.model,
                         "auth": llm.auth.as_str(),
@@ -304,7 +315,9 @@ async fn execute(cli: Cli) -> Result<bool> {
                     bail!("--tui requires a terminal; omit --tui or choose a --format");
                 }
                 let app = tui::App::new(target.clone(), llm.model.clone());
-                match tui::run_audit(app, llm.clone(), request, context, timeout).await {
+                match tui::run_audit(app, llm.clone(), request, context, root.clone(), timeout)
+                    .await
+                {
                     Ok(response) => RunResult {
                         case_id,
                         outcome: Outcome::Success,
@@ -329,7 +342,7 @@ async fn execute(cli: Cli) -> Result<bool> {
                 let mut renderer = output::Renderer::new(format, use_color, is_tty, stderr.lock());
                 let result = tokio::time::timeout(
                     timeout,
-                    provider::audit_with(&llm, &request, &context, timeout, &mut renderer),
+                    provider::audit_with(&llm, &request, &context, &root, timeout, &mut renderer),
                 )
                 .await;
                 match result {

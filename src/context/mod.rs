@@ -1,9 +1,9 @@
 //! Context management: assemble a finite, deterministic source snapshot for a
 //! single audit target and validate that findings refer to it.
 //!
-//! The model only ever sees what this module assembles. Budgets are explicit
-//! and enforced by failing, never by silently truncating source, so a report
-//! can always be traced back to the exact bytes the model received.
+//! Full snapshots remain available for deterministic fixtures. Interactive
+//! audits seed small files and discover additional source through workspace
+//! tools. Full snapshot budgets fail rather than silently truncating source.
 
 pub mod tools;
 
@@ -86,7 +86,7 @@ impl Context {
             .locate(&finding.path)
             .context("finding references a file outside the source snapshot")?;
         ensure!(
-            finding.line as usize <= source.content.lines().count(),
+            finding.line > 0 && finding.line as usize <= source.content.lines().count(),
             "finding references a line outside its source"
         );
         Ok(())
@@ -94,6 +94,8 @@ impl Context {
 }
 
 /// Build the context for `target`, enforcing `budget` and failing on overflow.
+///
+/// Used for deterministic fixtures and callers requesting a full snapshot.
 pub fn build(root: &Path, target: &str, budget: &ContextBudget) -> Result<Context> {
     let root = SourceRoot::open(root)?;
     let entries = root.walk(
@@ -128,12 +130,37 @@ pub fn snapshot(root: &Path, target: &str, max_bytes: usize) -> Result<Vec<Sourc
     Ok(build(root, target, &ContextBudget::new(max_bytes))?.sources)
 }
 
+/// Seed an interactive audit with a small target file. Directories and oversized
+/// files are explored through tools, so large repositories do not block startup.
+pub fn initial(root: &Path, target: &str, budget: &ContextBudget) -> Result<Context> {
+    let root = SourceRoot::open(root)?;
+    let path = root.resolve(target)?;
+    if path.is_file() && path.metadata()?.len() <= budget.max_bytes as u64 {
+        let file = root.read(target, budget.max_bytes)?;
+        return Ok(Context {
+            total_bytes: file.content.len(),
+            sources: vec![Source {
+                path: file.path,
+                content: file.content,
+            }],
+        });
+    }
+    ensure!(
+        path.is_file() || path.is_dir(),
+        "target must be a file or directory"
+    );
+    Ok(Context {
+        sources: vec![],
+        total_bytes: 0,
+    })
+}
+
 /// A rough token count for a block of source text.
 ///
 /// Most tokenizers emit roughly one token per four UTF-8 bytes of code and
 /// prose, so `ceil(bytes / 4)` is a stable, dependency-free approximation.
-/// It is intentionally conservative for budgeting but is not a substitute for
-/// a real tokenizer; callers must treat it as an estimate. A byte bound is
+/// It can undercount or overcount and is not a substitute for a real tokenizer;
+/// callers must treat it as an estimate. A byte bound is
 /// still the hard limit on what is sent.
 pub fn estimate_tokens(text: &str) -> usize {
     text.len().div_ceil(4)

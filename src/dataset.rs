@@ -40,8 +40,68 @@ pub fn load(path: &Path) -> Result<(Dataset, PathBuf)> {
     Ok((dataset, root))
 }
 
+/// Give each tool-using evaluation case its own writable copy, without the
+/// dataset's labels. This prevents normal PoC writes from contaminating cases;
+/// it is not an OS sandbox and cannot hide host files from arbitrary shell code.
+pub fn stage_workspace(root: &Path, manifest: &Path) -> Result<tempfile::TempDir> {
+    let root = root.canonicalize()?;
+    let manifest = manifest.canonicalize()?;
+    let workspace = tempfile::tempdir().context("create evaluation workspace")?;
+    let mut pending = vec![root.clone()];
+    let mut entries = 0usize;
+    let mut bytes = 0u64;
+    while let Some(path) = pending.pop() {
+        entries += 1;
+        ensure!(
+            entries <= 10_000,
+            "evaluation workspace exceeds 10000 entries; use a smaller dataset root"
+        );
+        if path == manifest {
+            continue;
+        }
+        let metadata = std::fs::symlink_metadata(&path)?;
+        if metadata.file_type().is_symlink() {
+            continue;
+        }
+        let destination = workspace.path().join(path.strip_prefix(&root)?);
+        if metadata.is_dir() {
+            std::fs::create_dir_all(destination)?;
+            for entry in std::fs::read_dir(path)? {
+                let entry = entry?;
+                if entry
+                    .file_name()
+                    .to_str()
+                    .is_some_and(|name| crate::context::tools::SKIP_DIRS.contains(&name))
+                {
+                    continue;
+                }
+                pending.push(entry.path());
+                ensure!(
+                    entries + pending.len() <= 10_000,
+                    "evaluation workspace exceeds 10000 entries; use a smaller dataset root"
+                );
+            }
+        } else if metadata.is_file() {
+            let remaining = (64 * 1024 * 1024u64).saturating_sub(bytes);
+            let mut input = File::open(&path)?.take(remaining + 1);
+            let mut output = File::create(&destination)?;
+            let copied = std::io::copy(&mut input, &mut output)?;
+            ensure!(
+                copied <= remaining,
+                "evaluation workspace exceeds 64 MiB; use a smaller dataset root"
+            );
+            bytes += copied;
+            std::fs::set_permissions(destination, metadata.permissions())?;
+        }
+    }
+    Ok(workspace)
+}
+
 impl Dataset {
     pub fn validate(&self, root: &Path) -> Result<()> {
+        // Canonicalize both sides of containment checks (Windows uses verbatim
+        // path prefixes for canonicalized paths).
+        let root = root.canonicalize().context("canonicalize dataset root")?;
         ensure!(
             self.schema_version == VERSION,
             "unsupported dataset schema version"
@@ -73,7 +133,7 @@ impl Dataset {
                 .join(&case.target)
                 .canonicalize()
                 .with_context(|| format!("missing target {}", case.target))?;
-            ensure!(target.starts_with(root), "target escapes dataset root");
+            ensure!(target.starts_with(&root), "target escapes dataset root");
             ensure!(
                 target.is_file() || target.is_dir(),
                 "target must be a file or directory"
@@ -92,7 +152,7 @@ impl Dataset {
                     .canonicalize()
                     .context("expected finding source missing")?;
                 ensure!(
-                    source.starts_with(root) && source.is_file(),
+                    source.starts_with(&root) && source.is_file(),
                     "expected finding source escapes root or is not a file"
                 );
                 ensure!(
