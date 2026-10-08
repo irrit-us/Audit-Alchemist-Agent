@@ -1,5 +1,9 @@
 # Validation: 2026-10-07
 
+> Historical record. This run predates the bounded transport retries and the
+> Sign In With ChatGPT adapter; it remains the recorded chat-completions smoke
+> result.
+
 The live evaluation used credentials from `/home/ubuntu/.codex/deepseek.config.toml`, read privately and passed as `AUDIT_API_KEY` to the harness process. No credential was printed, persisted in this repository, or added to command arguments. The local profile was left unchanged. The model selection was `deepseek-flash`; its provider URL was adapted to `https://api.deepseek.com/chat/completions` for a plain LLM request.
 
 Run configuration:
@@ -24,7 +28,7 @@ The credential environment must be supplied privately before reproducing this co
 | Precision / recall / F1 | 1.0 / 1.0 / 1.0 |
 | Total wall-clock duration | 10.702 s |
 
-All three corrected counterparts produced no findings. The unsafe shell, SQL, and eval cases produced the expected CWE, path, and sink line. The full findings and individual timings are in [deepseek-evaluation.json](../deepseek-evaluation.json).
+All three corrected counterparts produced no findings. The unsafe shell, SQL, and eval cases produced the expected CWE, path, and sink line. The full findings and individual timings are in [deepseek-evaluation.json](reports/deepseek-evaluation.json).
 
 This is one run on six small handcrafted cases with three vulnerability families. It establishes working provider integration and correct results on the supplied smoke set. It does not establish general vulnerability discovery effectiveness, repeatability, calibrated severity, or robustness to prompt injection. A broader held-out dataset and repeated measurements remain the appropriate next validation step. Token usage and cost were not captured.
 
