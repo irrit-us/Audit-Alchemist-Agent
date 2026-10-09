@@ -1,0 +1,307 @@
+{
+  "schema_version": 1,
+  "name": "alchemist-dataset-tiny-baseline-round1",
+  "date": "2026-10-09",
+  "model": "deepseek-flash",
+  "wire_api": "chat-completions",
+  "endpoint": "https://api.deepseek.com/chat/completions",
+  "limits": {
+    "max_tokens": 32768,
+    "max_tool_calls": 16,
+    "timeout_ms": 600000,
+    "max_attempts": 5,
+    "jobs": 1,
+    "max_context_bytes": 2097152,
+    "max_source_bytes": 262144
+  },
+  "blind_instruction": "Audit the target for exploitable security vulnerabilities. Report concrete root causes with exact source lines and explain how an attacker reaches each unsafe operation. Your final message must be exactly the JSON object, beginning with '{' and ending with '}', with no text before or after it.",
+  "note": "Blind, hint-free instruction; evaluate staging hides each manifest. Execution failures are counted separately from detection quality. This is a tuning baseline, not a quality benchmark.",
+  "aggregate": {
+    "tp": 1,
+    "fp": 3,
+    "fn": 6,
+    "success": 2,
+    "failed": 5,
+    "turns": 53,
+    "tools": 79,
+    "tool_errors": 10,
+    "prompt_tokens": 847227,
+    "completion_tokens": 65179,
+    "reasoning_tokens": 54676,
+    "total_tokens": 912406,
+    "elapsed_ms": 604454,
+    "precision": 0.25,
+    "recall": 0.14285714285714285,
+    "f1": 0.18181818181818182
+  },
+  "cases": [
+    {
+      "slug": "filelock-toctou",
+      "case_id": "lock-symlink-truncation",
+      "outcome": "success",
+      "error": null,
+      "journal_outcome": "success",
+      "journal_phase": "validating",
+      "elapsed_ms": 46173,
+      "trajectory_rounds": 8,
+      "tool_usage": {
+        "total": 14,
+        "errors": 2
+      },
+      "token_usage": {
+        "input": 95696,
+        "output": 9369,
+        "reasoning": 7630,
+        "total": 105065
+      },
+      "accuracy": {
+        "true_positives": 0,
+        "false_positives": 3,
+        "false_negatives": 1,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "findings": [
+        {
+          "cwe": "CWE-59",
+          "path": "filelock/_unix.py",
+          "line": 44
+        },
+        {
+          "cwe": "CWE-59",
+          "path": "filelock/_windows.py",
+          "line": 28
+        },
+        {
+          "cwe": "CWE-59",
+          "path": "filelock/_util.py",
+          "line": 22
+        }
+      ],
+      "missed": [
+        {
+          "cwe": "CWE-59",
+          "path": "filelock/_unix.py",
+          "line": 41
+        }
+      ]
+    },
+    {
+      "slug": "fast-jwt-iss",
+      "case_id": "iss-array-loose-match",
+      "outcome": "nonzero_exit",
+      "error": "agent exited with exit code: 1",
+      "journal_outcome": "error",
+      "journal_phase": "model",
+      "elapsed_ms": 222535,
+      "trajectory_rounds": 11,
+      "tool_usage": {
+        "total": 16,
+        "errors": 3
+      },
+      "token_usage": {
+        "input": 233750,
+        "output": 21262,
+        "reasoning": 19019,
+        "total": 255012
+      },
+      "accuracy": {
+        "true_positives": 0,
+        "false_positives": 0,
+        "false_negatives": 1,
+        "precision": null,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "findings": [],
+      "missed": [
+        {
+          "cwe": "CWE-290",
+          "path": "src/verifier.js",
+          "line": 159
+        }
+      ]
+    },
+    {
+      "slug": "thin-vec-uaf",
+      "case_id": "intoiter-drop-panic-double-free",
+      "outcome": "nonzero_exit",
+      "error": "agent exited with exit code: 1",
+      "journal_outcome": "error",
+      "journal_phase": "model",
+      "elapsed_ms": 29509,
+      "trajectory_rounds": 1,
+      "tool_usage": {
+        "total": 0,
+        "errors": 0
+      },
+      "token_usage": {
+        "input": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "accuracy": {
+        "true_positives": 0,
+        "false_positives": 0,
+        "false_negatives": 1,
+        "precision": null,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "findings": [],
+      "missed": [
+        {
+          "cwe": "CWE-415",
+          "path": "src/lib.rs",
+          "line": 2546
+        }
+      ]
+    },
+    {
+      "slug": "pymonocypher-overflow",
+      "case_id": "argon2i32-small-block-count",
+      "outcome": "nonzero_exit",
+      "error": "agent exited with exit code: 1",
+      "journal_outcome": "error",
+      "journal_phase": "model",
+      "elapsed_ms": 133133,
+      "trajectory_rounds": 12,
+      "tool_usage": {
+        "total": 16,
+        "errors": 3
+      },
+      "token_usage": {
+        "input": 269392,
+        "output": 18777,
+        "reasoning": 15816,
+        "total": 288169
+      },
+      "accuracy": {
+        "true_positives": 0,
+        "false_positives": 0,
+        "false_negatives": 1,
+        "precision": null,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "findings": [],
+      "missed": [
+        {
+          "cwe": "CWE-122",
+          "path": "c_monocypher.pyx",
+          "line": 345
+        }
+      ]
+    },
+    {
+      "slug": "h11-chunked-framing",
+      "case_id": "chunked-trailer-not-validated",
+      "outcome": "success",
+      "error": null,
+      "journal_outcome": "success",
+      "journal_phase": "validating",
+      "elapsed_ms": 80429,
+      "trajectory_rounds": 8,
+      "tool_usage": {
+        "total": 13,
+        "errors": 2
+      },
+      "token_usage": {
+        "input": 121651,
+        "output": 10339,
+        "reasoning": 8001,
+        "total": 131990
+      },
+      "accuracy": {
+        "true_positives": 1,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "findings": [
+        {
+          "cwe": "CWE-444",
+          "path": "h11/_readers.py",
+          "line": 197
+        }
+      ],
+      "missed": []
+    },
+    {
+      "slug": "zk-email-sha256",
+      "case_id": "sha256-length-comparator-unconstrained",
+      "outcome": "nonzero_exit",
+      "error": "agent exited with exit code: 1",
+      "journal_outcome": "error",
+      "journal_phase": "model",
+      "elapsed_ms": 33548,
+      "trajectory_rounds": 3,
+      "tool_usage": {
+        "total": 4,
+        "errors": 0
+      },
+      "token_usage": {
+        "input": 14108,
+        "output": 433,
+        "reasoning": 278,
+        "total": 14541
+      },
+      "accuracy": {
+        "true_positives": 0,
+        "false_positives": 0,
+        "false_negatives": 1,
+        "precision": null,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "findings": [],
+      "missed": [
+        {
+          "cwe": "CWE-1284",
+          "path": "sha.circom",
+          "line": 126
+        }
+      ]
+    },
+    {
+      "slug": "ajna-protocol-compromise-2",
+      "case_id": "unsettled-bad-debt-liquidation",
+      "outcome": "nonzero_exit",
+      "error": "agent exited with exit code: 1",
+      "journal_outcome": "error",
+      "journal_phase": "model",
+      "elapsed_ms": 59127,
+      "trajectory_rounds": 10,
+      "tool_usage": {
+        "total": 16,
+        "errors": 0
+      },
+      "token_usage": {
+        "input": 112630,
+        "output": 4999,
+        "reasoning": 3932,
+        "total": 117629
+      },
+      "accuracy": {
+        "true_positives": 0,
+        "false_positives": 0,
+        "false_negatives": 1,
+        "precision": null,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "findings": [],
+      "missed": [
+        {
+          "cwe": "CWE-841",
+          "path": "ajna-v2/src/libraries/external/TakerActions.sol",
+          "line": 168
+        }
+      ]
+    }
+  ]
+}

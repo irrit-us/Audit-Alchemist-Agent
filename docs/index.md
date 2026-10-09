@@ -16,5 +16,6 @@ Start with the [README](../README.md) for installation and a first run.
 | [Harness design research](harness-design.md) | Primary-source findings, project applications, and optimization acceptance criteria |
 | [Validation](validation.md) | Recorded smoke-set run and local checks |
 | [Reports](reports/deepseek-evaluation.json) | Committed evaluation artifact |
+| [Tiny baseline round 1](reports/tiny-baseline-round1.json) | Blind live evaluation over the seven submodule fixtures |
 
 The change history is in [CHANGELOG.md](../CHANGELOG.md).

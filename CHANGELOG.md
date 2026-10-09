@@ -7,6 +7,12 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- Blind live evaluation baseline over the seven `datasets/tiny` fixtures
+  (`docs/reports/tiny-baseline-round1.json`): 2/7 completed, 1 exact match, and
+  per-case trajectory rounds, tool usage, and input/output token metrics. The
+  blind instruction and manifest-excluding staging keep labels out of the model
+  context. Recorded as a tuning baseline, not a quality claim.
+
 - Real-world audit fixtures moved to the `alchemist-dataset-tiny` repository and
   vendored through the `datasets/tiny` git submodule: the Ajna incident plus six
   small fixtures covering TOCTOU symlink truncation, issuer-array validation,

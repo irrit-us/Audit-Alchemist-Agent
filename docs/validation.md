@@ -1,5 +1,32 @@
 # Validation
 
+## Live tiny-dataset baseline round 1: 2026-10-09
+
+Ran the built-in agent over the seven real-world fixtures from the `datasets/tiny`
+submodule with a blind, hint-free instruction; `evaluate` staging excludes each
+manifest, so no case ID or label reached the model. Model `deepseek-flash`
+(chat-completions), `--max-tokens 32768`, `--max-tool-calls 16`, one attempt per
+case. Full metrics are in [the baseline report](reports/tiny-baseline-round1.json).
+
+| Metric | Value |
+| --- | --- |
+| Successful cases | 2/7 (`filelock-toctou`, `h11-chunked-framing`) |
+| Execution failures | 5/7 |
+| True / false positives / misses | 1 / 3 / 6 |
+| Precision / recall / F1 | 0.25 / 0.143 / 0.182 |
+| Trajectory rounds / tool calls | 53 / 79 |
+| Tokens (input / output / reasoning) | 847,227 / 65,179 / 54,676 |
+
+The single exact match was h11 (`CWE-444`, `h11/_readers.py:197`).
+`filelock-toctou` was a near miss: three `CWE-59` findings at lines 44/28/22
+instead of the expected line 41. The five failures are execution failures, not
+detection decisions: `deepseek-flash` is a reasoning model that can exhaust the
+output-token cap (`finish_reason: length`), and several runs hit a transient
+model-stream error or the tool budget before emitting the required JSON object.
+The blind instruction is deliberately unscoped, so this measures a hard setting
+and is a tuning baseline, not a quality claim. A `deepseek-chat` probe showed the
+same strict-JSON failure mode (prose before the JSON object).
+
 ## Caller-side bridge: 2026-10-09
 
 `tests/bridge.rs` drives three `alchemist audit` nodes (discovery, verification,
