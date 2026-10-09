@@ -1,5 +1,30 @@
 # Validation
 
+## Live tiny-dataset baseline round 2: 2026-10-09
+
+Two harness fixes from round 1: chat-completions now sets `response_format =
+{"type":"json_object"}`, and `--reasoning-effort low` bounds reasoner output.
+All Rust tests pass (53 unit, 107 total). Re-ran the same blind instruction and
+limits, with up to two trials for cases that failed with an execution error.
+Full metrics are in [the round-2 report](reports/tiny-baseline-round2.json).
+
+| Metric | Round 1 | Round 2 |
+| --- | --- | --- |
+| Successful cases | 2/7 | 3/7 (best of <=2 trials) |
+| Expected-line hits (any CWE) | 1/7 | 3/7 |
+| Exact TP / FP / misses | 1 / 3 / 6 | 1 / 6 / 6 |
+| Exact precision / recall / F1 | 0.25 / 0.143 / 0.182 | 0.143 / 0.143 / 0.143 |
+
+The fixes removed the prose-before-JSON failure and let two more fixtures
+complete. Semantic recall improved: `filelock-toctou` now reports the expected
+line 41 (as `CWE-367`, not the expected `CWE-59`) and `pymonocypher-overflow`
+reports the expected line 345 (as `CWE-476`, not `CWE-122`). Exact F1 did not
+improve because those runs also add false positives and the CWE taxonomy
+differs; four fixtures (fast-jwt, thin-vec, zk-email, ajna) still had no
+successful trial in two attempts. Remaining failures are execution errors at the
+model phase (reasoner truncation or a transient stream error), not detection
+decisions. This remains a tuning baseline, not a quality claim.
+
 ## Live tiny-dataset baseline round 1: 2026-10-09
 
 Ran the built-in agent over the seven real-world fixtures from the `datasets/tiny`

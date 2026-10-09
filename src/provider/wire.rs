@@ -51,6 +51,8 @@ pub fn request_body(
             "max_tokens": max_tokens,
             "stream": true,
             "stream_options": {"include_usage": true},
+            // Force one JSON object so the final report is not preceded by prose.
+            "response_format": {"type": "json_object"},
             "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": user}
@@ -493,6 +495,7 @@ mod tests {
         let chat = request_body(WireApi::ChatCompletions, "m", "sys", "usr", 128);
         assert_eq!(chat["messages"][0]["role"], "system");
         assert_eq!(chat["stream"], true);
+        assert_eq!(chat["response_format"]["type"], "json_object");
         let responses = request_body(WireApi::Responses, "m", "sys", "usr", 128);
         assert_eq!(responses["instructions"], "sys");
         assert_eq!(responses["max_output_tokens"], 128);

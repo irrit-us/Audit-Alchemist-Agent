@@ -1,0 +1,279 @@
+{
+  "schema_version": 1,
+  "name": "alchemist-dataset-tiny-baseline-round2",
+  "date": "2026-10-09",
+  "model": "deepseek-flash",
+  "wire_api": "chat-completions",
+  "endpoint": "https://api.deepseek.com/chat/completions",
+  "changes": [
+    "chat-completions requests now set response_format=json_object (final report cannot be preceded by prose)",
+    "optional --reasoning-effort passed to chat-completions"
+  ],
+  "limits": {
+    "max_tokens": 32768,
+    "max_tool_calls": 16,
+    "timeout_ms": 600000,
+    "max_attempts": 5,
+    "jobs": 1,
+    "reasoning_effort": "low",
+    "trials_per_case": 2
+  },
+  "blind_instruction": "Audit the target for exploitable security vulnerabilities. Report concrete root causes with exact source lines and explain how an attacker reaches each unsafe operation. Your final message must be exactly the JSON object, beginning with '{' and ending with '}', with no text before or after it.",
+  "note": "Best of up to two trials per case. Exact matching is (CWE, path, line); line_only_hit ignores the CWE.",
+  "aggregate": {
+    "tp": 1,
+    "fp": 6,
+    "fn": 6,
+    "line_hits": 3,
+    "success_best": 3,
+    "failed_all": 4,
+    "turns": 91,
+    "tools": 119,
+    "prompt_tokens": 1663026,
+    "completion_tokens": 89504,
+    "reasoning_tokens": 77689,
+    "total_tokens": 1752530,
+    "trials": 12,
+    "precision": 0.14285714285714285,
+    "recall": 0.14285714285714285,
+    "f1": 0.14285714285714285
+  },
+  "round1_aggregate": {
+    "tp": 1,
+    "fp": 3,
+    "fn": 6,
+    "success": 2,
+    "failed": 5,
+    "turns": 53,
+    "tools": 79,
+    "tool_errors": 10,
+    "prompt_tokens": 847227,
+    "completion_tokens": 65179,
+    "reasoning_tokens": 54676,
+    "total_tokens": 912406,
+    "elapsed_ms": 604454,
+    "precision": 0.25,
+    "recall": 0.14285714285714285,
+    "f1": 0.18181818181818182
+  },
+  "cases": [
+    {
+      "slug": "filelock-toctou",
+      "trials": [
+        "success"
+      ],
+      "best_outcome": "success",
+      "error": null,
+      "exact": {
+        "true_positives": 0,
+        "false_positives": 3,
+        "false_negatives": 1,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "line_only_hit": true,
+      "findings": [
+        {
+          "cwe": "CWE-59",
+          "path": "filelock/_unix.py",
+          "line": 44
+        },
+        {
+          "cwe": "CWE-367",
+          "path": "filelock/_unix.py",
+          "line": 41
+        },
+        {
+          "cwe": "CWE-59",
+          "path": "filelock/_util.py",
+          "line": 22
+        }
+      ],
+      "expected": [
+        {
+          "cwe": "CWE-59",
+          "path": "filelock/_unix.py",
+          "line": 41
+        }
+      ]
+    },
+    {
+      "slug": "fast-jwt-iss",
+      "trials": [
+        "nonzero_exit",
+        "nonzero_exit"
+      ],
+      "best_outcome": "nonzero_exit",
+      "error": "agent exited with exit code: 1",
+      "exact": {
+        "true_positives": 0,
+        "false_positives": 0,
+        "false_negatives": 1,
+        "precision": null,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "line_only_hit": false,
+      "findings": [],
+      "expected": [
+        {
+          "cwe": "CWE-290",
+          "path": "src/verifier.js",
+          "line": 159
+        }
+      ]
+    },
+    {
+      "slug": "thin-vec-uaf",
+      "trials": [
+        "nonzero_exit",
+        "nonzero_exit"
+      ],
+      "best_outcome": "nonzero_exit",
+      "error": "agent exited with exit code: 1",
+      "exact": {
+        "true_positives": 0,
+        "false_positives": 0,
+        "false_negatives": 1,
+        "precision": null,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "line_only_hit": false,
+      "findings": [],
+      "expected": [
+        {
+          "cwe": "CWE-415",
+          "path": "src/lib.rs",
+          "line": 2546
+        }
+      ]
+    },
+    {
+      "slug": "pymonocypher-overflow",
+      "trials": [
+        "nonzero_exit",
+        "success"
+      ],
+      "best_outcome": "success",
+      "error": null,
+      "exact": {
+        "true_positives": 0,
+        "false_positives": 3,
+        "false_negatives": 1,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "line_only_hit": true,
+      "findings": [
+        {
+          "cwe": "CWE-121",
+          "path": "c_monocypher.pyx",
+          "line": 281
+        },
+        {
+          "cwe": "CWE-125",
+          "path": "c_monocypher.pyx",
+          "line": 429
+        },
+        {
+          "cwe": "CWE-476",
+          "path": "c_monocypher.pyx",
+          "line": 345
+        }
+      ],
+      "expected": [
+        {
+          "cwe": "CWE-122",
+          "path": "c_monocypher.pyx",
+          "line": 345
+        }
+      ]
+    },
+    {
+      "slug": "h11-chunked-framing",
+      "trials": [
+        "success"
+      ],
+      "best_outcome": "success",
+      "error": null,
+      "exact": {
+        "true_positives": 1,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "line_only_hit": true,
+      "findings": [
+        {
+          "cwe": "CWE-444",
+          "path": "h11/_readers.py",
+          "line": 197
+        }
+      ],
+      "expected": [
+        {
+          "cwe": "CWE-444",
+          "path": "h11/_readers.py",
+          "line": 197
+        }
+      ]
+    },
+    {
+      "slug": "zk-email-sha256",
+      "trials": [
+        "nonzero_exit",
+        "nonzero_exit"
+      ],
+      "best_outcome": "nonzero_exit",
+      "error": "agent exited with exit code: 1",
+      "exact": {
+        "true_positives": 0,
+        "false_positives": 0,
+        "false_negatives": 1,
+        "precision": null,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "line_only_hit": false,
+      "findings": [],
+      "expected": [
+        {
+          "cwe": "CWE-1284",
+          "path": "sha.circom",
+          "line": 126
+        }
+      ]
+    },
+    {
+      "slug": "ajna-protocol-compromise-2",
+      "trials": [
+        "nonzero_exit",
+        "nonzero_exit"
+      ],
+      "best_outcome": "nonzero_exit",
+      "error": "agent exited with exit code: 1",
+      "exact": {
+        "true_positives": 0,
+        "false_positives": 0,
+        "false_negatives": 1,
+        "precision": null,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "line_only_hit": false,
+      "findings": [],
+      "expected": [
+        {
+          "cwe": "CWE-841",
+          "path": "ajna-v2/src/libraries/external/TakerActions.sol",
+          "line": 168
+        }
+      ]
+    }
+  ]
+}

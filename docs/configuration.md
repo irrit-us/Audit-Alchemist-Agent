@@ -135,6 +135,12 @@ and [tool discovery/calls](https://modelcontextprotocol.io/specification/2025-11
 | `--api-key-env <NAME>` | `AUDIT_API_KEY` | Environment variable holding the bearer token. |
 | `--codex-auth-file <PATH>` | `$CODEX_HOME/auth.json` | Absolute path to a Codex credential file. |
 | `--codex-base-url <URL>` | `https://chatgpt.com/backend-api/codex` | Codex Responses base URL. |
+| `--reasoning-effort <LEVEL>` | — | `minimal`, `low`, `medium`, or `high`; sent with chat-completions requests to bound reasoning-model output. |
+
+Chat-completions requests set `response_format = {"type":"json_object"}` so the
+model returns one JSON object instead of prose followed by JSON. Providers that
+reject JSON mode need the Responses or Anthropic wire, or an endpoint that
+accepts the field. `--reasoning-effort` is ignored on those wires.
 
 See [Authentication](authentication.md) for the credential details.
 

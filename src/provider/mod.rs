@@ -60,6 +60,26 @@ impl AuthKind {
     }
 }
 
+/// Provider reasoning-effort hint for chat-completions reasoning models.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+pub enum ReasoningEffort {
+    Minimal,
+    Low,
+    Medium,
+    High,
+}
+
+impl ReasoningEffort {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            ReasoningEffort::Minimal => "minimal",
+            ReasoningEffort::Low => "low",
+            ReasoningEffort::Medium => "medium",
+            ReasoningEffort::High => "high",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Args)]
 pub struct LlmOptions {
     #[arg(skip)]
@@ -91,6 +111,9 @@ pub struct LlmOptions {
     pub max_source_bytes: u32,
     #[arg(long, default_value_t = 4096, value_parser = clap::value_parser!(u32).range(1..=32_768))]
     pub max_tokens: u32,
+    /// Optional reasoning-effort hint for reasoning models (chat-completions).
+    #[arg(long, value_enum)]
+    pub reasoning_effort: Option<ReasoningEffort>,
     /// Optional cap on the estimated context tokens; disabled when unset.
     #[arg(long, value_parser = clap::value_parser!(u32).range(1..=8_388_608))]
     pub max_source_tokens: Option<u32>,
@@ -537,6 +560,9 @@ async fn audit_session(
         options.max_tokens,
         definitions,
     );
+    if let Some(effort) = options.reasoning_effort {
+        conversation.set_reasoning_effort(effort.as_str());
+    }
     let mut tools =
         crate::tools::WorkspaceTools::configured(root, context, options.settings.clone())?;
     let mut used = 0usize;

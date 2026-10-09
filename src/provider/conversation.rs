@@ -79,6 +79,14 @@ impl Conversation {
         }
     }
 
+    /// Apply a provider reasoning-effort hint. Only chat-completions accepts
+    /// it; the Responses and Anthropic wires carry effort differently.
+    pub fn set_reasoning_effort(&mut self, effort: &str) {
+        if self.wire == WireApi::ChatCompletions {
+            self.body["reasoning_effort"] = json!(effort);
+        }
+    }
+
     pub fn append(&mut self, turn: &Turn, results: &[String]) -> Result<()> {
         ensure!(
             turn.calls.len() == results.len(),
@@ -379,6 +387,22 @@ impl TurnDecoder {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn reasoning_effort_is_chat_only_and_json_mode_is_default() {
+        let mut chat =
+            Conversation::with_tools(WireApi::ChatCompletions, "m", "s", "u", 100, vec![]);
+        assert_eq!(chat.body["response_format"]["type"], "json_object");
+        assert!(chat.body.get("reasoning_effort").is_none());
+        chat.set_reasoning_effort("low");
+        assert_eq!(chat.body["reasoning_effort"], "low");
+
+        for wire in [WireApi::Responses, WireApi::Anthropic] {
+            let mut conversation = Conversation::with_tools(wire, "m", "s", "u", 100, vec![]);
+            conversation.set_reasoning_effort("low");
+            assert!(conversation.body.get("reasoning_effort").is_none());
+        }
+    }
 
     #[test]
     fn pruning_preserves_call_pairs_reasoning_skills_and_recent_turns_on_all_wires() {

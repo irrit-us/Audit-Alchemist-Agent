@@ -35,6 +35,11 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- Chat-completions requests now set `response_format = {"type":"json_object"}`
+  so the final report is one JSON object rather than prose followed by JSON, and
+  `--reasoning-effort` (`minimal`/`low`/`medium`/`high`) is forwarded to
+  reasoning models. Prompt/completion wire contents and scoring are unchanged.
+
 - Rename the default CLI binary and new release archives to `alchemist`.
   The Rust package/library name remains unchanged.
 
