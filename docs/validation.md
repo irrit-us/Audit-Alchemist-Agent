@@ -1,5 +1,26 @@
 # Validation
 
+## Unexpected-finding verification and secondary cases: 2026-10-09
+
+Across rounds 1-3, every non-exact-match finding was checked against the
+vendored source and classified in `reports/tiny-unexpected-verification.json`.
+Nearly all were genuine: the aggregate unexpected-valid/unexpected-invalid
+counts were 3/1 (round 1), 6/0 (round 2), and 16/0 (round 3). They include
+alternate sink lines of the target bug (e.g. `thin-vec` line 2547, `h11` line
+163), alternate CWE labels at the expected line (`CWE-367` at filelock:41,
+`CWE-787` at `c_monocypher.pyx:345`), and genuinely separate issues.
+
+The verified-genuine separate issues were promoted to dataset cases in the
+tiny submodule (`e69c8fc`): `blake2b-key-overflow` (`CWE-121`,
+`c_monocypher.pyx:281`, unvalidated `len(key)` copied into `key_block[128]`),
+`aead-key-length` (`CWE-125`, `c_monocypher.pyx:181`),
+`clear-panic-double-free` (`CWE-415`, `src/lib.rs:1084`), and
+`empty-signature-accepted` (`CWE-347`, `src/verifier.js:139`, conditional on a
+no-key/`none` caller). The default prompt now asks for reachable root causes
+that break a security property and omits low-impact hardening. Exact-match
+metrics are unchanged; the distinct `unexpected_valid` count and per-case
+execution records are logged in `reports/tiny-metrics-log.jsonl`.
+
 ## Live tiny-dataset baseline round 3: 2026-10-09
 
 Fix from round 2: the raw-response cap is now `--max-stream-bytes` (default

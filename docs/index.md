@@ -19,5 +19,7 @@ Start with the [README](../README.md) for installation and a first run.
 | [Tiny baseline round 1](reports/tiny-baseline-round1.json) | Blind live evaluation over the seven submodule fixtures |
 | [Tiny baseline round 2](reports/tiny-baseline-round2.json) | Same blind run after the JSON-mode and reasoning-effort fixes |
 | [Tiny baseline round 3](reports/tiny-baseline-round3.json) | Same blind run after the configurable stream cap |
+| [Unexpected-finding verification](reports/tiny-unexpected-verification.json) | Verdicts for every non-exact-match finding across rounds 1-3 |
+| [Tiny metrics log](reports/tiny-metrics-log.jsonl) | Per-round and per-case execution/metric records for comparison |
 
 The change history is in [CHANGELOG.md](../CHANGELOG.md).

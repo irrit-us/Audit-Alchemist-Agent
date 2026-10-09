@@ -51,6 +51,23 @@ vulnerability coverage. A historical single-request `deepseek-flash` run complet
 [validation results](validation.md) and the [full report](reports/deepseek-evaluation.json).
 That result predates the tool loop and does not measure its discovery quality.
 
+## Unexpected-finding verification
+
+Exact scoring is deliberately strict, so a run's non-matching findings are
+classified separately after a live round. `reports/tiny-unexpected-verification.json`
+records, for each unexpected finding, whether it is the same root cause at
+another sink line or label (`alternate_sink`/`alternate_label`), a genuine
+separate issue (`valid_distinct`), genuine but low impact (`valid_low_impact`),
+or outside the case boundary (`out_of_scope`). Verified-genuine findings are
+promoted into dataset cases. This classification is analysis metadata: the
+harness still scores exact keys and does not silently relax them. The aggregate
+`unexpected_valid`/`unexpected_invalid` counts are written to
+`reports/tiny-metrics-log.jsonl` for round-over-round comparison.
+
+The default system prompt asks for reachable root causes that break a security
+property and to omit low-impact hardening and unproven observations. This is a
+default-configuration filter, not a scoring change.
+
 ## Real-world fixtures
 
 Seven real-world fixtures live in the `alchemist-dataset-tiny` submodule at

@@ -246,8 +246,10 @@ fn real_world_datasets_validate() {
     ];
     for manifest in manifests {
         let (dataset, _) = audit_harness::dataset::load(&root.join(manifest)).unwrap();
-        assert_eq!(dataset.cases.len(), 1, "{manifest}");
-        assert_eq!(dataset.cases[0].expected.len(), 1, "{manifest}");
+        assert!(!dataset.cases.is_empty(), "{manifest}");
+        for case in &dataset.cases {
+            assert_eq!(case.expected.len(), 1, "{manifest} {}", case.id);
+        }
     }
 }
 

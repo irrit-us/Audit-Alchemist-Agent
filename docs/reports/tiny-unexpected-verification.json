@@ -1,0 +1,236 @@
+{
+  "schema_version": 1,
+  "name": "tiny-unexpected-verification",
+  "date": "2026-10-09",
+  "description": "Verification of non-exact-match findings across the live rounds. alternate_sink/alternate_label confirm the same root cause; valid_distinct and valid_low_impact are genuine separate issues; out_of_scope is genuine but outside the case boundary.",
+  "counts": {
+    "valid_low_impact": 3,
+    "valid_distinct": 8,
+    "alternate_label": 3,
+    "alternate_sink": 4,
+    "out_of_scope": 1,
+    "unverified": 1
+  },
+  "findings": [
+    {
+      "dataset": "fast-jwt-iss",
+      "case_id": "iss-array-loose-match",
+      "cwe": "CWE-613",
+      "path": "src/verifier.js",
+      "line": 89,
+      "severity": "medium",
+      "title": "Response cache records no expiry bound for tokens lacking iat, so expired tokens keep verifying until cacheTTL elapses",
+      "verdict": "valid_low_impact",
+      "note": "Verification cache without an iat-derived bound; low impact, dependent on cacheTTL."
+    },
+    {
+      "dataset": "fast-jwt-iss",
+      "case_id": "iss-array-loose-match",
+      "cwe": "CWE-613",
+      "path": "src/verifier.js",
+      "line": 92,
+      "severity": "high",
+      "title": "Cached verification ignores a token's exp whenever the payload has no numeric iat",
+      "verdict": "valid_low_impact",
+      "note": "Cache expiry uses iat only; low impact."
+    },
+    {
+      "dataset": "fast-jwt-iss",
+      "case_id": "iss-array-loose-match",
+      "cwe": "CWE-347",
+      "path": "src/verifier.js",
+      "line": 139,
+      "severity": "high",
+      "title": "Signature verification skipped for tokens with an empty signature segment when no key material is resolved",
+      "verdict": "valid_distinct",
+      "note": "Signature check is skipped for an empty signature; exploitable only if the caller allows alg none and configures no key."
+    },
+    {
+      "dataset": "fast-jwt-iss",
+      "case_id": "iss-array-loose-match",
+      "cwe": "CWE-347",
+      "path": "src/verifier.js",
+      "line": 182,
+      "severity": "medium",
+      "title": "Tokens with an empty signature are accepted when the configured key is empty/null",
+      "verdict": "valid_distinct",
+      "note": "Companion key/signature consistency check for the empty-signature path."
+    },
+    {
+      "dataset": "filelock-toctou",
+      "case_id": "lock-symlink-truncation",
+      "cwe": "CWE-367",
+      "path": "filelock/_unix.py",
+      "line": 41,
+      "severity": "medium",
+      "title": "O_TRUNC is applied before flock ownership, so a losing contender truncates the holder's lock file",
+      "verdict": "alternate_label",
+      "note": "Expected line, alternate upstream CWE (advisory lists CWE-59/362/367)."
+    },
+    {
+      "dataset": "filelock-toctou",
+      "case_id": "lock-symlink-truncation",
+      "cwe": "CWE-59",
+      "path": "filelock/_unix.py",
+      "line": 44,
+      "severity": "high",
+      "title": "UnixFileLock follows a symlink at the lock path and truncates its target (no O_NOFOLLOW/O_EXCL)",
+      "verdict": "alternate_sink",
+      "note": "The os.open call that follows the symlink; same root cause one line later."
+    },
+    {
+      "dataset": "filelock-toctou",
+      "case_id": "lock-symlink-truncation",
+      "cwe": "CWE-59",
+      "path": "filelock/_util.py",
+      "line": 22,
+      "severity": "low",
+      "title": "raise_on_not_writable_file uses os.stat, following a symlink at the lock path",
+      "verdict": "valid_low_impact",
+      "note": "os.stat follows a symlink, but it is only a writability check; not on the truncate path."
+    },
+    {
+      "dataset": "filelock-toctou",
+      "case_id": "lock-symlink-truncation",
+      "cwe": "CWE-59",
+      "path": "filelock/_windows.py",
+      "line": 28,
+      "severity": "medium",
+      "title": "WindowsFileLock opens the lock path with O_CREAT|O_TRUNC following redirects",
+      "verdict": "out_of_scope",
+      "note": "Genuine; the same CVE fixed Windows reparse points, but this case scopes to Unix."
+    },
+    {
+      "dataset": "h11-chunked-framing",
+      "case_id": "chunked-trailer-not-validated",
+      "cwe": "CWE-444",
+      "path": "h11/_readers.py",
+      "line": 163,
+      "severity": "high",
+      "title": "Chunked-body footer consumed without CRLF validation (HTTP request smuggling)",
+      "verdict": "alternate_sink",
+      "note": "The _bytes_to_discard branch that consumes the unvalidated footer; same bug as line 197."
+    },
+    {
+      "dataset": "h11-chunked-framing",
+      "case_id": "chunked-trailer-not-validated",
+      "cwe": "CWE-444",
+      "path": "h11/_readers.py",
+      "line": 197,
+      "severity": "high",
+      "title": "ChunkedReader accepts arbitrary bytes as the chunk footer, enabling HTTP request smuggling",
+      "verdict": "unverified",
+      "note": "Not yet classified."
+    },
+    {
+      "dataset": "pymonocypher-overflow",
+      "case_id": "argon2i32-small-block-count",
+      "cwe": "CWE-125",
+      "path": "c_monocypher.pyx",
+      "line": 181,
+      "severity": "medium",
+      "title": "lock()/unlock() pass unvalidated key and nonce sizes to crypto_aead_lock/unlock (out-of-bounds read)",
+      "verdict": "valid_distinct",
+      "note": "crypto_aead_lock receives unvalidated key/nonce sizes (documented 32/24) without checks."
+    },
+    {
+      "dataset": "pymonocypher-overflow",
+      "case_id": "argon2i32-small-block-count",
+      "cwe": "CWE-125",
+      "path": "c_monocypher.pyx",
+      "line": 267,
+      "severity": "medium",
+      "title": "chacha20() validates the nonce length but not the key length (out-of-bounds read)",
+      "verdict": "valid_distinct",
+      "note": "chacha20 validates the nonce length but not the key length."
+    },
+    {
+      "dataset": "pymonocypher-overflow",
+      "case_id": "argon2i32-small-block-count",
+      "cwe": "CWE-121",
+      "path": "c_monocypher.pyx",
+      "line": 281,
+      "severity": "high",
+      "title": "Unbounded BLAKE2b key length overflows fixed stack buffer in keyed init",
+      "verdict": "valid_distinct",
+      "note": "Genuine: blake2b passes unbounded len(key) to crypto_blake2b_keyed, which COPYs into u8 key_block[128]."
+    },
+    {
+      "dataset": "pymonocypher-overflow",
+      "case_id": "argon2i32-small-block-count",
+      "cwe": "CWE-476",
+      "path": "c_monocypher.pyx",
+      "line": 345,
+      "severity": "medium",
+      "title": "argon2i_32 ignores NULL from malloc and does not bound nb_blocks",
+      "verdict": "alternate_label",
+      "note": "Same allocation line; unchecked malloc is a lesser companion issue."
+    },
+    {
+      "dataset": "pymonocypher-overflow",
+      "case_id": "argon2i32-small-block-count",
+      "cwe": "CWE-787",
+      "path": "c_monocypher.pyx",
+      "line": 345,
+      "severity": "high",
+      "title": "Unvalidated nb_blocks plus unchecked malloc overrun or NULL-deref the Argon2 work area",
+      "verdict": "alternate_label",
+      "note": "Expected line 345, heap-overflow CWE instead of CWE-122."
+    },
+    {
+      "dataset": "pymonocypher-overflow",
+      "case_id": "argon2i32-small-block-count",
+      "cwe": "CWE-125",
+      "path": "c_monocypher.pyx",
+      "line": 429,
+      "severity": "medium",
+      "title": "signature_check trusts fixed-size buffers, allowing out-of-bounds read of untrusted input",
+      "verdict": "valid_distinct",
+      "note": "signature_check passes fixed-size expectations without validating buffer lengths."
+    },
+    {
+      "dataset": "thin-vec-uaf",
+      "case_id": "intoiter-drop-panic-double-free",
+      "cwe": "CWE-415",
+      "path": "src/lib.rs",
+      "line": 1084,
+      "severity": "high",
+      "title": "ThinVec::clear drops elements before resetting len, causing double-free if an element destructor panics",
+      "verdict": "valid_distinct",
+      "note": "ThinVec::clear has the same panic-unwind double-drop; the 0.2.16 fix patches it too."
+    },
+    {
+      "dataset": "thin-vec-uaf",
+      "case_id": "intoiter-drop-panic-double-free",
+      "cwe": "CWE-401",
+      "path": "src/lib.rs",
+      "line": 1772,
+      "severity": "low",
+      "title": "gecko-ffi reallocate loses the length when moving an auto array to the heap",
+      "verdict": "valid_distinct",
+      "note": "Gecko-FFI reallocate fixes the length on the new header; 0.2.16 adds set_len."
+    },
+    {
+      "dataset": "thin-vec-uaf",
+      "case_id": "intoiter-drop-panic-double-free",
+      "cwe": "CWE-415",
+      "path": "src/lib.rs",
+      "line": 2547,
+      "severity": "high",
+      "title": "IntoIter::drop double-drops the buffer if a destructor panics, because the temporary ThinVec keeps its original len",
+      "verdict": "alternate_sink",
+      "note": "The drop_in_place call in the same IntoIter::drop bug."
+    },
+    {
+      "dataset": "zk-email-sha256",
+      "case_id": "sha256-length-comparator-unconstrained",
+      "cwe": "CWE-191",
+      "path": "sha.circom",
+      "line": 195,
+      "severity": "high",
+      "title": "Block index underflow lets a prover force the SHA256 output to zero (unsound hash)",
+      "verdict": "alternate_sink",
+      "note": "The out-of-range selector index in Sha256General; same bug as the LessEqThan sink."
+    }
+  ]
+}

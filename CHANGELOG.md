@@ -7,6 +7,16 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- Verified non-exact-match findings from the live rounds
+  (`docs/reports/tiny-unexpected-verification.json`) and promoted the genuine
+  separate issues to dataset cases in the tiny submodule: `blake2b-key-overflow`
+  (`CWE-121`), `aead-key-length` (`CWE-125`), `clear-panic-double-free`
+  (`CWE-415`), and `empty-signature-accepted` (`CWE-347`).
+- Distinct `unexpected_valid`/`unexpected_invalid` metrics and per-round/per-case
+  execution records in `docs/reports/tiny-metrics-log.jsonl` for round-over-round
+  comparison. The default prompt now prefers reachable root causes and omits
+  low-impact hardening.
+
 - Blind live evaluation baseline over the seven `datasets/tiny` fixtures
   (`docs/reports/tiny-baseline-round1.json`): 2/7 completed, 1 exact match, and
   per-case trajectory rounds, tool usage, and input/output token metrics. The
