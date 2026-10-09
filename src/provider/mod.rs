@@ -38,8 +38,9 @@ use self::{
 pub use crate::context::{snapshot, Source};
 
 pub use prompt::SYSTEM_PROMPT;
-/// Upper bound on any single HTTP response body we will buffer.
-const MAX_RESPONSE_BYTES: usize = 2 * 1024 * 1024;
+/// Default upper bound on a streamed model response. Reasoning models emit a
+/// large SSE event stream, so the default leaves headroom above the assembled text.
+const DEFAULT_MAX_STREAM_BYTES: u32 = 8 * 1024 * 1024;
 
 /// Which credential source to use.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
@@ -111,6 +112,9 @@ pub struct LlmOptions {
     pub max_source_bytes: u32,
     #[arg(long, default_value_t = 4096, value_parser = clap::value_parser!(u32).range(1..=32_768))]
     pub max_tokens: u32,
+    /// Hard byte cap on streamed model output (SSE framing included).
+    #[arg(long, default_value_t = DEFAULT_MAX_STREAM_BYTES, value_parser = clap::value_parser!(u32).range(1_048_576..=33_554_432))]
+    pub max_stream_bytes: u32,
     /// Optional reasoning-effort hint for reasoning models (chat-completions).
     #[arg(long, value_enum)]
     pub reasoning_effort: Option<ReasoningEffort>,
@@ -739,7 +743,7 @@ async fn complete(
                 "LLM API returned HTTP {}",
                 response.status().as_u16()
             );
-            read_stream(response, wire, sink).await?
+            read_stream(response, wire, sink, options.max_stream_bytes as usize).await?
         }
         AuthKind::Codex => {
             let url = options.endpoint.clone().unwrap_or_else(|| {
@@ -770,7 +774,13 @@ async fn complete(
                 "Codex responses returned HTTP {}",
                 response.status().as_u16()
             );
-            read_stream(response, WireApi::Responses, sink).await?
+            read_stream(
+                response,
+                WireApi::Responses,
+                sink,
+                options.max_stream_bytes as usize,
+            )
+            .await?
         }
     };
 
@@ -835,6 +845,7 @@ async fn read_stream(
     mut response: reqwest::Response,
     wire: WireApi,
     sink: &mut dyn EventSink,
+    max_bytes: usize,
 ) -> Result<Turn> {
     let mut lines = SseLines::new();
     let mut stream = TurnDecoder::new(wire);
@@ -848,10 +859,7 @@ async fn read_stream(
             ));
         }
         total += chunk.len();
-        ensure!(
-            total <= MAX_RESPONSE_BYTES,
-            "model stream exceeds {MAX_RESPONSE_BYTES} bytes"
-        );
+        ensure!(total <= max_bytes, "model stream exceeds {max_bytes} bytes");
         for data in lines.push(&chunk)? {
             stream.handle_data(&data, sink)?;
         }

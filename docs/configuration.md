@@ -156,6 +156,7 @@ See [Authentication](authentication.md) for the credential details.
 | `--context-keep-turns <N>` | `2` | 1–32 recent complete tool turns protected from history pruning |
 | `--max-tool-output-bytes <N>` | `32768` | 1024–131072 bytes per model-visible JSON tool result, including metadata |
 | `--max-tokens <N>` | `4096` | 1–32768 requested output tokens |
+| `--max-stream-bytes <N>` | `8388608` (8 MiB) | 1048576–33554432 streamed bytes per response, including SSE framing. Reasoning models can emit far more raw SSE than assembled text |
 | `--timeout-ms <N>` | `60000` | 1–3600000 wall-clock deadline |
 | `--max-output-bytes <N>` | `1048576` (1 MiB) | 1–16777216 stdout/stderr cap per run |
 | `--jobs <N>` | `1` | 1–32 evaluation workers |

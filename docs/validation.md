@@ -1,5 +1,31 @@
 # Validation
 
+## Live tiny-dataset baseline round 3: 2026-10-09
+
+Fix from round 2: the raw-response cap is now `--max-stream-bytes` (default
+8 MiB) instead of a fixed 2 MiB. Reasoning models emit far more SSE framing than
+assembled text, and the 2 MiB cap aborted three fixtures. Full metrics are in
+[the round-3 report](reports/tiny-baseline-round3.json).
+
+| Metric | Round 1 | Round 2 | Round 3 |
+| --- | --- | --- | --- |
+| Completed cases (best of 2) | 2/7 | 3/7 | 6/7 |
+| Raw trial success | 2/7 | 3/12 | 11/14 (79%) |
+| Expected-line hits (any CWE) | 1/7 | 3/7 | 2/7 |
+| Exact TP / FP / misses | 1 / 3 / 6 | 1 / 6 / 6 | 1 / 8 / 6 |
+| Exact precision / recall / F1 | 0.25 / 0.143 / 0.182 | 0.143 / 0.143 / 0.143 | 0.111 / 0.143 / 0.125 |
+
+The stream-cap fix lifted completion from 3/7 to 6/7 and raw trial success to
+79%. Exact F1 did not follow because the extra completed runs report more
+candidate findings, and each extra candidate counts as a false positive under
+exact `(CWE, path, line)` matching. The near misses are close: `thin-vec-uaf`
+reports `CWE-415` at line 2547 (expected 2546), `pymonocypher-overflow` reports
+the expected line 345 as `CWE-787` (expected `CWE-122`), and `h11` alone stays
+exact. `ajna-protocol-compromise-2` now fails at the model/validation phase
+rather than the stream cap. The remaining gap is label and extra-finding noise,
+not an execution wall; the scoring and label policy needs an explicit decision
+before exact F1 is used as the optimization target.
+
 ## Live tiny-dataset baseline round 2: 2026-10-09
 
 Two harness fixes from round 1: chat-completions now sets `response_format =

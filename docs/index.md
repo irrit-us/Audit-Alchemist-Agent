@@ -18,5 +18,6 @@ Start with the [README](../README.md) for installation and a first run.
 | [Reports](reports/deepseek-evaluation.json) | Committed evaluation artifact |
 | [Tiny baseline round 1](reports/tiny-baseline-round1.json) | Blind live evaluation over the seven submodule fixtures |
 | [Tiny baseline round 2](reports/tiny-baseline-round2.json) | Same blind run after the JSON-mode and reasoning-effort fixes |
+| [Tiny baseline round 3](reports/tiny-baseline-round3.json) | Same blind run after the configurable stream cap |
 
 The change history is in [CHANGELOG.md](../CHANGELOG.md).

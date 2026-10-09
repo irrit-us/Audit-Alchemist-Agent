@@ -92,7 +92,7 @@ recover it, or relax the final request cap when protected context cannot fit.
 | Batch progress must not corrupt results or affect scoring | Lock-free `progress` counters emitted through tracing on stderr | Concurrent progress tests |
 | A ChatGPT subscription must be usable without a second stored secret | `provider::auth` reuses and refreshes `$CODEX_HOME/auth.json` through the public OAuth token endpoint | Credential parsing and selection tests |
 | Concurrent refreshes must not corrupt the shared credential file | Advisory lock, atomic token-field write-back, redacting `Debug`, no tokens in reports | Lock and token-merge tests |
-| Streaming model output must stay bounded and parseable | `provider::wire` and `provider::sse` decode each wire format into normalized events with a 2 MiB cap | Wire and SSE parser tests |
+| Streaming model output must stay bounded and parseable | `provider::wire` and `provider::sse` decode each wire format into normalized events; `--max-stream-bytes` bounds the raw SSE (default 8 MiB) | Wire and SSE parser tests |
 | Providers differ in request shape and stream events | `provider::wire` normalizes chat-completions, Responses, and Anthropic into one event stream | Wire decoder tests |
 | Human output must not corrupt the machine report | `output` and `tui` render on stderr; stdout stays JSON | Renderer and CLI tests |
 | A TUI must be testable without a terminal | `tui::App` and `tui::render` are terminal-free and validated with `TestBackend` | TUI frame test |

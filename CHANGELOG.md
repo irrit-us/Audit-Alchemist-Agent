@@ -40,6 +40,10 @@ All notable changes to this project are documented here. The format follows
   `--reasoning-effort` (`minimal`/`low`/`medium`/`high`) is forwarded to
   reasoning models. Prompt/completion wire contents and scoring are unchanged.
 
+- Replace the fixed 2 MiB response cap with `--max-stream-bytes` (default
+  8 MiB). Reasoning models emit far more SSE framing than assembled text, so the
+  old cap aborted otherwise valid runs.
+
 - Rename the default CLI binary and new release archives to `alchemist`.
   The Rust package/library name remains unchanged.
 
