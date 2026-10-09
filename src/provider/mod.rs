@@ -109,6 +109,15 @@ pub struct LlmOptions {
     /// Hard byte cap on the serialized model request, including tool history.
     #[arg(long, default_value_t = 2_097_152, value_parser = clap::value_parser!(u32).range(4096..=16_777_216))]
     pub max_context_bytes: u32,
+    /// Archive old tool outputs under pressure, or retain history and fail at the cap.
+    #[arg(long, value_enum, default_value_t = crate::context::history::ContextPolicy::Prune)]
+    pub context_policy: crate::context::history::ContextPolicy,
+    /// Complete recent tool turns protected from context pruning.
+    #[arg(long, default_value_t = 2, value_parser = clap::value_parser!(u32).range(1..=32))]
+    pub context_keep_turns: u32,
+    /// Maximum JSON bytes per model-visible tool result, including truncation metadata.
+    #[arg(long, default_value_t = 32768, value_parser = clap::value_parser!(u32).range(1024..=131072))]
+    pub max_tool_output_bytes: u32,
 }
 
 impl LlmOptions {
@@ -222,6 +231,12 @@ impl LlmOptions {
             self.max_tool_calls.to_string(),
             "--max-context-bytes".into(),
             self.max_context_bytes.to_string(),
+            "--context-policy".into(),
+            self.context_policy.as_str().into(),
+            "--context-keep-turns".into(),
+            self.context_keep_turns.to_string(),
+            "--max-tool-output-bytes".into(),
+            self.max_tool_output_bytes.to_string(),
         ];
         if let Some(tokens) = self.max_source_tokens {
             args.extend(["--max-source-tokens".into(), tokens.to_string()]);
@@ -493,6 +508,7 @@ async fn audit_session(
     );
     let deadline = Instant::now() + timeout;
     let client = client(timeout)?;
+    let mut archive = crate::context::history::ResultArchive::default();
     let mcp_started = Instant::now();
     let servers: Vec<_> = options
         .settings
@@ -525,21 +541,42 @@ async fn audit_session(
         crate::tools::WorkspaceTools::configured(root, context, options.settings.clone())?;
     let mut used = 0usize;
     let mut turn_number = 0u32;
+    let can_archive = matches!(
+        options.context_policy,
+        crate::context::history::ContextPolicy::Prune
+    ) && options.settings.tool_enabled("bash");
     loop {
         if Instant::now() >= deadline {
             return Err(AuditTimeout.into());
         }
-        let request_bytes = serde_json::to_vec(&conversation.body)?.len();
+        let request_bytes = if can_archive {
+            let reduction = conversation.reduce_context(
+                options.max_context_bytes as usize,
+                options.context_keep_turns,
+                &mut archive,
+            )?;
+            if reduction.pruned_results > 0 {
+                sink.on_event(&crate::monitor::operation(
+                    "context_pruned",
+                    serde_json::to_value(&reduction)?,
+                ));
+            }
+            reduction.after_bytes
+        } else {
+            crate::context::history::serialized_bytes(&conversation.body)?
+        };
         ensure!(
             request_bytes <= options.max_context_bytes as usize,
-            "conversation exceeds --max-context-bytes; narrow the target or raise the limit"
+            "conversation exceeds --max-context-bytes; protected or retained context does not fit; narrow the target or raise the limit"
         );
         turn_number += 1;
         sink.on_event(&crate::monitor::operation(
             "turn_start",
             serde_json::json!({
                 "turn":turn_number,"request_bytes":request_bytes,
-                "remaining_tool_calls":options.max_tool_calls as usize - used
+                "remaining_tool_calls":options.max_tool_calls as usize - used,
+                "estimated_request_tokens":request_bytes.div_ceil(4),
+                "context_limit_bytes":options.max_context_bytes
             }),
         ));
         debug_capture(options, sink, "request", || conversation.body.to_string());
@@ -608,14 +645,25 @@ async fn audit_session(
                 serde_json::json!({
                     "call_id":call.id,"name":call.name,"exit_code":result.get("exit_code"),
                     "timed_out":result.get("timed_out"),"truncated":result.get("truncated"),
-                    "result_bytes":serde_json::to_vec(&result)?.len()
+                    "result_bytes":crate::context::history::serialized_bytes(&result)?
                 }),
             ));
             debug_capture(options, sink, "tool_result", || result.to_string());
-            results.push(crate::tools::bounded_output(
-                &serde_json::to_string(&result)?,
-                crate::tools::OUTPUT_BYTES,
-            ));
+            let original = serde_json::to_string(&result)?;
+            let saved = if can_archive && original.len() > options.max_tool_output_bytes as usize {
+                archive.save(&original)?
+            } else {
+                None
+            };
+            let projected = crate::context::history::project_result(
+                &original,
+                options.max_tool_output_bytes as usize,
+                saved.as_deref(),
+            )?;
+            if projected.len() != original.len() {
+                sink.on_event(&crate::monitor::operation("tool_output_projected", serde_json::json!({"call_id":call.id,"original_bytes":original.len(),"projected_bytes":projected.len(),"archived":saved.is_some()})));
+            }
+            results.push(projected);
         }
         conversation.append(&turn, &results)?;
     }
@@ -823,6 +871,12 @@ mod tests {
             "--trace-dir",
             "relative-traces",
             "--debug-trace",
+            "--context-policy",
+            "fail",
+            "--context-keep-turns",
+            "5",
+            "--max-tool-output-bytes",
+            "2048",
         ]);
         let args = options.llm.arguments().unwrap();
         let path = args
@@ -834,6 +888,15 @@ mod tests {
             std::path::absolute("relative-traces").unwrap()
         );
         assert!(args.iter().any(|arg| arg == "--debug-trace"));
+        for (flag, value) in [
+            ("--context-policy", "fail"),
+            ("--context-keep-turns", "5"),
+            ("--max-tool-output-bytes", "2048"),
+        ] {
+            assert!(args
+                .windows(2)
+                .any(|pair| pair[0] == flag && pair[1] == value));
+        }
     }
 
     #[test]

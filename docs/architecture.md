@@ -20,6 +20,7 @@ The library separates provider protocols, tool execution, and evidence validatio
 | MCP | `src/mcp.rs` | Opt-in stdio servers, bounded discovery/calls, namespaced tools, and subprocess cleanup |
 | Source access | `src/context/tools.rs` | Bounded, read-only filesystem operations inside a canonical root |
 | Context | `src/context/mod.rs` | Deterministic snapshot assembly, token estimate, finding validation |
+| Context projection | `src/context/history.rs` | Exact request sizing, bounded JSON previews, and temporary result archives |
 | Prompt | `src/provider/prompt.rs`, `prompts/audit.txt` | JSON-escaped instructions/numbered source and evidence-driven audit guidance |
 | Agent tools | `src/tools.rs` | Bash, paged reads, writes, exact edits, listing, batched search, observed-line validation |
 | Conversation | `src/provider/conversation.rs` | Streamed tool calls and provider-native history replay, including reasoning state |
@@ -55,6 +56,9 @@ The library separates provider protocols, tool execution, and evidence validatio
    Enabled MCP stdio servers initialize and advertise selected tool schemas
    before the first model turn. Their calls share the native tool budget and
    monitoring events. No MCP instruction text is added to the system prompt.
+   Before each model call, [context management](context-management.md) can replace
+   older tool outputs with recoverable previews while preserving native replay
+   fields, recent turns, and loaded skills. The complete request retains a hard cap.
 4. The `audit` command renders the events through `output` (or `tui`) on stderr
    and emits the JSON report on stdout. `evaluate` scores findings with
    `evaluate::score`; `progress` counts started, completed, and failed cases.

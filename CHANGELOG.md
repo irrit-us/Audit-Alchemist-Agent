@@ -5,6 +5,19 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Configurable context pruning with protected recent turns and loaded skills,
+  bounded temporary output archives recoverable through native Bash, and
+  request/projection telemetry. Documented pinned Codex, DeepSeek Harness, Pi,
+  and OpenCode design references and CLI/provider regression coverage.
+
+### Changed
+
+- Bound model-visible tool results as valid JSON, including escaping and
+  truncation metadata, while retaining execution status. Count serialized
+  request bytes without allocating an extra complete request.
+
 ## [0.1.1] - 2026-10-08
 
 ### Fixed

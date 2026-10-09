@@ -5,6 +5,7 @@
 //! audits seed small files and discover additional source through workspace
 //! tools. Full snapshot budgets fail rather than silently truncating source.
 
+pub mod history;
 pub mod tools;
 
 use crate::protocol::Finding;

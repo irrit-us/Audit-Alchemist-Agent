@@ -21,6 +21,12 @@ retries, duration, and cumulative provider-reported token usage. Repeated
 partial usage updates are merged within a turn; separate turns are added.
 Missing provider usage remains zero, so it is not a billing estimate.
 
+Context events report request size, the configured cap, approximate request
+tokens, and before/after sizes for pruning or tool-result projection. See
+[Context management](context-management.md) for retention and archive lifetime.
+Archives are separate temporary tool-output files; ordinary journals do not
+embed their contents.
+
 The ordinary journal omits source text, prompts, commands, model text, and
 tool payloads. It retains operational identifiers such as model and tool names,
 call IDs, case ID, target, and the journal path. Text output shows lifecycle and heartbeat

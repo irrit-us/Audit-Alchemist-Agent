@@ -68,6 +68,12 @@ accounting, invalidation, and mutation recovery. A truncated debug journal is no
 a checkpoint. Do not promise exactly-once shell side effects after an interruption.
 No persistent session mechanism is required by the current bounded-audit scope.
 
+Current [context pruning](context-management.md) changes only old result bodies,
+preserves paired calls and provider continuation, and protects recent turns and
+skills. Archives are bounded to one run and recover observed output through
+native Bash. Do not treat recovered output as fresh source, replay mutations to
+recover it, or relax the final request cap when protected context cannot fit.
+
 ## Existing implementation checks
 
 | Constraint | Implementation choice | Validation |

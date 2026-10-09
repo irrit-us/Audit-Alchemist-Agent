@@ -24,6 +24,22 @@ pub struct Turn {
 pub struct Conversation {
     pub body: Value,
     wire: WireApi,
+    result_slots: Vec<ResultSlot>,
+    tool_turns: u32,
+}
+
+struct ResultSlot {
+    pointer: String,
+    turn: u32,
+    protected: bool,
+    pruned: bool,
+}
+
+#[derive(serde::Serialize)]
+pub struct ContextReduction {
+    pub before_bytes: usize,
+    pub after_bytes: usize,
+    pub pruned_results: usize,
 }
 
 impl Conversation {
@@ -55,7 +71,12 @@ impl Conversation {
         if wire == WireApi::Responses {
             body["include"] = json!(["reasoning.encrypted_content"]);
         }
-        Self { body, wire }
+        Self {
+            body,
+            wire,
+            result_slots: Vec::new(),
+            tool_turns: 0,
+        }
     }
 
     pub fn append(&mut self, turn: &Turn, results: &[String]) -> Result<()> {
@@ -72,8 +93,24 @@ impl Conversation {
             .as_array_mut()
             .context("missing conversation history")?;
         history.extend(turn.assistant.iter().cloned());
+        self.tool_turns += 1;
         let mut anthropic = Vec::new();
         for (call, result) in turn.calls.iter().zip(results) {
+            let pointer = match self.wire {
+                WireApi::ChatCompletions => format!("/{key}/{}/content", history.len()),
+                WireApi::Responses => format!("/{key}/{}/output", history.len()),
+                WireApi::Anthropic => format!(
+                    "/{key}/{}/content/{}/content",
+                    history.len(),
+                    anthropic.len()
+                ),
+            };
+            self.result_slots.push(ResultSlot {
+                pointer,
+                turn: self.tool_turns,
+                protected: call.name == "load_skill",
+                pruned: false,
+            });
             match self.wire {
                 WireApi::ChatCompletions => {
                     history.push(json!({"role":"tool","tool_call_id":call.id,"content":result}))
@@ -88,6 +125,61 @@ impl Conversation {
             history.push(json!({"role":"user","content":anthropic}));
         }
         Ok(())
+    }
+
+    /// Change only old result bodies. Calls, IDs, reasoning and initial context
+    /// remain byte-for-byte intact; recent tool turns and loaded skills survive.
+    pub fn reduce_context(
+        &mut self,
+        max_bytes: usize,
+        keep_turns: u32,
+        archive: &mut crate::context::history::ResultArchive,
+    ) -> Result<ContextReduction> {
+        use crate::context::history::{project_result, serialized_bytes};
+        let before_bytes = serialized_bytes(&self.body)?;
+        let mut report = ContextReduction {
+            before_bytes,
+            after_bytes: before_bytes,
+            pruned_results: 0,
+        };
+        if before_bytes <= max_bytes * 9 / 10 {
+            return Ok(report);
+        }
+        let cutoff = self.tool_turns.saturating_sub(keep_turns.max(1));
+        for slot in &mut self.result_slots {
+            if report.after_bytes <= max_bytes * 8 / 10 {
+                break;
+            }
+            if slot.protected || slot.pruned || slot.turn > cutoff {
+                continue;
+            }
+            let original = self
+                .body
+                .pointer(&slot.pointer)
+                .and_then(Value::as_str)
+                .context("missing paired tool result")?;
+            if original.len() <= 2048 {
+                continue;
+            }
+            let saved = archive.save(original)?;
+            let Some(path) = saved else {
+                continue;
+            };
+            let replacement = project_result(original, 1024, Some(&path))?;
+            let old_bytes = serialized_bytes(&original)?;
+            let new_bytes = serialized_bytes(&replacement)?;
+            if new_bytes >= old_bytes {
+                continue;
+            }
+            *self
+                .body
+                .pointer_mut(&slot.pointer)
+                .context("missing tool result")? = json!(replacement);
+            report.after_bytes = report.after_bytes - old_bytes + new_bytes;
+            report.pruned_results += 1;
+            slot.pruned = true;
+        }
+        Ok(report)
     }
 }
 
@@ -287,6 +379,90 @@ impl TurnDecoder {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn pruning_preserves_call_pairs_reasoning_skills_and_recent_turns_on_all_wires() {
+        use crate::context::history::{serialized_bytes, ResultArchive};
+        for wire in [
+            WireApi::ChatCompletions,
+            WireApi::Responses,
+            WireApi::Anthropic,
+        ] {
+            let mut conversation =
+                Conversation::with_tools(wire, "fixture", "system", "source", 100, vec![]);
+            for turn in 0..4 {
+                let calls = vec![ToolCall {
+                    id: format!("c{turn}"),
+                    name: if turn == 1 { "load_skill" } else { "bash" }.into(),
+                    arguments: "{}".into(),
+                }];
+                let assistant = match wire {
+                    WireApi::ChatCompletions => vec![
+                        json!({"role":"assistant","reasoning_content":"reasoning","tool_calls":[{"id":calls[0].id,"type":"function","function":{"name":calls[0].name,"arguments":"{}"}}]}),
+                    ],
+                    WireApi::Responses => vec![
+                        json!({"type":"reasoning","id":format!("r{turn}"),"encrypted_content":"opaque"}),
+                        json!({"type":"function_call","call_id":calls[0].id,"name":calls[0].name,"arguments":"{}"}),
+                    ],
+                    WireApi::Anthropic => vec![
+                        json!({"role":"assistant","content":[{"type":"thinking","thinking":"reasoning","signature":"signed"},{"type":"tool_use","id":calls[0].id,"name":calls[0].name,"input":{}}]}),
+                    ],
+                };
+                conversation
+                    .append(
+                        &Turn {
+                            text: String::new(),
+                            usage: Default::default(),
+                            calls,
+                            assistant,
+                        },
+                        &[json!({"stdout":"x".repeat(10000),"exit_code":0}).to_string()],
+                    )
+                    .unwrap();
+            }
+            let before = conversation.body.clone();
+            let original = before
+                .pointer(&conversation.result_slots[0].pointer)
+                .unwrap()
+                .as_str()
+                .unwrap();
+            let mut archive = ResultArchive::default();
+            let reduction = conversation.reduce_context(30000, 2, &mut archive).unwrap();
+            assert_eq!(reduction.pruned_results, 1);
+            assert_eq!(
+                reduction.after_bytes,
+                serialized_bytes(&conversation.body).unwrap()
+            );
+            assert!(reduction.after_bytes < reduction.before_bytes - 8000);
+            let projected: Value = serde_json::from_str(
+                conversation
+                    .body
+                    .pointer(&conversation.result_slots[0].pointer)
+                    .unwrap()
+                    .as_str()
+                    .unwrap(),
+            )
+            .unwrap();
+            assert_eq!(
+                std::fs::read_to_string(projected["context_archive"]["path"].as_str().unwrap())
+                    .unwrap(),
+                original
+            );
+            // Restore that single result and the complete provider request must match.
+            *conversation
+                .body
+                .pointer_mut(&conversation.result_slots[0].pointer)
+                .unwrap() = json!(original);
+            assert_eq!(conversation.body, before);
+            assert_eq!(
+                conversation
+                    .reduce_context(30000, 2, &mut archive)
+                    .unwrap()
+                    .pruned_results,
+                0
+            );
+        }
+    }
 
     #[test]
     fn responses_use_final_phase_text_without_losing_commentary_history() {

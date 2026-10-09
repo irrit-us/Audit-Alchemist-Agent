@@ -92,7 +92,7 @@ tools, or non-object input schemas fail discovery. Limits are 16 servers,
 128 discovered tools and 16 pages per server, 256 KiB of selected tool schemas
 per server, and a 1–3600000 ms request timeout (default 10000). Message limits
 are 1024–2097152 bytes (default 1048576). The complete model request still obeys
-`max_context_bytes`; returned tool text uses the existing 32 KiB truncation cap.
+`max_context_bytes`; model-visible tool results obey `max_tool_output_bytes`.
 
 MCP calls execute sequentially with native calls and count against the same
 tool budget and overall deadline. Tool-level `isError` becomes a model-visible
@@ -146,6 +146,9 @@ See [Authentication](authentication.md) for the credential details.
 | `--max-source-tokens <N>` | disabled | 1–8388608; cap on the `ceil(bytes / 4)` estimate |
 | `--max-tool-calls <N>` | `32` | 1–256 tool executions per audit; a batch counts each call |
 | `--max-context-bytes <N>` | `2097152` (2 MiB) | 4096–16777216 bytes for each serialized request, including tools and history |
+| `--context-policy <POLICY>` | `prune` | `prune` archives old results under pressure; `fail` retains history until the cap |
+| `--context-keep-turns <N>` | `2` | 1–32 recent complete tool turns protected from history pruning |
+| `--max-tool-output-bytes <N>` | `32768` | 1024–131072 bytes per model-visible JSON tool result, including metadata |
 | `--max-tokens <N>` | `4096` | 1–32768 requested output tokens |
 | `--timeout-ms <N>` | `60000` | 1–3600000 wall-clock deadline |
 | `--max-output-bytes <N>` | `1048576` (1 MiB) | 1–16777216 stdout/stderr cap per run |
@@ -159,6 +162,9 @@ tool schemas/provider framing), and the available tools. Dry runs need a model
 name but no credentials or endpoint. Estimates can undercount or overcount.
 `--max-context-bytes` is the hard request bound. `--max-tokens` applies to each
 model turn; the wall-clock deadline covers the entire audit, including tools.
+Dry runs report the context policy, protected-turn count, and result budget.
+See [Context management](context-management.md) for pruning thresholds, protected
+fields, temporary archives, exact accounting, and limitations.
 
 ### Agent tools
 
@@ -171,7 +177,8 @@ model turn; the wall-clock deadline covers the entire audit, including tools.
 | `list_files` | List up to 128 supported source files; prune build/dependency directories. Use Bash for broader listings and other file types. |
 | `search` | Match any of 1–64 literal needles in one scan; at most 128 files, 1 MiB scanned, and 200 matches. A budget overflow fails instead of silently skipping files. |
 
-Tool results are bounded around 32 KiB plus truncation metadata. Calls execute in
+Model-visible tool results are bounded to 32 KiB by default, including JSON
+escaping and truncation metadata. Calls execute in
 the model's order so a PoC can be written and then run in one batch. Errors return
 to the model for correction; malformed/incomplete provider streams never execute
 tools. A final response must satisfy the versioned JSON contract and cite an
