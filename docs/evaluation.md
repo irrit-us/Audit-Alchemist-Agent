@@ -51,6 +51,29 @@ vulnerability coverage. A historical single-request `deepseek-flash` run complet
 [validation results](validation.md) and the [full report](reports/deepseek-evaluation.json).
 That result predates the tool loop and does not measure its discovery quality.
 
+## Real-world fixtures
+
+Seven real-world fixtures live in the `alchemist-dataset-tiny` submodule at
+`datasets/tiny` (see its README). Each keeps the audited code under `audit/` and
+the fix/evidence under `reference/`, so evaluation staging copies only the
+audited code:
+
+| Fixture | Class / key |
+| --- | --- |
+| `ajna-protocol-compromise-2` | accounting / reward manipulation (`CWE-841`, `ajna-v2/src/libraries/external/TakerActions.sol:168`) |
+| `filelock-toctou` | TOCTOU symlink truncation (`CWE-59`, `filelock/_unix.py:41`) |
+| `fast-jwt-iss` | issuer-array validation (`CWE-290`, `src/verifier.js:159`) |
+| `thin-vec-uaf` | Rust double free on unwind (`CWE-415`, `src/lib.rs:2546`) |
+| `pymonocypher-overflow` | cross-language heap overflow (`CWE-122`, `c_monocypher.pyx:345`) |
+| `h11-chunked-framing` | chunked-body parser disagreement (`CWE-444`, `h11/_readers.py:197`) |
+| `zk-email-sha256` | standalone SHA256 comparator soundness (`CWE-1284`, `sha.circom:126`) |
+
+Each `README.md` records the upstream advisory, vulnerable and fixed versions,
+and the scope boundary (notably that the fast-jwt, h11, and zk-email fixtures
+are narrower than a full compromise). The labels are deliberate choices among
+defensible CWEs and adjacent sink lines; treat them as tuning data. No live-model
+result for these fixtures is recorded yet.
+
 ## Reproducibility
 
 Record the model, prompt, dataset revision, limits, and repeat runs when

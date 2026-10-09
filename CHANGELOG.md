@@ -7,6 +7,21 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- Real-world audit fixtures moved to the `alchemist-dataset-tiny` repository and
+  vendored through the `datasets/tiny` git submodule: the Ajna incident plus six
+  small fixtures covering TOCTOU symlink truncation, issuer-array validation,
+  Rust unwind double free, a cross-language heap overflow, chunked-body parser
+  disagreement, and standalone SHA256 comparator soundness. Each keeps its
+  audited code under `audit/` and fix/evidence under `reference/`, with a
+  versioned manifest and a `real_world_datasets_validate` harness test.
+
+- Three-node caller-side bridge regression (`tests/bridge.rs`) that runs the
+  committed Ajna fixture from `datasets/tiny/ajna-protocol-compromise-2/audit`
+  through discovery, verification, and reporting `alchemist audit` nodes with one
+  shared base prompt and per-role brief instructions, threads findings forward,
+  and pushes per-node metrics (trajectory rounds, tool usage, input/output token
+  usage, and result accuracy) as each node finishes.
+
 - Configurable context pruning with protected recent turns and loaded skills,
   bounded temporary output archives recoverable through native Bash, and
   request/projection telemetry. Documented pinned Codex, DeepSeek Harness, Pi,

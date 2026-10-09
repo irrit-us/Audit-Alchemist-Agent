@@ -1,5 +1,30 @@
 # Validation
 
+## Caller-side bridge: 2026-10-09
+
+`tests/bridge.rs` drives three `alchemist audit` nodes (discovery, verification,
+reporting) through a caller-side bridge against a mock chat-completions provider.
+The audited data is the committed Ajna fixture at
+`datasets/tiny/ajna-protocol-compromise-2/audit`, staged with the harness's own
+`dataset::stage_workspace` so the repository copy stays read-only; the case
+target, instruction, and expected finding come from that manifest. The test
+asserts that all three requests carry the same `prompts/audit.txt` base prompt,
+that each node receives its own brief instruction and no later brief, and that
+discovery and verification findings are threaded into the later nodes.
+Each node also performs one `read_file` tool call, so the bridge reads that
+node's run journal and pushes a metrics record on completion: two trajectory
+rounds, one tool call, provider-reported input/output token usage, and result
+accuracy (precision/recall/F1 against a one-key expected set). Discovery's
+planted false positive drives its precision to 0.5 while verification and
+reporting reach 1.0. The pushed records are appended to `metrics.jsonl` per node
+and returned to the caller. The `real_world_datasets_validate` harness test loads and validates all seven
+fixtures from the submodule. All 105 Rust tests passed (52 unit, 53 integration),
+with formatting and strict Clippy clean on `1.95.0-x86_64-pc-windows-msvc` using
+the local `.mozbuild` VC tools and Windows SDK 10.0.26100.0. The bridge is
+caller-side test code: the harness still owns one bounded node, and no
+orchestration or metrics sink was added to `alchemist`. No live model or network
+request was used.
+
 ## CLI node configuration and MCP: 2026-10-08
 
 All 98 Rust tests passed locally on Windows/MSVC, including real CLI tests for

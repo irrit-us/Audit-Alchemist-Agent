@@ -217,6 +217,41 @@ fn smoke_dataset_validates() {
 }
 
 #[test]
+fn ajna_dataset_validates() {
+    let (dataset, _) = audit_harness::dataset::load(
+        &PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("datasets/tiny/ajna-protocol-compromise-2/audit/dataset.json"),
+    )
+    .unwrap();
+    assert_eq!(dataset.name, "ajna-protocol-compromise-2-v1");
+    assert_eq!(dataset.cases.len(), 1);
+    assert_eq!(dataset.cases[0].id, "unsettled-bad-debt-liquidation");
+    assert_eq!(dataset.cases[0].target, "ajna-v2/src");
+    assert_eq!(dataset.cases[0].expected.len(), 1);
+    assert_eq!(dataset.cases[0].expected[0].cwe, "CWE-841");
+    assert_eq!(dataset.cases[0].expected[0].line, 168);
+}
+
+#[test]
+fn real_world_datasets_validate() {
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("datasets/tiny");
+    let manifests = [
+        "ajna-protocol-compromise-2/audit/dataset.json",
+        "filelock-toctou/audit/dataset.json",
+        "fast-jwt-iss/audit/dataset.json",
+        "thin-vec-uaf/audit/dataset.json",
+        "pymonocypher-overflow/audit/dataset.json",
+        "h11-chunked-framing/audit/dataset.json",
+        "zk-email-sha256/audit/dataset.json",
+    ];
+    for manifest in manifests {
+        let (dataset, _) = audit_harness::dataset::load(&root.join(manifest)).unwrap();
+        assert_eq!(dataset.cases.len(), 1, "{manifest}");
+        assert_eq!(dataset.cases[0].expected.len(), 1, "{manifest}");
+    }
+}
+
+#[test]
 fn demo_end_to_end() {
     let output = std::process::Command::new(env!("CARGO_BIN_EXE_alchemist"))
         .args([

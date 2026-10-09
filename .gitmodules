@@ -1,0 +1,3 @@
+[submodule "datasets/tiny"]
+	path = datasets/tiny
+	url = git@github.com:irrit-us/alchemist-dataset-tiny.git
