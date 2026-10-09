@@ -12,7 +12,7 @@ use std::{
 };
 
 fn cli(root: &Path, command: &str) -> Command {
-    let mut cmd = Command::new(env!("CARGO_BIN_EXE_audit-harness"));
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_alchemist"));
     cmd.current_dir(root)
         .arg(command)
         .arg("--config")

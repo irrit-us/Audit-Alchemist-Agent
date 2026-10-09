@@ -9,10 +9,12 @@ All release targets are **AMD64 / x86_64**:
 | `x86_64-pc-windows-msvc` | `.zip` | Windows x64 with the MSVC C runtime statically linked. |
 
 Download from [GitHub Releases](https://github.com/irrit-us/Audit-Alchemist-Agent/releases).
-Each archive contains the optimized `audit-harness` binary (`.exe` on Windows),
+New builds contain the optimized `alchemist` binary (`.exe` on Windows),
 a minimal `node.toml`, quick-start instructions, licenses/skill attribution, and
 `build-info.json` recording version, source commit, target, and Rust version.
-Every archive has a sibling `.sha256` checksum file. Verify before extracting:
+New archives use `alchemist-vVERSION-TARGET` names. The published v0.1.1 release
+still uses `audit-harness` for its archive and binary names. Every archive has a
+sibling `.sha256` checksum file. For example, to verify and extract v0.1.1:
 
 ```sh
 sha256sum -c audit-harness-v0.1.1-x86_64-unknown-linux-musl.tar.gz.sha256
@@ -21,7 +23,8 @@ tar -xzf audit-harness-v0.1.1-x86_64-unknown-linux-musl.tar.gz
 
 On Windows, compare `Get-FileHash -Algorithm SHA256 <archive.zip>` with the
 checksum file, then use `Expand-Archive <archive.zip>`. Run the extracted CLI
-with `./audit-harness` or `.\audit-harness.exe`, or add its directory to PATH.
+with `./alchemist` or `.\alchemist.exe` for new builds (`audit-harness` for
+v0.1.1), or add its directory to PATH.
 Edit the included configuration for your provider, root, and target. Rust and
 Python are not required to run the binary. Bash, optional debuggers, and MCP
 server programs are separate host dependencies; Windows Bash can come from Git

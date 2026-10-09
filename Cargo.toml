@@ -8,7 +8,11 @@ readme = "README.md"
 repository = "https://github.com/irrit-us/Audit-Alchemist-Agent"
 keywords = ["security", "vulnerability", "audit", "llm"]
 categories = ["command-line-utilities", "development-tools"]
-default-run = "audit-harness"
+default-run = "alchemist"
+
+[[bin]]
+name = "alchemist"
+path = "src/main.rs"
 
 [dependencies]
 anyhow = "1"

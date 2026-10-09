@@ -22,6 +22,7 @@ use tokio::task::JoinSet;
 
 #[derive(Parser)]
 #[command(
+    name = "alchemist",
     version,
     about = "Lightweight LLM vulnerability auditor and evaluation harness"
 )]

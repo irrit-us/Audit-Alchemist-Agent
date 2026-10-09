@@ -89,7 +89,7 @@ fn fixture(
 }
 
 fn audit(endpoint: &str) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_audit-harness"))
+    Command::new(env!("CARGO_BIN_EXE_alchemist"))
         .args([
             "audit",
             "--root",

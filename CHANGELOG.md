@@ -14,6 +14,9 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- Rename the default CLI binary and new release archives to `alchemist`.
+  The Rust package/library name remains unchanged.
+
 - Bound model-visible tool results as valid JSON, including escaping and
   truncation metadata, while retaining execution status. Count serialized
   request bytes without allocating an extra complete request.

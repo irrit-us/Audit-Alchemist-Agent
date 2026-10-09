@@ -379,7 +379,7 @@ fn run(
     endpoint: &str,
     max_calls: &str,
 ) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_audit-harness"))
+    Command::new(env!("CARGO_BIN_EXE_alchemist"))
         .args(["audit", "--root"])
         .arg(root)
         .args([
@@ -491,7 +491,7 @@ fn over_budget_batch_fails_before_any_tool_mutation() {
 fn dry_run_explores_directories_without_credentials_and_reports_prompt_cost() {
     let dir = tempfile::tempdir().unwrap();
     std::fs::write(dir.path().join("a.py"), "pass\n").unwrap();
-    let output = Command::new(env!("CARGO_BIN_EXE_audit-harness"))
+    let output = Command::new(env!("CARGO_BIN_EXE_alchemist"))
         .args(["audit", "--root"])
         .arg(dir.path())
         .args(["--target", ".", "--model", "preview", "--dry-run"])

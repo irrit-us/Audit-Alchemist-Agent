@@ -67,7 +67,7 @@ fn answer(content: &str) -> String {
 
 fn run(root: &Path, url: &str, extra: &[&str]) -> std::process::Output {
     std::fs::write(root.join("a.py"), "# source-private fixture-secret\npass\n").unwrap();
-    Command::new(env!("CARGO_BIN_EXE_audit-harness"))
+    Command::new(env!("CARGO_BIN_EXE_alchemist"))
         .args(["audit", "--root"])
         .arg(root)
         .args([
@@ -179,7 +179,7 @@ fn invalid_final_output_is_an_error_at_validation_and_skills_need_no_credentials
         ],
         vec!["doctor"],
     ] {
-        let output = Command::new(env!("CARGO_BIN_EXE_audit-harness"))
+        let output = Command::new(env!("CARGO_BIN_EXE_alchemist"))
             .current_dir(dir.path())
             .args(args)
             .env_remove("AUDIT_API_KEY")
@@ -192,7 +192,7 @@ fn invalid_final_output_is_an_error_at_validation_and_skills_need_no_credentials
         );
         serde_json::from_slice::<Value>(&output.stdout).unwrap();
     }
-    let output = Command::new(env!("CARGO_BIN_EXE_audit-harness"))
+    let output = Command::new(env!("CARGO_BIN_EXE_alchemist"))
         .args([
             "audit",
             "--model",

@@ -8,8 +8,8 @@ temporary workspaces, so journals survive workspace cleanup. No credentials
 are required to inspect an existing journal:
 
 ```sh
-audit-harness audit --root . --target src --model MODEL --endpoint URL --trace-dir ./run-traces
-audit-harness inspect-trace ./run-traces/audit-RUN_ID.jsonl
+alchemist audit --root . --target src --model MODEL --endpoint URL --trace-dir ./run-traces
+alchemist inspect-trace ./run-traces/audit-RUN_ID.jsonl
 ```
 
 Each record has schema version 1, an increasing sequence, a timestamp, elapsed
@@ -71,7 +71,7 @@ malformed JSON or unsupported citations. A nonzero Bash exit counts as a tool
 error even when the tool successfully returned stdout/stderr. Missing
 dependencies and failed PoCs remain available to the agent for recovery.
 
-Run `audit-harness doctor --root .` without credentials to execute a fixed
+Run `alchemist doctor --root .` without credentials to execute a fixed
 Bash probe and discover optional rg, Git, Python, Forge, Cast, Node, GDB, LLDB,
 and tmux commands.
 Missing optional programs are reported without failing Bash readiness. The
@@ -103,8 +103,8 @@ Skill loads count toward `--max-tool-calls`, like other tools. Bash, writes,
 edits, searches, and source reads remain fully available. Loading a skill does
 not install a debugger or change tool permissions.
 
-For human inspection, use `audit-harness skills` or
-`audit-harness skills native-debugging --resource references/pwndbg.md`.
+For human inspection, use `alchemist skills` or
+`alchemist skills native-debugging --resource references/pwndbg.md`.
 These commands work from any directory without model credentials. Exact
 registered resources are served from the binary, so workspace files cannot
 replace built-in instructions and resource names cannot traverse the filesystem.
@@ -119,8 +119,8 @@ The existing Foundry, GDB, Node Inspector, and pwntools skills supply executable
 helpers where available. Recommendations do not imply those tools are installed.
 
 ```sh
-audit-harness skills debugger-selection
-audit-harness skills debugger-selection --resource references/managed.md
+alchemist skills debugger-selection
+alchemist skills debugger-selection --resource references/managed.md
 ```
 
 ### On-demand script execution
@@ -140,7 +140,7 @@ for inspection. No script executes merely because a skill was loaded.
 The equivalent CLI export is:
 
 ```sh
-audit-harness skills node-inspector --resource scripts/inspect.mjs --output .audit-debug/inspect.mjs
+alchemist skills node-inspector --resource scripts/inspect.mjs --output .audit-debug/inspect.mjs
 node .audit-debug/inspect.mjs --break app.js:42 --expression 'request.path' -- app.js
 ```
 

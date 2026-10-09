@@ -63,12 +63,12 @@ jobs:
         if: matrix.target == 'x86_64-unknown-linux-musl'
         run: sudo apt-get update && sudo apt-get install -y musl-tools
       - name: Build optimized CLI
-        run: cargo build --locked --release --bin audit-harness --target ${{ matrix.target }}
+        run: cargo build --locked --release --bin alchemist --target ${{ matrix.target }}
       - name: Verify musl has no dynamic loader or shared dependencies
         if: matrix.target == 'x86_64-unknown-linux-musl'
         shell: bash
         run: |
-          binary=target/x86_64-unknown-linux-musl/release/audit-harness
+          binary=target/x86_64-unknown-linux-musl/release/alchemist
           readelf -lW "$binary" > target/program-headers.txt
           readelf -dW "$binary" > target/dynamic-section.txt
           cat target/program-headers.txt target/dynamic-section.txt
@@ -80,7 +80,7 @@ jobs:
         run: python scripts/release.py package --target ${{ matrix.target }}
       - uses: actions/upload-artifact@v4
         with:
-          name: audit-harness-${{ needs.metadata.outputs.version }}-${{ matrix.target }}
+          name: alchemist-${{ needs.metadata.outputs.version }}-${{ matrix.target }}
           path: target/release-dist/*
           if-no-files-found: error
           compression-level: 0
@@ -100,7 +100,7 @@ jobs:
           python-version: '3.12'
       - uses: actions/download-artifact@v4
         with:
-          pattern: audit-harness-${{ needs.metadata.outputs.version }}-*
+          pattern: alchemist-${{ needs.metadata.outputs.version }}-*
           path: target/release-dist
           merge-multiple: true
       - name: Verify all three archives and checksums

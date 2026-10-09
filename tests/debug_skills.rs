@@ -61,7 +61,7 @@ async fn skill_scripts_export_exact_bytes_without_overwriting_or_traversing() {
 #[test]
 fn cli_exports_raw_resources_from_any_directory_and_keeps_existing_files() {
     let dir = tempfile::tempdir().unwrap();
-    let binary = env!("CARGO_BIN_EXE_audit-harness");
+    let binary = env!("CARGO_BIN_EXE_alchemist");
     let args = [
         "skills",
         "node-inspector",

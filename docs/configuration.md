@@ -10,10 +10,10 @@ harness does not search the working directory, user directory, or environment
 for configuration. Copy [examples/node.toml](../examples/node.toml), then run:
 
 ```sh
-audit-harness check-config --config examples/node.toml
-audit-harness audit --config examples/node.toml --dry-run
-audit-harness audit --config examples/node.toml --model YOUR-MODEL
-audit-harness agent --config node.toml < request.json
+alchemist check-config --config examples/node.toml
+alchemist audit --config examples/node.toml --dry-run
+alchemist audit --config examples/node.toml --model YOUR-MODEL
+alchemist agent --config node.toml < request.json
 ```
 
 `schema_version = 1` is required. Precedence is built-in defaults, then TOML,

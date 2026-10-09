@@ -29,7 +29,7 @@ def metadata():
 
 def archive_name(version, target):
     extension = ".zip" if target.endswith("windows-msvc") else ".tar.gz"
-    return f"audit-harness-v{version}-{target}{extension}"
+    return f"alchemist-v{version}-{target}{extension}"
 
 
 def digest(path):
@@ -41,7 +41,7 @@ def smoke(binary, workspace, version):
     def run(*args):
         return subprocess.check_output([str(binary), *args], cwd=workspace, text=True, encoding="utf-8", timeout=30)
 
-    if run("--version").strip() != f"audit-harness {version}":
+    if run("--version").strip() != f"alchemist {version}":
         raise ValueError("packaged binary version does not match manifest")
     if not json.loads(run("skills")):
         raise ValueError("packaged binary is missing built-in skills")
@@ -56,7 +56,7 @@ def smoke(binary, workspace, version):
 
 def package(target):
     version, commit = metadata()
-    executable = "audit-harness.exe" if target.endswith("windows-msvc") else "audit-harness"
+    executable = "alchemist.exe" if target.endswith("windows-msvc") else "alchemist"
     source = ROOT / "target" / target / "release" / executable
     if not source.is_file():
         raise ValueError(f"missing release binary: {source}")
@@ -64,7 +64,7 @@ def package(target):
     archive = DIST / archive_name(version, target)
     if archive.exists() or archive.with_name(archive.name + ".sha256").exists():
         raise ValueError("release archive already exists; use a clean output directory")
-    directory_name = f"audit-harness-v{version}-{target}"
+    directory_name = f"alchemist-v{version}-{target}"
     with tempfile.TemporaryDirectory() as temporary:
         staging = Path(temporary) / directory_name
         staging.mkdir()
@@ -77,7 +77,7 @@ def package(target):
         (staging / "README.md").write_text(
             f"# Audit Alchemist {version}\n\nTarget: `{target}`\n\n"
             "Edit `node.toml` for your provider and target, then run:\n\n"
-            "```sh\naudit-harness check-config --config node.toml\naudit-harness audit --config node.toml --dry-run\naudit-harness audit --config node.toml\n```\n\n"
+            "```sh\nalchemist check-config --config node.toml\nalchemist audit --config node.toml --dry-run\nalchemist audit --config node.toml\n```\n\n"
             "Set AUDIT_API_KEY for a real audit. Bash and optional debugger/MCP executables are separate host tools. On Windows install Git Bash or set AUDIT_BASH. Python and Rust are not required to run this binary.\n\n"
             f"[Configuration reference](https://github.com/irrit-us/Audit-Alchemist-Agent/blob/{commit}/docs/configuration.md)\n",
             encoding="utf-8")

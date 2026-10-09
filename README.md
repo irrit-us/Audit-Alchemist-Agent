@@ -21,6 +21,10 @@ See [binary releases](docs/releases.md) for checksums, compatibility, and CI pub
 
 Install stable Rust, then build and run the deterministic fixture:
 
+The default CLI target is `alchemist` (`alchemist.exe` on Windows).
+`cargo build --release --bin alchemist` writes it to `target/release/`;
+`cargo run` selects it automatically.
+
 ```sh
 cargo build --locked --bins
 cargo run --locked -- validate --dataset datasets/smoke/dataset.json

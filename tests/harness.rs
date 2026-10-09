@@ -218,7 +218,7 @@ fn smoke_dataset_validates() {
 
 #[test]
 fn demo_end_to_end() {
-    let output = std::process::Command::new(env!("CARGO_BIN_EXE_audit-harness"))
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_alchemist"))
         .args([
             "benchmark",
             "--dataset",
@@ -250,7 +250,7 @@ fn report_destination_is_checked_before_execution() {
     let dir = tempfile::tempdir().unwrap();
     let report = dir.path().join("existing.json");
     std::fs::write(&report, "preserve this").unwrap();
-    let output = std::process::Command::new(env!("CARGO_BIN_EXE_audit-harness"))
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_alchemist"))
         .args([
             "benchmark",
             "--dataset",
