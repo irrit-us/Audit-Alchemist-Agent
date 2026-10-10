@@ -51,9 +51,10 @@ The library separates provider protocols, tool execution, and evidence validatio
    under one deadline. `conversation` decodes tool calls and preserves native
    assistant messages, Responses reasoning items, and Anthropic signatures.
    `tools` executes calls in order and returns bounded results; failures are
-   available to the model for correction. Once the tool budget is spent the
-   provider drops the tool schemas for the last turn so the model returns the
-   report instead of asking for another tool. A final report that fails JSON,
+   available to the model for correction. Once the tool budget is spent, or when
+   a batch would exceed it, the provider drops the tool schemas for the last turn
+   (executing none of an over-budget batch) so the model returns the report
+   instead of asking for another tool. A final report that fails JSON,
    schema, or evidence validation is returned to the model for bounded repair
    (`--max-output-repairs`), and a completed stream with no text or tool calls is
    retried up to `--max-attempts` without replaying a tool. The loop ends with a

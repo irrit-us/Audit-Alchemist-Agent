@@ -1,0 +1,50 @@
+{
+  "0ed4847229b8a9fdc8a9eebb356d4583b7984ea6dd107119c056abd6c8559b74:intoiter-drop-panic-double-free:cd59bb4ab9de8d3e6f6a0073f87b6207b16670183b82c424733cd0c99eea0928": {
+    "evidence": "IntoIter::drop drops its tail before zeroing len, so a destructor panic drops the stale local vector again. Same expected root cause at the adjacent unsafe operation.",
+    "verdict": "alternate_match"
+  },
+  "0f8605ec6123488c40f3c33a824f26cd0568f70f0c9667d902d785a84467edd2:aead-key-length:074e113d4713897edbc0b6e8033671b94400fdea7adc56da5b8fe1dfc6c63759": {
+    "evidence": "unlock() forwards an attacker-controlled MAC, key, and nonce to crypto_aead_unlock, whose C prototype declares fixed-size mac[16]/key[32]/nonce[24]; no length check exists. Same AEAD bounds family as line 181, source-verified.",
+    "verdict": "valid_distinct"
+  },
+  "0f8605ec6123488c40f3c33a824f26cd0568f70f0c9667d902d785a84467edd2:aead-key-length:bc2ebe58bcad911b36d59cad078bcd09d2e3b736fe6cfdef92c1b11855f4e549": {
+    "evidence": "chacha20 validates the nonce length but not the key length; the native operation reads 32 key bytes. Genuine wrapper bounds defect, matches its own promoted case.",
+    "verdict": "valid_distinct"
+  },
+  "160f0631871d941b89386757e87eea56f3a8f7f2353b87c71aa3f3945ad5abc3:cache-expiry-without-iat:5def9a293ca5c67f30dfe8973ccc1b5406427c227ccb60c74a11b973c8e7cb55": {
+    "evidence": "cacheSet derives the cached validity window only when a numeric iat exists, so cache:true keeps accepting a signed exp token without iat after expiry. round4-jwt-verification.json shows uncached and numeric-iat controls reject; cache opt-in is required.",
+    "verdict": "valid_distinct"
+  },
+  "179c56c06fa3ae9e8e1701a2c421b276344b8eb898333695a8171897fa2c9197:iss-array-loose-match:a8534151e6047cf236a902b8e2cfb34b05cf44aef9551176ee3baa97c6f508f6": {
+    "evidence": "validateClaimValues uses some over the attacker-controlled issuer array; same expected issuer-array root cause with an alternate CWE.",
+    "verdict": "alternate_match"
+  },
+  "3e4bb3f636ed470c5d789697e18d7a75b7696f5f510230717bd89aae7d13249b:sha256-length-comparator-unconstrained:40464b530f26f0362a91ba0fb5cd459eeb81396d0a9431a2848539cfb9accb7d": {
+    "evidence": "Sha256General/Sha256Partial derive inBlockIndex from an unbounded paddedInLength and feed inBlockIndex-1 into ItemAtIndex, whose LessThan lacks a range check. Same comparator/selector soundness defect as the expected line-126 sink.",
+    "verdict": "alternate_match"
+  },
+  "5e4902aa034a64e791502a2929c8a3e120f5a4845d70ab3f01a9b9ce11a3388a:lock-symlink-truncation:1c0225fef03c3609b0337cf70ce4af55c9d863389aa52a3fb40dd6872631af4d": {
+    "evidence": "os.open at line 44 follows the attacker-controlled lock path with O_TRUNC set at line 41 and no O_NOFOLLOW; same protected-file truncation root cause one line after the expected sink. Directory write access and victim write permission are prerequisites.",
+    "verdict": "alternate_match"
+  },
+  "85939bdf9d48a585505376af5e1cdd5258c1cc8b9b44c2baaa663b08b6e12beb:chacha20-short-key:be3360c20d65deac0b3988d5d1275c1c6d4f270aa57970579feee04d29116e1c": {
+    "evidence": "The 24-byte nonce branch of chacha20 also omits the key-length check. Same chacha20 wrapper bounds root cause as line 267.",
+    "verdict": "valid_distinct"
+  },
+  "8e1cc6566f452253abb3d89a7e8222cd8306ae59e866f520bbb5ccf15c4dd172:clear-panic-double-free:8084db22e11678b7e7b82fbc9d216cca6021a8711d545adba917a34f427de2f0": {
+    "evidence": "IntoIter::drop drops its tail before zeroing len, so a destructor panic drops the stale local vector again. Same expected root cause at the adjacent unsafe operation.",
+    "verdict": "alternate_match"
+  },
+  "bfb3f439c211c341c851ef87b2164790d1ae7c7f919f7361ef104fa7dc73d5f8:argon2-null-allocation:43e1de886e88fe8939832b046e8bc00b3b440e57162dc8dc1eed8ac52741e990": {
+    "evidence": "Caller-controlled nb_blocks sizes the work area while native Argon2 reads initialized blocks; alternate CWE at the expected undersized-work-area line.",
+    "verdict": "alternate_match"
+  },
+  "dee43f0acdcf0e8a768177d839c2b4a27e3a9d451613466a52511686afe87a69:empty-hs256-null-key:0bcbcfba828e09ec5042bbe37ca3d1f81927c8e32e1fe4be88c0ac00639dad62": {
+    "evidence": "The missingKey guard does not fire for an empty signature, so a null key with a signing algorithm accepts it. Confirmed by round4-jwt-verification.json.",
+    "verdict": "valid_distinct"
+  },
+  "e8c85ab881d608fc545d7a5c5faa9bc0921159119f3bb41184ffd432726d823a:cache-max-age-with-exp:bd6177ca6051acc95b72d35e53de7bf9b6a858e245cbaa331202fb12dead48fd": {
+    "evidence": "cacheSet's exp branch excludes the maxAge bound, letting a cached token outlive maxAge. Same cached-lifetime root cause at the adjacent line-98 sink.",
+    "verdict": "alternate_match"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "18257d947266f84fada4a3030f975092a2094130d8076f87157be8c3d853149c:intoiter-drop-panic-double-free:68d948ba53421afe9de9d309f7267c8170a023ed36287081cca4b0f94bea8001": {
+    "evidence": "IntoIter::drop drops its tail before zeroing len, so a destructor panic drops the stale local vector again. Same expected root cause at the adjacent unsafe operation.",
+    "verdict": "alternate_match"
+  },
+  "1ebfe770dbb0b1b01aa3eda4f4c88d1b27f82e0e79e5695f046bca1d48c5ee6d:lock-symlink-truncation:5acfc08bed9867362637cebfff6d929a391fc1c8a72a40a9cbaaa78015fa8237": {
+    "evidence": "os.open at line 44 follows the attacker-controlled lock path with O_TRUNC set at line 41 and no O_NOFOLLOW; same protected-file truncation root cause one line after the expected sink. Directory write access and victim write permission are prerequisites.",
+    "verdict": "alternate_match"
+  },
+  "20ca7291ecb0d09e286fd7ea515b22fb746e089805f1e10f8819b6864804ee0a:chunked-trailer-not-validated:452ae4a5b6623a0eebae6f3fdaac484f8372ceb3a0f67c17e143fc7392412fee": {
+    "evidence": "The _bytes_to_discard branch consumes the unvalidated chunk footer; same framing root cause as the expected line-197 sink.",
+    "verdict": "alternate_match"
+  },
+  "2f2f256519f843efd65db1b0743c0b14777032f3f107efe76536b7ef822fa5da:argon2i32-small-block-count:b878e889207df0f99ae644dbec0488b2fdec09dc0839719635ce519840cc2190": {
+    "evidence": "Unvalidated nb_blocks sizes the work area while native Argon2 reads initialized blocks; same expected undersized-work-area root cause with an alternate CWE at the expected line.",
+    "verdict": "alternate_match"
+  },
+  "34264b9e4a6678ca55a5bd3f16530ad28b5084a47e697a97943e49ca876de9ba:iss-array-loose-match:5fdacc97e6ed2702fcf9ba0fbc91a9eead88d4e6588dbe698fdb4d9a73861d25": {
+    "evidence": "validateClaimValues uses some over the attacker-controlled issuer array; same expected issuer-array root cause with an alternate CWE.",
+    "verdict": "alternate_match"
+  },
+  "4f5445248c965fb7e41901ca7c9aa50b50107a51fef08934b5c6d571bdbde62b:aead-key-length:059e1a046050ab40882f95a0e44252388590598529821cec856ea98437ad02fd": {
+    "evidence": "blake2b passes unbounded len(key) into crypto_blake2b_keyed; monocypher.c copies key_size bytes into key_block[128]. Keys >128 bytes overflow the stack. Source-verified; remote reachability is not claimed.",
+    "verdict": "valid_distinct"
+  },
+  "6cec3720d10a6d704ba5b3c177620fea48cfcf1736b2a8d24b99bd8016744938:chacha20-short-key:cff3c17dd61147f5ae43c3c66f6d6e7243c715a65a9bf63aa63737e87c3ef03b": {
+    "evidence": "The 24-byte nonce branch of chacha20 also omits the key-length check. Same chacha20 wrapper bounds root cause as line 267.",
+    "verdict": "valid_distinct"
+  },
+  "7f92af3921a9f00b0c4e10f3d50b6912ca302877b7d7e45aa5c7f84e54cdfbca:empty-hs256-null-key:b14645b589c5968a402c503f403506fa7543dac8c1cb08a2c2815f1814113604": {
+    "evidence": "The missingKey guard does not fire for an empty signature, so a null key with a signing algorithm accepts it. Confirmed by round4-jwt-verification.json.",
+    "verdict": "valid_distinct"
+  },
+  "9db126c2345c1b448a40f1778090d193d9d60c4412d80e3846fca6f773505138:argon2-null-allocation:029a20f8e3b676f0e3d8323260f33f0f6bd9d34343269e725b949c77bb2fcb76": {
+    "evidence": "Unvalidated nb_blocks sizes the work area while native Argon2 reads initialized blocks; same expected undersized-work-area root cause with an alternate CWE at the expected line.",
+    "verdict": "alternate_match"
+  },
+  "c2def42b8426d44465e736821929963d81110665ff4e723d917fd175fbb05b8e:sha256-length-comparator-unconstrained:71e2d1ee8697123911b2b928921c7fa26d26adb22fa1234f7a976b84f6fbf992": {
+    "evidence": "Sha256General/Sha256Partial derive inBlockIndex from an unbounded paddedInLength and feed inBlockIndex-1 into ItemAtIndex, whose LessThan lacks a range check. Same comparator/selector soundness defect as the expected line-126 sink.",
+    "verdict": "alternate_match"
+  }
+}

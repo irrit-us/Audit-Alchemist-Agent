@@ -69,6 +69,12 @@ All notable changes to this project are documented here. The format follows
   stale a citation. Native writes and edits invalidate observations, and
   re-reading a changed line makes it citable again
   (`citation_fingerprint_rejects_external_source_change`).
+- A tool batch that would exceed the remaining `--max-tool-calls` now executes
+  nothing, then the provider drops the tool schemas and forces a final report,
+  instead of failing the run. Covered on the chat-completions wire by
+  `over_budget_batch_is_rejected_then_finalizes_without_mutation`; a 16 vs 24
+  call A/B showed the larger budget costs ~40% more tokens with no supported
+  finding gain, so the default stays 16.
 
 ### Changed
 

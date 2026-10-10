@@ -1,0 +1,483 @@
+{
+  "schema_version": 1,
+  "groups": {
+    "default": {
+      "trials": 18,
+      "success": 17,
+      "failed": 1,
+      "tp": 8,
+      "fp": 12,
+      "fn": 9,
+      "latencies_ms": [
+        21394,
+        52551,
+        62472,
+        45079,
+        27744,
+        53469,
+        35497,
+        140760,
+        40227,
+        96127,
+        41452,
+        39850,
+        39078,
+        51155,
+        54169,
+        51424,
+        88964,
+        74106
+      ],
+      "completed_latencies_ms": [
+        52551,
+        62472,
+        45079,
+        27744,
+        53469,
+        35497,
+        140760,
+        40227,
+        96127,
+        41452,
+        39850,
+        39078,
+        51155,
+        54169,
+        51424,
+        88964,
+        74106
+      ],
+      "timeouts": 0,
+      "operational_totals": {
+        "turns": 192,
+        "tools": 244,
+        "tool_errors": 29,
+        "retries": 0,
+        "output_repairs": 1,
+        "empty_completions": 0,
+        "tool_budget_rejections": 0,
+        "completion_tokens": 151273,
+        "prompt_tokens": 5470024,
+        "reasoning_tokens": 113648,
+        "total_tokens": 5621297
+      },
+      "runs_with_usage": 18,
+      "unexpected_total": 12,
+      "unexpected_valid": 12,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 0,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 7,
+      "valid_distinct": 5,
+      "precision": 0.4,
+      "recall": 0.47058823529411764,
+      "f1": 0.43243243243243246,
+      "latencies_ms_mean": 56417.666666666664,
+      "latencies_ms_stdev": 28550.190470158916,
+      "completed_latencies_ms_mean": 58477.882352941175,
+      "completed_latencies_ms_stdev": 28015.74764280429
+    }
+  },
+  "case_metrics": [
+    {
+      "run": "unsettled-bad-debt-liquidation-1-default",
+      "variant": "default",
+      "unexpected_total": 0,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 0,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "empty-hs256-null-key-1-default",
+      "variant": "default",
+      "unexpected_total": 1,
+      "unexpected_valid": 1,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 0,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 1
+    },
+    {
+      "run": "iss-array-loose-match-1-default",
+      "variant": "default",
+      "unexpected_total": 1,
+      "unexpected_valid": 1,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 0,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 1,
+      "valid_distinct": 0
+    },
+    {
+      "run": "cache-expiry-without-iat-1-default",
+      "variant": "default",
+      "unexpected_total": 1,
+      "unexpected_valid": 1,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 0,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 1
+    },
+    {
+      "run": "lock-symlink-truncation-1-default",
+      "variant": "default",
+      "unexpected_total": 1,
+      "unexpected_valid": 1,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 0,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 1,
+      "valid_distinct": 0
+    },
+    {
+      "run": "cache-max-age-with-exp-1-default",
+      "variant": "default",
+      "unexpected_total": 1,
+      "unexpected_valid": 1,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 0,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 1,
+      "valid_distinct": 0
+    },
+    {
+      "run": "argon2i32-small-block-count-1-default",
+      "variant": "default",
+      "unexpected_total": 0,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 0,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "unsigned-opt-in-control-1-default",
+      "variant": "default",
+      "unexpected_total": 0,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 0,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "blake2b-key-overflow-1-default",
+      "variant": "default",
+      "unexpected_total": 0,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 0,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "chunked-trailer-not-validated-1-default",
+      "variant": "default",
+      "unexpected_total": 0,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 0,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "aead-key-length-1-default",
+      "variant": "default",
+      "unexpected_total": 2,
+      "unexpected_valid": 2,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 0,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 2
+    },
+    {
+      "run": "chacha20-short-key-1-default",
+      "variant": "default",
+      "unexpected_total": 1,
+      "unexpected_valid": 1,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 0,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 1
+    },
+    {
+      "run": "signature-check-short-buffers-1-default",
+      "variant": "default",
+      "unexpected_total": 0,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 0,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "argon2-null-allocation-1-default",
+      "variant": "default",
+      "unexpected_total": 1,
+      "unexpected_valid": 1,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 0,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 1,
+      "valid_distinct": 0
+    },
+    {
+      "run": "intoiter-drop-panic-double-free-1-default",
+      "variant": "default",
+      "unexpected_total": 1,
+      "unexpected_valid": 1,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 0,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 1,
+      "valid_distinct": 0
+    },
+    {
+      "run": "layout-rounded-size-overflow-low-impact-1-default",
+      "variant": "default",
+      "unexpected_total": 0,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 0,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "clear-panic-double-free-1-default",
+      "variant": "default",
+      "unexpected_total": 1,
+      "unexpected_valid": 1,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 0,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 1,
+      "valid_distinct": 0
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-1-default",
+      "variant": "default",
+      "unexpected_total": 1,
+      "unexpected_valid": 1,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 0,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 1,
+      "valid_distinct": 0
+    }
+  ],
+  "review_queue": [
+    {
+      "run": "empty-hs256-null-key-1-default",
+      "variant": "default",
+      "review_id": "dee43f0acdcf0e8a768177d839c2b4a27e3a9d451613466a52511686afe87a69:empty-hs256-null-key:0bcbcfba828e09ec5042bbe37ca3d1f81927c8e32e1fe4be88c0ac00639dad62",
+      "finding": {
+        "cwe": "CWE-347",
+        "path": "src/verifier.js",
+        "line": 184,
+        "severity": "high",
+        "title": "Missing key material does not fail closed: empty-signature HS256 token is accepted without verification",
+        "evidence": "Config: createVerifier({ key: null, algorithms: ['HS256'], cache: false }). Validation passes because typeof null === 'object' (line 391-397), and the `if (key && keyType !== 'function')` block (line 399) is skipped, so no key is prepared, isAsync is false, and the sync path runs. Attacker input is a token whose signature segment is empty (`header.payload.`). decoder.js:44 returns `signature: token.slice(lastSeparator + 1)` === '' (falsy). In verifyToken, `hasKey = !!null = false` (line 180); the `hasKey && !signature` missing-signature guard (line 182) and the `!hasKey && signature` missing-key guard (line 184) are BOTH skipped because signature is empty. validateAlgorithmAndSignature then reaches `if (signature && !verifySignature(...))` (line 139); since '' is falsy, verifySignature is never called and no error is thrown, so the unsigned token is returned as valid. Protections fail because presence of a signature is tested by truthiness, so '' is treated as 'no signature' instead of 'present but invalid', and the only guard intended to fail closed on absent key material (line 184) requires a truthy signature. PoC run against the real module: v('hdr.payload.') returned {\"sub\":\"attacker\",\"admin\":true} (ACCEPTED); control with key:'secret' on the same empty-signature token was rejected with 'The token signature is missing.'; a non-empty bogus signature with key:null was rejected with 'The key option is missing.' Cache disabled is irrelevant (also true for a configured cache since a cache miss falls through to the same code). Result: unauthenticated forgery of HS256 tokens whenever key material is null/absent."
+      },
+      "verdict": "valid_distinct",
+      "evidence": "The missingKey guard does not fire for an empty signature, so a null key with a signing algorithm accepts it. Confirmed by round4-jwt-verification.json."
+    },
+    {
+      "run": "iss-array-loose-match-1-default",
+      "variant": "default",
+      "review_id": "179c56c06fa3ae9e8e1701a2c421b276344b8eb898333695a8171897fa2c9197:iss-array-loose-match:a8534151e6047cf236a902b8e2cfb34b05cf44aef9551176ee3baa97c6f508f6",
+      "finding": {
+        "cwe": "CWE-863",
+        "path": "src/verifier.js",
+        "line": 159,
+        "severity": "high",
+        "title": "allowedIss validation uses OR semantics over an iss array, letting attacker-controlled issuers pass",
+        "evidence": "When a token carries iss as an array of strings (e.g. [\"https://valid-iss\",\"https://attacker.example\"]), verifyToken (line 209) lifts the raw claim into `values`, validateClaimType (line 221) accepts it because every element is a string, and the sink at line 159 validates it with `values.some(v => allowed.some(a => a.test(v)))` \u2014 i.e. ANY element matching an allowed issuer satisfies the check. The allowedIss validator is registered at line 475 without `array: true`, yet arrays still pass because the type check only verifies element types, so a token that lists one legitimate issuer plus the attacker's issuer is accepted. This matters specifically because the key is fetched before issuer validation: getAsyncKey at line 319 calls the user-supplied keyFetcher with the fully decoded {header,payload,signature} and only afterwards does verifyToken run at line 352, so a JWKS fetcher such as get-jwks that derives the discovery domain from jwt.payload.iss acts on the same unvalidated array. The issuer check therefore does not constrain which entry the fetch uses, so an attacker can sign with their own key, place the real issuer first to satisfy `.some()`, and have their key selected via the additional issuer entry. PoC: with createVerifier({ key: keyFetcher, allowedIss: 'https://valid-iss' }) and a fetcher reading the last iss element, an HS256 token with iss='https://attacker.example' is rejected (FAST_JWT_INVALID_CLAIM_VALUE), while iss=['https://valid-iss','https://attacker.example'] signed with the attacker secret is ACCEPTED. The same `some` semantics also affect other scalar string-claim validators (aud/sub/jti/nonce) registered at lines 466-483. Not a universal bypass on its own: exploiting it requires the configured key resolver to build the fetch target from the same iss claim without independently rejecting multi-valued issuers."
+      },
+      "verdict": "alternate_match",
+      "evidence": "validateClaimValues uses some over the attacker-controlled issuer array; same expected issuer-array root cause with an alternate CWE."
+    },
+    {
+      "run": "cache-expiry-without-iat-1-default",
+      "variant": "default",
+      "review_id": "160f0631871d941b89386757e87eea56f3a8f7f2353b87c71aa3f3945ad5abc3:cache-expiry-without-iat:5def9a293ca5c67f30dfe8973ccc1b5406427c227ccb60c74a11b973c8e7cb55",
+      "finding": {
+        "cwe": "CWE-613",
+        "path": "src/verifier.js",
+        "line": 89,
+        "severity": "high",
+        "title": "Cache stores no exp bound for tokens lacking iat, so expired signed tokens are accepted on replay",
+        "evidence": "cacheSet() only derives the cache entry's expiry from the token's exp claim when the payload also contains a numeric iat: the exp handling is nested inside `if (hasIat)` (line 89 gates the block at lines 92-102, with the exp branch at lines 95-101), and line 106 then falls back to `maxTTL = clockTimestamp + clockTolerance + cacheTTL` (default cacheTTL = 600_000 ms, line 384) whenever cacheValue[2] is still 0. Consequently a validly signed HS256 token that includes exp but omits iat is cached for the full cacheTTL from first verification instead of until exp. The cache read path (lines 257-272) accepts any entry whose value is not an error and whose max bound `now <= max` holds, and returns the cached payload via handleCachedResult() (line 271) without ever re-running the exp validator built at lines 452-460. An attacker with a previously issued token therefore verifies successfully as long as the first use occurs before exp and the replay occurs before now+cacheTTL (default 10 minutes after first use), so expiry is not enforced after caching. PoC (real verifier, secret key, algorithms ['HS256'], cache:true, cacheTTL 600_000): a token with payload {sub, exp: now+2} and no iat is ACCEPTED on first verification and still ACCEPTED when replayed 4s later after exp has passed, whereas the otherwise identical token that also contains iat is REJECTED:FAST_JWT_EXPIRED on the same replay. Required configuration: cache enabled and tokens carrying exp without iat (iat is optional per the threat model), which is the documented default cacheTTL window."
+      },
+      "verdict": "valid_distinct",
+      "evidence": "cacheSet derives the cached validity window only when a numeric iat exists, so cache:true keeps accepting a signed exp token without iat after expiry. round4-jwt-verification.json shows uncached and numeric-iat controls reject; cache opt-in is required."
+    },
+    {
+      "run": "lock-symlink-truncation-1-default",
+      "variant": "default",
+      "review_id": "5e4902aa034a64e791502a2929c8a3e120f5a4845d70ab3f01a9b9ce11a3388a:lock-symlink-truncation:1c0225fef03c3609b0337cf70ce4af55c9d863389aa52a3fb40dd6872631af4d",
+      "finding": {
+        "cwe": "CWE-59",
+        "path": "filelock/_unix.py",
+        "line": 44,
+        "severity": "high",
+        "title": "Unix lock acquisition follows symlinks and O_TRUNC-truncates the symlink target",
+        "evidence": "Threat model: the service creates its lock under a directory writable by an unprivileged local attacker and stores secrets in a sibling file. In UnixFileLock._acquire, line 40 only mkdirs the parent, line 41 builds open_flags = os.O_RDWR | os.O_TRUNC, and line 44 calls os.open(self.lock_file, open_flags, self._context.mode). os.open resolves symlinks in the final path component and O_TRUNC truncates the resolved inode to zero length. The precondition at line 42 (`Path(self.lock_file).exists()`) also follows symlinks, so a pre-created `lockfile -> secrets.txt` symlink makes `.exists()` report True and simply omits O_CREAT; the open still succeeds O_RDWR|O_TRUNC on the attacker-chosen target via the symlink. There is no lstat check, no os.O_NOFOLLOW, and no verification that the opened inode is a regular file distinct from the sibling secret, so the attacker fully controls which file the lock open truncates. Additionally, line 46 `os.fchmod(fd, self._context.mode)` then re-modes that same attacker-chosen inode (e.g. widening a 0600 secret to the default 0644), and the descriptor returned at line 55 is subsequently locked, while the service writes its secrets to the sibling file whose contents have already been destroyed by the truncation. Thus acquiring the lock at an attacker-influenced path truncates a file other than the lock \u2014 the sibling secret \u2014 violating its integrity/availability."
+      },
+      "verdict": "alternate_match",
+      "evidence": "os.open at line 44 follows the attacker-controlled lock path with O_TRUNC set at line 41 and no O_NOFOLLOW; same protected-file truncation root cause one line after the expected sink. Directory write access and victim write permission are prerequisites."
+    },
+    {
+      "run": "cache-max-age-with-exp-1-default",
+      "variant": "default",
+      "review_id": "e8c85ab881d608fc545d7a5c5faa9bc0921159119f3bb41184ffd432726d823a:cache-max-age-with-exp:bd6177ca6051acc95b72d35e53de7bf9b6a858e245cbaa331202fb12dead48fd",
+      "finding": {
+        "cwe": "CWE-613",
+        "path": "src/verifier.js",
+        "line": 97,
+        "severity": "high",
+        "title": "Cache expiry ignores maxAge when token also carries a later exp, allowing replay past maxAge",
+        "evidence": "Attacker input is a validly signed HS256 token (verified with the real secret) whose payload has numeric `iat` and a later `exp`, e.g. {iat: now, exp: now+3600}, verified with cache:true and maxAge:1000. On the first verification verifyToken() (line 224) enforces both the exp validator (line 452-459) and the iat+maxAge validator (line 462-463), so the token is accepted and cacheSet() caches the payload. In cacheSet() the cached upper bound `cacheValue[2]` is chosen by an if/else-if: line 96-97 sets it to `payload.exp * 1000 + clockTolerance` whenever `exp` is a number, and the `else if (maxAge)` branch (line 98-99) that would add the maxAge limit is skipped. The value is then only clamped to the (much larger) configured cacheTTL at line 105-106, never to `iat*1000 + maxAge`. On a later call the cache-hit path in verify() (line 258-271) returns the cached payload using only `now <= max` (line 268), skipping all validators, so the maxAge lifetime is not re-checked. PoC (`node poc.js`) verifies first within maxAge, waits 1614ms (> maxAge=1000ms) while still before exp, and the same token is ACCEPTED from cache (returns {iat,exp}); the no-cache control (`node control.js`) correctly rejects the identical token at the same time with FAST_JWT_EXPIRED, isolating the cache expiry computation as the root cause. The `maxAge` option is therefore not honored for cached tokens that also carry exp, enabling replay of a session beyond its intended lifetime."
+      },
+      "verdict": "alternate_match",
+      "evidence": "cacheSet's exp branch excludes the maxAge bound, letting a cached token outlive maxAge. Same cached-lifetime root cause at the adjacent line-98 sink."
+    },
+    {
+      "run": "aead-key-length-1-default",
+      "variant": "default",
+      "review_id": "0f8605ec6123488c40f3c33a824f26cd0568f70f0c9667d902d785a84467edd2:aead-key-length:074e113d4713897edbc0b6e8033671b94400fdea7adc56da5b8fe1dfc6c63759",
+      "finding": {
+        "cwe": "CWE-125",
+        "path": "c_monocypher.pyx",
+        "line": 199,
+        "severity": "high",
+        "title": "Missing key/nonce/mac length validation in unlock() causes out-of-bounds read",
+        "evidence": "unlock(key, nonce, mac, ...) (line 185) passes caller-supplied key, nonce and mac straight into crypto_aead_unlock, whose extern prototype declares `const uint8_t mac[16]`, `const uint8_t key[32]`, `const uint8_t nonce[24]`. Cython treats these fixed array sizes as documentation only and converts the Python arguments to raw pointers without any length check (contrast the class method unlock at lines 246-247 which validates `len(mac) != 16`, and __init__ at lines 214-218 which validates the key/nonce). No guard exists on line 199. Therefore `monocypher.unlock(b'A', b'B', b'C', b'msg')` causes crypto_aead_unlock to read 16 bytes from the 1-byte mac buffer, 32 from the key and 24 from the nonce, all out of bounds; the read values influence the authentication/decryption result and adjacent heap memory is disclosed through behavior or crashes."
+      },
+      "verdict": "valid_distinct",
+      "evidence": "unlock() forwards an attacker-controlled MAC, key, and nonce to crypto_aead_unlock, whose C prototype declares fixed-size mac[16]/key[32]/nonce[24]; no length check exists. Same AEAD bounds family as line 181, source-verified."
+    },
+    {
+      "run": "aead-key-length-1-default",
+      "variant": "default",
+      "review_id": "0f8605ec6123488c40f3c33a824f26cd0568f70f0c9667d902d785a84467edd2:aead-key-length:bc2ebe58bcad911b36d59cad078bcd09d2e3b736fe6cfdef92c1b11855f4e549",
+      "finding": {
+        "cwe": "CWE-125",
+        "path": "c_monocypher.pyx",
+        "line": 267,
+        "severity": "medium",
+        "title": "Missing key length validation in chacha20() causes out-of-bounds read",
+        "evidence": "chacha20(key, nonce, message) (line 257) validates only the nonce length (24 or 8, lines 266-272) but never the key: the key is passed as the `const uint8_t key[32]` argument of crypto_chacha20_x (line 267) and crypto_chacha20_djb (line 269). Because Cython ignores the `[32]` extent on extern function parameters and simply takes a pointer to the Python buffer, a caller-controlled short key buffer (e.g. `monocypher.chacha20(b'A', b'B'*24, b'msg')`) makes the C ChaCha20 routine read 32 bytes from a 1-byte allocation. The out-of-bounds bytes become part of the cipher key, so the keystream and returned ciphertext depend on adjacent heap memory, leaking memory contents to the caller and potentially faulting when the buffer abuts an unmapped page."
+      },
+      "verdict": "valid_distinct",
+      "evidence": "chacha20 validates the nonce length but not the key length; the native operation reads 32 key bytes. Genuine wrapper bounds defect, matches its own promoted case."
+    },
+    {
+      "run": "chacha20-short-key-1-default",
+      "variant": "default",
+      "review_id": "85939bdf9d48a585505376af5e1cdd5258c1cc8b9b44c2baaa663b08b6e12beb:chacha20-short-key:be3360c20d65deac0b3988d5d1275c1c6d4f270aa57970579feee04d29116e1c",
+      "finding": {
+        "cwe": "CWE-125",
+        "path": "c_monocypher.pyx",
+        "line": 269,
+        "severity": "medium",
+        "title": "chacha20() does not validate key length, causing 32-byte out-of-bounds read of attacker-supplied key buffer",
+        "evidence": "The Python caller controls the `key` byte buffer and supplies a valid 8-byte `nonce`. In `chacha20()` (c_monocypher.pyx:257-273) only `len(nonce)` is checked; the 8-byte branch at line 269 passes `key` straight to the native `crypto_chacha20_djb(result, message, len(message), key, nonce, 0)` with no `len(key) == 32` check. The extern declaration types the parameter as `const uint8_t key[32]` (line 127), and Cython passes the bytes object's internal pointer without enforcing the fixed size. The native implementation unconditionally reads 32 bytes: `load32_le_buf(input + 4, key, 8)` at monocypher.c:225 loads 8 u32 words (32 bytes) from `key`, so any key shorter than 32 bytes reads past the end of the Python buffer. Unlike `IncrementalAuthenticatedEncryption.__init__` (c_monocypher.pyx:214-215), which raises on `len(key) != 32`, this path performs no validation, so the protection is simply absent. PoC (run in audit_poc/old): `monocypher.chacha20(b'\\x01\\x02\\x03', b'\\x00'*8, b'hello world')` returned a non-empty result ('6d0a207f563522c3785aaf') using the matching 4.0.2.6 wheel, proving a 3-byte key is accepted and the native code reads 32 bytes; the fixed 4.0.3.4 wheel instead raises `ValueError: Invalid key length 3 != 32`. Depending on heap layout this out-of-bounds read discloses adjacent process memory into the ChaCha20 key material or crashes the interpreter, violating memory safety. The same omission exists in the 24-byte branch at line 267 (`crypto_chacha20_x`)."
+      },
+      "verdict": "valid_distinct",
+      "evidence": "The 24-byte nonce branch of chacha20 also omits the key-length check. Same chacha20 wrapper bounds root cause as line 267."
+    },
+    {
+      "run": "argon2-null-allocation-1-default",
+      "variant": "default",
+      "review_id": "bfb3f439c211c341c851ef87b2164790d1ae7c7f919f7361ef104fa7dc73d5f8:argon2-null-allocation:43e1de886e88fe8939832b046e8bc00b3b440e57162dc8dc1eed8ac52741e990",
+      "finding": {
+        "cwe": "CWE-190",
+        "path": "c_monocypher.pyx",
+        "line": 345,
+        "severity": "high",
+        "title": "Undersized work_area allocation via size_t multiplication overflow reaches heap out-of-bounds write",
+        "evidence": "The allocation size is computed in size_t: (<size_t> nb_blocks) * (<size_t> 1024) (line 345). nb_blocks originates from the Python caller as an unbounded int (line 328 casts it into config.nb_blocks, a uint32_t). On a 32-bit build (size_t == 32 bits) the multiplication wraps for nb_blocks large enough that nb_blocks*1024 exceeds 2^32-1; e.g. nb_blocks = 0x400000 => 0x400000*1024 = 2^32, which wraps to 0, and malloc(0) succeeds returning a small/NULL-but-successful pointer. crypto_argon2 then treats the buffer as config.nb_blocks blocks (monocypher.c rounds down via segment_size = config.nb_blocks/lanes/4 at line 752, then lane_size*lanes at 754) and writes/zeros 128*nb_blocks u64 words at lines 757/781/915, writing far past the undersized allocation: a heap buffer overflow (memory corruption), not merely a NULL dereference. Nothing validates that nb_blocks*1024 fits in size_t, so the too-small-successful-allocation case is reachable and corrupts memory. Distinguishing from the NULL failure above: the NULL path is an unchecked malloc failure (availability), whereas this path is a successful but undersized allocation caused by integer overflow in the size computation (integrity/memory-safety). No local PoC was compiled (no C compiler available in this environment); the overflow and downstream writes are established from the inspected monocypher.c code path."
+      },
+      "verdict": "alternate_match",
+      "evidence": "Caller-controlled nb_blocks sizes the work area while native Argon2 reads initialized blocks; alternate CWE at the expected undersized-work-area line."
+    },
+    {
+      "run": "intoiter-drop-panic-double-free-1-default",
+      "variant": "default",
+      "review_id": "0ed4847229b8a9fdc8a9eebb356d4583b7984ea6dd107119c056abd6c8559b74:intoiter-drop-panic-double-free:cd59bb4ab9de8d3e6f6a0073f87b6207b16670183b82c424733cd0c99eea0928",
+      "finding": {
+        "cwe": "CWE-415",
+        "path": "src/lib.rs",
+        "line": 2547,
+        "severity": "high",
+        "title": "IntoIter::drop double-drops backing vector when element destructor panics (no drop guard)",
+        "evidence": "ThinVec::into_iter() (src/lib.rs:2175) hands the backing storage to IntoIter. On drop, the non-singleton path calls drop_non_singleton (src/lib.rs:2544), which first does `let mut vec = mem::replace(&mut this.vec, ThinVec::new());` (line 2546) so the original, still-full-length vector is owned by the local `vec`, then executes `ptr::drop_in_place(&mut vec[this.start..]);` (line 2547, the sink) and only afterwards resets the length via `vec.set_len_non_singleton(0)` (line 2548). If any element's Drop impl panics, that panic unwinds out of the `drop_in_place` call at line 2547 before line 2548 runs, so the local `vec` is still a live ThinVec whose header length is unchanged. During unwinding the local `vec` is dropped by `impl Drop for ThinVec` (src/lib.rs:1910-1930), which calls `ptr::drop_in_place(&mut this[..])` over the FULL original length, re-running destructors on the element that just panicked and on every element already moved out by earlier `next()` calls (src/lib.rs:2503-2512) \u2014 a second destruction of already-consumed values (double drop / double free; with Box-like elements, a use-after-free). std::vec::IntoIter avoids this with a DropGuard that only deallocates on unwind; this drop path has no such guard, and the state update at line 2548 is ordered after the unwinding sink. Attacker prerequisites: only safe API use \u2014 build a ThinVec<T> whose T has a panicking Drop, obtain IntoIter, consume some (or zero) items, and let it drop; a panicking element destructor triggers UB. A local PoC (poc/src/main.rs) that pivots through exactly this path type-checks against the crate (cargo check succeeded); the runtime double-drop could not be executed here because the environment has no usable system linker (MSVC link.exe missing, x86_64-w64-mingw32-gcc not found), so execution evidence is not claimed."
+      },
+      "verdict": "alternate_match",
+      "evidence": "IntoIter::drop drops its tail before zeroing len, so a destructor panic drops the stale local vector again. Same expected root cause at the adjacent unsafe operation."
+    },
+    {
+      "run": "clear-panic-double-free-1-default",
+      "variant": "default",
+      "review_id": "8e1cc6566f452253abb3d89a7e8222cd8306ae59e866f520bbb5ccf15c4dd172:clear-panic-double-free:8084db22e11678b7e7b82fbc9d216cca6021a8711d545adba917a34f427de2f0",
+      "finding": {
+        "cwe": "CWE-415",
+        "path": "src/lib.rs",
+        "line": 2547,
+        "severity": "high",
+        "title": "IntoIter::drop double-drops remaining elements when an element's Drop panics",
+        "evidence": "Dropping a `ThinVec` iterator (`ThinVec::into_iter()`, line 2175) invokes `impl Drop for IntoIter` (line 2539). `drop_non_singleton` (line 2544) moves the vector into a local `let mut vec = mem::replace(&mut this.vec, ThinVec::new())` (line 2546), drops the not-yet-yielded elements with `ptr::drop_in_place(&mut vec[this.start..])` (line 2547), and only then calls `vec.set_len_non_singleton(0)` (line 2548), again without an unwind guard. If one element's `Drop` panics, line 2548 is skipped, so the local `vec` retains its original length and is itself dropped while unwinding; `ThinVec::drop` runs `drop_in_place(&mut this[..])` over the full range, re-dropping elements that were already consumed by iteration and already dropped by line 2547 -> double free / double drop of `T` from safe code (`into_iter()` + drop). Verified locally: PoC consumed one element, then dropped the `IntoIter` inside `catch_unwind`; output `INTOITER total_drops=4` versus 2 correct drops. Upstream fixed this in 0.2.16 with a DropGuard that sets the iterator vec's length to 0 on unwind; the audited source has no guard."
+      },
+      "verdict": "alternate_match",
+      "evidence": "IntoIter::drop drops its tail before zeroing len, so a destructor panic drops the stale local vector again. Same expected root cause at the adjacent unsafe operation."
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-1-default",
+      "variant": "default",
+      "review_id": "3e4bb3f636ed470c5d789697e18d7a75b7696f5f510230717bd89aae7d13249b:sha256-length-comparator-unconstrained:40464b530f26f0362a91ba0fb5cd459eeb81396d0a9431a2848539cfb9accb7d",
+      "finding": {
+        "cwe": "CWE-129",
+        "path": "sha.circom",
+        "line": 195,
+        "severity": "high",
+        "title": "Unconstrained selector index fed to ItemAtIndex comparator allows out-of-range index and all-zero SHA256 output",
+        "evidence": "In Sha256General, the block selector is derived from the prover-controlled length. Line 110 assigns `inBlockIndex <-- (paddedInLength >> 9)` and line 111 only constrains `paddedInLength === inBlockIndex * 512`; no constraint forces `inBlockIndex >= 1` (nor `index >= 0`). The final compression output is selected at line 195 by feeding `inBlockIndex - 1` into `ItemAtIndex(maxBlocks)` (`arraySelectors[k].index <== inBlockIndex - 1;`), and the identical flow exists at line 292 in Sha256Partial. `ItemAtIndex` (array.circom:25-28) guards the index with `LessThan(bitLength)` where `bitLength = log2Ceil(maxArrayLen)` and asserts `2**bitLength > maxArrayLen`; circomlib's `LessThan(n)` (comparators.circom:89-99) only decomposes `in[0] + (1<<n) - in[1]` into `n+1` bits and never bounds `in[0]` to `n` bits, whereas `in[1] = maxArrayLen <= 2**bitLength - 1`. A prover sets `paddedInLength = 0` (via Sha256Bytes this is `paddedInLength*8 = 0`), which satisfies the `<= maxBitLength` check (lines 125-128), satisfies line 111 (0 === 0*512), and makes `inBlockIndex = 0` so the fed value is `index = 0 - 1 = p-1`. Arithmetic mod p then makes the comparator input `(p-1) + (1<<bitLength) - maxArrayLen == 2**bitLength - maxArrayLen - 1`, a non-negative `(bitLength+1)`-bit value, so `LessThan.out === 1` and Num2Bits(bitLength+1) succeed. Simulating this comparator (maxArrayLen=4, bitLength=3) gives out=1 for index p-1 while out=0 for the true out-of-range positive value 4, confirming the width check is bypassed. Because no `eqs[i]` matches a negative index, `CalculateTotal.sum` is 0 and every `out[k]` (lines 196/293) is forced to 0, yielding an all-zero 256-bit hash. The commented-out floor verifiers at lines 114-122 were the intended missing lower/upper bound checks. This is confined to the standalone hash template; no claim is made that the full EmailVerifier is broken."
+      },
+      "verdict": "alternate_match",
+      "evidence": "Sha256General/Sha256Partial derive inBlockIndex from an unbounded paddedInLength and feed inBlockIndex-1 into ItemAtIndex, whose LessThan lacks a range check. Same comparator/selector soundness defect as the expected line-126 sink."
+    }
+  ],
+  "usage_note": "Provider-reported totals; zero/missing usage is unknown, not free. No cost claim."
+}

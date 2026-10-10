@@ -170,6 +170,9 @@ tool schemas/provider framing), and the available tools. Dry runs need a model
 name but no credentials or endpoint. Estimates can undercount or overcount.
 `--max-context-bytes` is the hard request bound. `--max-tokens` applies to each
 model turn; the wall-clock deadline covers the entire audit, including tools.
+A tool batch that would exceed `--max-tool-calls` executes nothing; the harness
+removes the tool schemas and asks for a final report so gathered evidence is not
+discarded.
 Dry runs report the context policy, protected-turn count, and result budget.
 See [Context management](context-management.md) for pruning thresholds, protected
 fields, temporary archives, exact accounting, and limitations.

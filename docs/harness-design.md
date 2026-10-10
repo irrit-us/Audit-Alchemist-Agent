@@ -35,7 +35,7 @@ failure to justify it. Live evidence is in [Validation](validation.md).
 
 | Strategy | Source harnesses | Status | Evidence |
 | --- | --- | --- | --- |
-| Force a tool-free final answer when the action budget is spent | Codex, Claude Code | Adopted | `Conversation::disable_tools` + `final_turn_forced`; `exhausted_budget_forces_a_final_report_without_tools`; round 5 |
+| Force a tool-free final answer when the action budget is spent | Codex, Claude Code | Adopted | `Conversation::disable_tools` + `final_turn_forced`; an over-budget batch is rejected without executing any call, then finalized (`tool_budget_rejected`); `exhausted_budget_forces_a_final_report_without_tools`, `over_budget_batch_is_rejected_then_finalizes_without_mutation`; rounds 5 and 11-12 |
 | Bounded final-output repair: return JSON/schema/evidence errors to the model | OpenAI strict schemas, Codex, Claude Code | Adopted | `--max-output-repairs` (default 2); `invalid_final_output_is_repaired_within_budget`; round 9 repaired two live malformed reports |
 | Retry empty/no-content completions as transient provider responses | OpenAI/Anthropic SDK retries, Codex | Adopted | typed `EmptyCompletion` + `empty_completion_retry`; `empty_completion_is_retried_before_failing`; round 7 failure class absent in round 8 |
 | Surface a failed child's stderr tail without putting it in the report | Codex/Claude Code verbose modes | Adopted | `runner::stderr_tail` warn; captured and redacted into evaluation `stderr.log` |

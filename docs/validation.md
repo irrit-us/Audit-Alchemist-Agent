@@ -1,5 +1,45 @@
 # Validation
 
+## Optimization and validation rounds 10-12: 2026-10-10
+
+Three further rounds under the same procedure (same provider, model, dataset
+revision, and budgets unless stated; all trials retained and reviewed).
+
+- **Round 10 - action-budget A/B (16 vs 24 tool calls, 7 cases x 2).** The
+  larger budget did not improve supported findings: exact TP 2 -> 1, F1
+  0.114 -> 0.062, unexpected findings 19 -> 17, while tokens rose 5.25M -> 7.33M
+  (+40%) and tools 205 -> 282. Increasing the budget is rejected; the default
+  stays 16.
+- **Round 11 - expanded-dataset validation (18 cases, 1 trial, each case's own
+  threat model).** 17/18 completed, 8 exact TPs, 12 unexpected findings reviewed
+  as alternate matches or genuine distinct issues, and the clean
+  `unsigned-opt-in-control` produced no findings. The one failure was
+  `unsettled-bad-debt-liquidation`, which ended with
+  `agent exhausted --max-tool-calls without a final report` after a 2-call batch
+  arrived with 1 call of budget left.
+- **Round 12 - expanded-dataset re-validation after the over-budget fix.** 18/18
+  completed, 8 exact TPs, 10 unexpected, clean control still empty. Three output
+  repairs fired live. `tool_budget_rejections` was 0 because no run happened to
+  over-request; the behavior is covered deterministically by
+  `over_budget_batch_is_rejected_then_finalizes_without_mutation`.
+
+The over-budget fix rejects the whole batch without executing a call, then
+removes the tool schemas and forces a final report, so an over-budget turn can no
+longer discard an otherwise complete investigation. This preserves the
+no-partial-mutation invariant in H04.
+
+| Round | Cases x trials | Variant | Success | Exact TP/FP/FN | F1 | unexpected valid | Repairs | Tokens |
+| --- | --- | --- | ---: | --- | ---: | ---: | ---: | ---: |
+| 10 | 7 x 2 | 16 tools | 14/14 | 2 / 19 / 12 | .114 | 17 | 3 | 5.25M |
+| 10 | 7 x 2 | 24 tools | 14/14 | 1 / 17 / 13 | .062 | 15 | 1 | 7.33M |
+| 11 | 18 x 1 | default | 17/18 | 8 / 12 / 9 | .432 | 12 | 1 | 5.62M |
+| 12 | 18 x 1 | default | 18/18 | 8 / 10 / 9 | .457 | 10 | 3 | 4.95M |
+
+Rounds 11-12 use per-case threat models, so their exact F1 is higher than the
+blind 7-case baseline and is not a blind capability claim. Reviews:
+`round10-reviews.json`, `round11-reviews.json`, `round12-reviews.json`. These
+remain small samples with provider variance.
+
 ## Harness strategy rounds 6-9: 2026-10-10
 
 Implemented and evaluated two recovery strategies selected from well-known

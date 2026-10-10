@@ -23,6 +23,8 @@ Start with the [README](../README.md) for installation and a first run.
 | [Tiny paired round 5](reports/tiny-round5.json) | Same comparison after the forced final-report fix |
 | [Tiny strategy round 6](reports/tiny-round6.json) | Full-plan A/B for bounded output repair |
 | [Tiny strategy rounds 7-9](reports/tiny-round9.json), [8](reports/tiny-round8.json), [7](reports/tiny-round7.json) | Targeted recovery-strategy experiments |
+| [Action-budget round 10](reports/tiny-round10.json) | 16 vs 24 tool calls; larger budget rejected |
+| [Expanded validation rounds 11-12](reports/tiny-round12.json), [11](reports/tiny-round11.json) | 18-case dataset with per-case threat models |
 | [Round 4 reviews](reports/round4-reviews.json) | Per-finding verdicts for the round-4 non-exact matches |
 | [Round 5 reviews](reports/round5-reviews.json) | Per-finding verdicts for the round-5 non-exact matches |
 | [Round 6 reviews](reports/round6-reviews.json) | Per-finding verdicts for the round-6 non-exact matches |
