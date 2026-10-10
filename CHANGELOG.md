@@ -63,6 +63,12 @@ All notable changes to this project are documented here. The format follows
   definitions and forces a final report turn instead of failing with
   `agent exhausted --max-tool-calls without a final report`. Exercised on all
   three wires by `exhausted_budget_forces_a_final_report_without_tools`.
+- A finding's cited line is content-fingerprinted when supplied by the initial
+  context or `read_file` and re-checked against the current source before the
+  report is accepted, so a Bash or external edit after the read can no longer
+  stale a citation. Native writes and edits invalidate observations, and
+  re-reading a changed line makes it citable again
+  (`citation_fingerprint_rejects_external_source_change`).
 
 ### Changed
 

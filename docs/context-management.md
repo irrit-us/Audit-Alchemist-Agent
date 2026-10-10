@@ -67,8 +67,10 @@ discarded by Bash capture, file paging, or an MCP server.
 
 Saved output is evidence from its original execution, not fresh source or
 instruction authority. Pruning does not add observed source lines or change
-finding validation. Native writes retain their existing invalidation behavior;
-Bash/MCP mutations still lack source-version tracking (constraint H07).
+finding validation. Native writes and edits invalidate the affected file's
+observations. Bash/MCP or other external mutations are caught at acceptance
+time: the cited line is content-fingerprinted when read and re-checked against
+the current source (constraint H07).
 
 ## Accounting and checks
 

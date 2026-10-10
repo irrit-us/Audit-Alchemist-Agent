@@ -90,6 +90,51 @@ async fn workspace_tools_page_edit_search_and_report_recoverable_errors() {
 }
 
 #[tokio::test]
+async fn citation_fingerprint_rejects_external_source_change() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(dir.path().join("a.py"), "first\nneedle\nlast\n").unwrap();
+    let context = Context {
+        sources: vec![Source {
+            path: "a.py".into(),
+            content: "first\nneedle\nlast\n".into(),
+        }],
+        total_bytes: 17,
+    };
+    let mut tools = WorkspaceTools::new(dir.path(), &context).unwrap();
+    let timeout = Duration::from_secs(5);
+    let mut finding = Finding {
+        cwe: "CWE-78".into(),
+        path: "a.py".into(),
+        line: 2,
+        severity: Severity::High,
+        title: "x".into(),
+        evidence: "x".into(),
+    };
+    tools.validate_finding(&finding).unwrap();
+    // A Bash or external edit does not touch native state, so the fingerprint
+    // must catch the stale citation.
+    std::fs::write(dir.path().join("a.py"), "first\nchanged\nlast\n").unwrap();
+    assert!(tools.validate_finding(&finding).is_err());
+    // Re-reading the changed line makes the new content citable again.
+    tools
+        .execute(
+            "read_file",
+            r#"{"path":"a.py","offset":2,"limit":1}"#,
+            timeout,
+        )
+        .await;
+    tools.validate_finding(&finding).unwrap();
+    // An unobserved line is still rejected.
+    finding.line = 4;
+    assert!(tools.validate_finding(&finding).is_err());
+    // A later external change to another already-observed line is rejected.
+    finding.line = 3;
+    tools.validate_finding(&finding).unwrap();
+    std::fs::write(dir.path().join("a.py"), "first\nchanged\nchanged-last\n").unwrap();
+    assert!(tools.validate_finding(&finding).is_err());
+}
+
+#[tokio::test]
 async fn bash_preserves_shell_syntax_and_native_failure_semantics() {
     let dir = tempfile::tempdir().unwrap();
     let mut tools = WorkspaceTools::new(

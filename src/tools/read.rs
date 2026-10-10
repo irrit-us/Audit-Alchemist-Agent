@@ -11,6 +11,8 @@ pub(super) struct Page {
     pub path: String,
     pub offset: usize,
     pub lines: usize,
+    /// Raw page lines without line-number labels, for citation fingerprints.
+    pub texts: Vec<String>,
     pub result: Value,
 }
 
@@ -55,6 +57,7 @@ fn page(
     let overhead = serde_json::to_string(&json!({"path":path,"content":"","total_lines":usize::MAX,"next_offset":usize::MAX,"truncated":false}))?.len() + 128;
     let budget = OUTPUT_BYTES.saturating_sub(overhead);
     let mut content = String::new();
+    let mut texts = Vec::new();
     let mut encoded_bytes = 0;
     let mut lines = 0;
     let mut eof = false;
@@ -100,6 +103,7 @@ fn page(
         }
         encoded_bytes += cost;
         content.push_str(&numbered);
+        texts.push(text.to_owned());
         lines += 1;
         if reader.fill_buf()?.is_empty() {
             eof = true;
@@ -112,6 +116,7 @@ fn page(
         path,
         offset,
         lines,
+        texts,
     })
 }
 

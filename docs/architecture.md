@@ -22,7 +22,7 @@ The library separates provider protocols, tool execution, and evidence validatio
 | Context | `src/context/mod.rs` | Deterministic snapshot assembly, token estimate, finding validation |
 | Context projection | `src/context/history.rs` | Exact request sizing, bounded JSON previews, and temporary result archives |
 | Prompt | `src/provider/prompt.rs`, `prompts/audit.txt` | JSON-escaped instructions/numbered source and evidence-driven audit guidance |
-| Agent tools | `src/tools.rs` | Bash, paged reads, writes, exact edits, listing, batched search, observed-line validation |
+| Agent tools | `src/tools.rs` | Bash, paged reads, writes, exact edits, listing, batched search, observed-line and content-fingerprint citation validation |
 | Conversation | `src/provider/conversation.rs` | Streamed tool calls and provider-native history replay, including reasoning state |
 | Skills | `src/skills.rs`, `skills/` | Compiled metadata catalog, on-demand guidance, and exact script resources |
 | Monitoring | `src/monitor.rs` | Bounded local run journals, operational events, debug capture, and trace inspection |
@@ -58,7 +58,8 @@ The library separates provider protocols, tool execution, and evidence validatio
    (`--max-output-repairs`), and a completed stream with no text or tool calls is
    retried up to `--max-attempts` without replaying a tool. The loop ends with a
    validated JSON report or an explicit limit/provider error. Findings must cite
-   observed lines.
+   observed lines whose content fingerprint still matches, so a Bash or external
+   edit after the read invalidates the citation.
    Enabled MCP stdio servers initialize and advertise selected tool schemas
    before the first model turn. Their calls share the native tool budget and
    monitoring events. No MCP instruction text is added to the system prompt.

@@ -50,6 +50,9 @@ pub struct WorkspaceTools {
     settings: crate::config::AgentSettings,
     // Only lines actually supplied through initial context/read_file may be cited.
     observed: BTreeMap<String, BTreeSet<u32>>,
+    // Content fingerprint of each observed line, checked before a citation is
+    // accepted so a Bash or external edit cannot stale a finding.
+    fingerprints: BTreeMap<String, BTreeMap<u32, u64>>,
 }
 
 impl WorkspaceTools {
@@ -63,25 +66,45 @@ impl WorkspaceTools {
         settings: crate::config::AgentSettings,
     ) -> Result<Self> {
         let mut observed = BTreeMap::new();
+        let mut fingerprints = BTreeMap::new();
         for source in &initial.sources {
-            observed.insert(
-                source.path.clone(),
-                (1..=source.content.lines().count() as u32).collect(),
-            );
+            let mut lines = BTreeSet::new();
+            let mut hashes = BTreeMap::new();
+            for (index, text) in source.content.lines().enumerate() {
+                let line = index as u32 + 1;
+                lines.insert(line);
+                hashes.insert(line, fingerprint(text.as_bytes()));
+            }
+            observed.insert(source.path.clone(), lines);
+            fingerprints.insert(source.path.clone(), hashes);
         }
         Ok(Self {
             root: SourceRoot::open(root)?,
             settings,
             observed,
+            fingerprints,
         })
     }
 
     pub fn validate_finding(&self, finding: &Finding) -> Result<()> {
+        let expected = self
+            .fingerprints
+            .get(&finding.path)
+            .and_then(|lines| lines.get(&finding.line))
+            .copied();
         ensure!(
-            self.observed
-                .get(&finding.path)
-                .is_some_and(|lines| lines.contains(&finding.line)),
+            expected.is_some(),
             "finding must cite a source line supplied in the initial context or read_file: {}:{}",
+            finding.path,
+            finding.line
+        );
+        // Re-read the cited line so a change made by Bash or another process
+        // after the read cannot be cited as if it were the inspected source.
+        let page = read::read(&self.root, &finding.path, finding.line as usize, 1)
+            .with_context(|| format!("re-read cited source {}:{}", finding.path, finding.line))?;
+        ensure!(
+            page.texts.first().map(|text| fingerprint(text.as_bytes())) == expected,
+            "cited source changed after it was read; re-read {}:{} before reporting",
             finding.path,
             finding.line
         );
@@ -164,17 +187,27 @@ impl WorkspaceTools {
                     limit: Option<usize>,
                 }
                 let args: Args = serde_json::from_str(arguments)?;
-                let page = read::read(
+                let read::Page {
+                    path,
+                    offset,
+                    lines,
+                    texts,
+                    result,
+                } = read::read(
                     &self.root,
                     &args.path,
                     args.offset.unwrap_or(1),
                     args.limit.unwrap_or(200),
                 )?;
                 self.observed
-                    .entry(page.path)
+                    .entry(path.clone())
                     .or_default()
-                    .extend((page.offset..page.offset + page.lines).map(|line| line as u32));
-                Ok(page.result)
+                    .extend((offset..offset + lines).map(|line| line as u32));
+                let hashes = self.fingerprints.entry(path).or_default();
+                for (index, text) in texts.iter().enumerate() {
+                    hashes.insert((offset + index) as u32, fingerprint(text.as_bytes()));
+                }
+                Ok(result)
             }
 
             "write_file" => {
@@ -188,7 +221,9 @@ impl WorkspaceTools {
                 ensure!(args.content.len() <= FILE_BYTES, "content exceeds 1 MiB");
                 let path = self.write_path(&args.path)?;
                 fs::write(&path, &args.content)?;
-                self.observed.remove(&self.root.relative(&path)?);
+                let relative = self.root.relative(&path)?;
+                self.observed.remove(&relative);
+                self.fingerprints.remove(&relative);
                 Ok(json!({"path":args.path,"bytes_written":args.content.len()}))
             }
             "edit_file" => {
@@ -210,6 +245,7 @@ impl WorkspaceTools {
                 ensure!(updated.len() <= FILE_BYTES, "edited file exceeds 1 MiB");
                 fs::write(self.root.resolve(&args.path)?, updated)?;
                 self.observed.remove(&file.path);
+                self.fingerprints.remove(&file.path);
                 Ok(json!({"path":file.path,"replacements":1}))
             }
             "list_files" => {
@@ -265,6 +301,18 @@ impl WorkspaceTools {
         );
         Ok(parent.join(path.file_name().context("missing file name")?))
     }
+}
+
+/// FNV-1a 64-bit change detector for observed source lines. It is deliberately
+/// not a cryptographic authenticator; it detects accidental or tool-driven
+/// mutation between the read and the citation.
+fn fingerprint(bytes: &[u8]) -> u64 {
+    let mut hash = 0xcbf2_9ce4_8422_2325u64;
+    for byte in bytes {
+        hash ^= u64::from(*byte);
+        hash = hash.wrapping_mul(0x0000_0100_0000_01b3);
+    }
+    hash
 }
 
 pub fn bounded_output(text: &str, limit: usize) -> String {
