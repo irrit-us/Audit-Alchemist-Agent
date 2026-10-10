@@ -1,0 +1,53 @@
+# Round-13 A/B: does a smaller tool budget keep supported findings while cutting
+# the dominant prompt-token cost? Identical prompt/model; only max_tool_calls.
+trials = 2
+workers = 4
+instruction = "Audit the target for exploitable security vulnerabilities. Report concrete root causes with exact source lines and explain how an attacker reaches each unsafe operation. Your final message must be exactly the JSON object, beginning with '{' and ending with '}', with no text before or after it."
+
+[prompts]
+baseline = "prompts/audit.txt"
+candidate = "prompts/audit.txt"
+
+[limits]
+model = "deepseek-flash"
+endpoint = "https://api.deepseek.com/chat/completions"
+max_tokens = 32768
+timeout_ms = 600000
+max_attempts = 5
+reasoning_effort = "low"
+max_stream_bytes = 8388608
+jobs = 1
+
+[limits_by_variant.baseline]
+max_tool_calls = 16
+
+[limits_by_variant.candidate]
+max_tool_calls = 12
+
+[[datasets]]
+path = "datasets/tiny/filelock-toctou/audit/dataset.json"
+case = "lock-symlink-truncation"
+
+[[datasets]]
+path = "datasets/tiny/fast-jwt-iss/audit/dataset.json"
+case = "iss-array-loose-match"
+
+[[datasets]]
+path = "datasets/tiny/thin-vec-uaf/audit/dataset.json"
+case = "intoiter-drop-panic-double-free"
+
+[[datasets]]
+path = "datasets/tiny/pymonocypher-overflow/audit/dataset.json"
+case = "argon2i32-small-block-count"
+
+[[datasets]]
+path = "datasets/tiny/h11-chunked-framing/audit/dataset.json"
+case = "chunked-trailer-not-validated"
+
+[[datasets]]
+path = "datasets/tiny/zk-email-sha256/audit/dataset.json"
+case = "sha256-length-comparator-unconstrained"
+
+[[datasets]]
+path = "datasets/tiny/ajna-protocol-compromise-2/audit/dataset.json"
+case = "unsettled-bad-debt-liquidation"

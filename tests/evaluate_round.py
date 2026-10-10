@@ -102,6 +102,24 @@ class ReviewTests(unittest.TestCase):
             ROUND.append_log(log, ROUND.log_records(root, summary, 5))
             self.assertEqual(len(log.read_text().splitlines()), 4)
 
+    def test_line_metrics_separate_sink_from_cwe_label(self):
+        finding = dict(cwe="CWE-367", path="lock.py", line=41, severity="high",
+                       title="Symlink truncation", evidence="same sink, different CWE")
+        expected = dict(cwe="CWE-59", path="lock.py", line=41)
+        case = dict(run=dict(case_id="lock", outcome="success", elapsed_ms=1, findings=[finding]),
+                    matched=[], unexpected=[finding], missed=[expected])
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            report = root / "report.json"
+            ROUND.write_json(report, {"cases": [case]})
+            (root / "executions.jsonl").write_text(json.dumps(dict(
+                run="lock-1-candidate", variant="candidate", report="report.json",
+                report_sha256=ROUND.digest(report.read_bytes()), summaries=[])) + "\n")
+            group = ROUND.summarize(root)["groups"]["candidate"]
+            self.assertEqual((group["tp"], group["fp"], group["fn"]), (0, 1, 1))
+            self.assertEqual((group["line_tp"], group["line_fp"], group["line_fn"]), (1, 0, 0))
+            self.assertEqual(group["line_f1"], 1.0)
+
     def test_all_trials_and_changed_report_detection(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

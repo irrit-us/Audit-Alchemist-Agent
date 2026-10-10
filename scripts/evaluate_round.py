@@ -114,13 +114,15 @@ def summarize(output, review_path=None):
     groups, queue, case_metrics = {}, [], []
     for record in records:
         group = groups.setdefault(record["variant"], {"trials": 0, "success": 0, "failed": 0,
-                                  "tp": 0, "fp": 0, "fn": 0, "latencies_ms": [],
+                                  "tp": 0, "fp": 0, "fn": 0, "line_tp": 0, "line_fp": 0,
+                                  "line_fn": 0, "latencies_ms": [],
                                   "completed_latencies_ms": [], "timeouts": 0,
                                   "operational_totals": {}, "runs_with_usage": 0})
         group["trials"] += 1
         if not record.get("report"):
             group["failed"] += 1
             group["fn"] += record["expected_count"]
+            group["line_fn"] += record["expected_count"]
             continue
         path = output / record["report"]
         report_bytes = path.read_bytes()
@@ -136,8 +138,17 @@ def summarize(output, review_path=None):
                 group["completed_latencies_ms"].append(case["run"]["elapsed_ms"])
             for name, field in (("tp", "matched"), ("fp", "unexpected"), ("fn", "missed")):
                 group[name] += len(case[field])
+            # Line-only matching separates finding the sink from choosing the
+            # CWE label; it is a distinct metric, never a replacement for exact.
+            expected_lines = {(f["path"], f["line"]) for f in case["matched"] + case["missed"]}
+            reported_lines = {(f["path"], f["line"]) for f in case["run"]["findings"]}
+            line = {"line_tp": len(expected_lines & reported_lines),
+                    "line_fp": len(reported_lines - expected_lines),
+                    "line_fn": len(expected_lines - reported_lines)}
+            for name, count in line.items():
+                group[name] += count
             counts, pending = review_counts(case, reviews, record["report_sha256"])
-            case_metrics.append({"run": record["run"], "variant": record["variant"], **counts})
+            case_metrics.append({"run": record["run"], "variant": record["variant"], **line, **counts})
             queue.extend({"run": record["run"], "variant": record["variant"], **item} for item in pending)
             for name, count in counts.items():
                 group[name] = group.get(name, 0) + count
@@ -152,7 +163,10 @@ def summarize(output, review_path=None):
     for group in groups.values():
         for label, n, d in (("precision", group["tp"], group["tp"] + group["fp"]),
                             ("recall", group["tp"], group["tp"] + group["fn"]),
-                            ("f1", 2 * group["tp"], 2 * group["tp"] + group["fp"] + group["fn"])):
+                            ("f1", 2 * group["tp"], 2 * group["tp"] + group["fp"] + group["fn"]),
+                            ("line_precision", group["line_tp"], group["line_tp"] + group["line_fp"]),
+                            ("line_recall", group["line_tp"], group["line_tp"] + group["line_fn"]),
+                            ("line_f1", 2 * group["line_tp"], 2 * group["line_tp"] + group["line_fp"] + group["line_fn"])):
             group[label] = n / d if d else None
         for field in ("latencies_ms", "completed_latencies_ms"):
             values = group[field]
@@ -189,6 +203,8 @@ def log_records(output, summary, round_number, date=None):
             "type": "round", "round": round_number, "variant": variant, "date": date,
             "config": config,
             "exact": {name: group.get(name) for name in ("tp", "fp", "fn", "precision", "recall", "f1")},
+            "line": {name: group.get(name) for name in
+                     ("line_tp", "line_fp", "line_fn", "line_precision", "line_recall", "line_f1")},
             "trials": group["trials"], "success": group["success"], "failed": group["failed"],
             "timeouts": group["timeouts"], "unexpected_total": group.get("unexpected_total", 0),
             "unexpected_valid": group.get("unexpected_valid", 0),
@@ -212,8 +228,9 @@ def log_records(output, summary, round_number, date=None):
                 "type": "case", "round": round_number, "variant": variant, "date": date,
                 "case_id": metric["run"],
                 **{name: metric.get(name, 0) for name in
-                   ("unexpected_total", "unexpected_valid", "unexpected_invalid", "unexpected_unreviewed",
-                    "unexpected_low_impact", "unexpected_out_of_scope", "alternate_matches", "valid_distinct")},
+                   ("line_tp", "line_fp", "line_fn", "unexpected_total", "unexpected_valid",
+                    "unexpected_invalid", "unexpected_unreviewed", "unexpected_low_impact",
+                    "unexpected_out_of_scope", "alternate_matches", "valid_distinct")},
                 "findings": findings_by_run.get(metric["run"], []),
             })
     return records
