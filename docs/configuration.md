@@ -157,6 +157,7 @@ See [Authentication](authentication.md) for the credential details.
 | `--max-tool-output-bytes <N>` | `32768` | 1024–131072 bytes per model-visible JSON tool result, including metadata |
 | `--max-tokens <N>` | `4096` | 1–32768 requested output tokens |
 | `--max-output-repairs <N>` | `2` | 0–8 bounded retries after the final report fails JSON, schema, or evidence validation; `0` fails fast. A repair never fabricates a report |
+| `--max-settlement-calls <N>` | `2` | 0–8 read-only tool executions after the action budget is spent; `0` ends with a tool-free report |
 | `--max-stream-bytes <N>` | `8388608` (8 MiB) | 1048576–33554432 streamed bytes per response, including SSE framing. Reasoning models can emit far more raw SSE than assembled text |
 | `--timeout-ms <N>` | `60000` | 1–3600000 wall-clock deadline |
 | `--max-output-bytes <N>` | `1048576` (1 MiB) | 1–16777216 stdout/stderr cap per run |
@@ -170,9 +171,11 @@ tool schemas/provider framing), and the available tools. Dry runs need a model
 name but no credentials or endpoint. Estimates can undercount or overcount.
 `--max-context-bytes` is the hard request bound. `--max-tokens` applies to each
 model turn; the wall-clock deadline covers the entire audit, including tools.
-A tool batch that would exceed `--max-tool-calls` executes nothing; the harness
-removes the tool schemas and asks for a final report so gathered evidence is not
-discarded.
+A tool batch that would exceed `--max-tool-calls` executes nothing. The harness
+then enters settlement: Bash and file mutations are withdrawn, `read_file`,
+`list_files`, `search`, and `load_skill` remain for up to
+`--max-settlement-calls`, and the run returns its report. Mutating or
+over-budget settlement calls get paired error results and never execute.
 Dry runs report the context policy, protected-turn count, and result budget.
 See [Context management](context-management.md) for pruning thresholds, protected
 fields, temporary archives, exact accounting, and limitations.

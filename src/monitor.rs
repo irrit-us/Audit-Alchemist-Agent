@@ -38,6 +38,22 @@ fn add(a: Usage, b: Usage) -> Usage {
     }
 }
 
+/// Reproducibility metadata recorded once per run. It deliberately holds only
+/// fingerprints and names, never prompt text, instructions, or credentials.
+#[derive(Debug, Default, Clone)]
+pub struct RunManifest {
+    pub harness_version: String,
+    pub system_prompt_sha256: String,
+    pub instruction_sha256: String,
+    pub tools: Vec<String>,
+    pub max_tool_calls: u32,
+    pub max_tokens: u32,
+    pub max_context_bytes: u32,
+    pub context_policy: String,
+    pub max_output_repairs: u32,
+    pub max_settlement_calls: u32,
+}
+
 pub struct Monitor<'a> {
     sink: &'a mut dyn EventSink,
     file: Option<File>,
@@ -58,6 +74,8 @@ pub struct Monitor<'a> {
     output_repairs: u64,
     empty_completions: u64,
     tool_budget_rejections: u64,
+    settlements: u64,
+    settlement_calls: u64,
     completed_usage: Usage,
     current_usage: Usage,
 }
@@ -107,16 +125,47 @@ impl<'a> Monitor<'a> {
             output_repairs: 0,
             empty_completions: 0,
             tool_budget_rejections: 0,
+            settlements: 0,
+            settlement_calls: 0,
             completed_usage: Usage::default(),
             current_usage: Usage::default(),
         })
     }
 
     pub fn start(&mut self, model: &str, wire: &str, timeout_ms: u64, case_id: &str, target: &str) {
+        self.start_with_manifest(
+            model,
+            wire,
+            timeout_ms,
+            case_id,
+            target,
+            &RunManifest::default(),
+        );
+    }
+
+    pub fn start_with_manifest(
+        &mut self,
+        model: &str,
+        wire: &str,
+        timeout_ms: u64,
+        case_id: &str,
+        target: &str,
+        manifest: &RunManifest,
+    ) {
         self.on_event(&operation(
             "run_start",
             json!({"model":model,"wire_api":wire,
-            "timeout_ms":timeout_ms,"trace_path":self.path,"debug_trace":self.debug,"case_id":case_id,"target":target}),
+            "timeout_ms":timeout_ms,"trace_path":self.path,"debug_trace":self.debug,"case_id":case_id,"target":target,
+            "harness_version":manifest.harness_version,
+            "system_prompt_sha256":manifest.system_prompt_sha256,
+            "instruction_sha256":manifest.instruction_sha256,
+            "tools":manifest.tools,
+            "max_tool_calls":manifest.max_tool_calls,
+            "max_tokens":manifest.max_tokens,
+            "max_context_bytes":manifest.max_context_bytes,
+            "context_policy":manifest.context_policy,
+            "max_output_repairs":manifest.max_output_repairs,
+            "max_settlement_calls":manifest.max_settlement_calls}),
         ));
     }
 
@@ -136,6 +185,7 @@ impl<'a> Monitor<'a> {
             "output_repairs":self.output_repairs,
             "empty_completions":self.empty_completions,
             "tool_budget_rejections":self.tool_budget_rejections,
+            "settlements":self.settlements,"settlement_calls":self.settlement_calls,
             "usage":add(self.completed_usage, self.current_usage),"trace_truncated":self.truncated})));
         if let Some(error) = &self.error {
             anyhow::bail!("run trace write failed: {error}");
@@ -234,6 +284,13 @@ impl EventSink for Monitor<'_> {
             }
             StreamEvent::Operation { name, .. } if name == "tool_budget_rejected" => {
                 self.tool_budget_rejections += 1;
+            }
+            StreamEvent::Operation { name, .. } if name == "settlement_start" => {
+                self.settlements += 1;
+                self.phase = "settling".into();
+            }
+            StreamEvent::Operation { name, .. } if name == "settlement_call" => {
+                self.settlement_calls += 1;
             }
             StreamEvent::Operation { name, .. } if name == "turn_end" => {
                 self.phase = "validating".into();
@@ -357,6 +414,52 @@ mod tests {
             .unwrap_err()
             .to_string()
             .contains("trace write failed"));
+    }
+
+    #[test]
+    fn run_manifest_records_fingerprints_and_limits_without_prompt_text() {
+        let dir = tempfile::tempdir().unwrap();
+        let options = MonitorOptions {
+            trace_dir: Some(dir.path().into()),
+            debug_trace: false,
+        };
+        let mut events = Events::default();
+        let path;
+        {
+            let mut monitor =
+                Monitor::new(&options, "UNSET_TEST_MONITOR_KEY", &mut events).unwrap();
+            path = monitor.path.clone().unwrap();
+            let manifest = RunManifest {
+                harness_version: "0.1.1".into(),
+                system_prompt_sha256: "abcd1234".into(),
+                instruction_sha256: "ef015678".into(),
+                tools: vec!["read_file".into(), "bash".into()],
+                max_tool_calls: 16,
+                max_tokens: 4096,
+                max_context_bytes: 1024,
+                context_policy: "prune".into(),
+                max_output_repairs: 2,
+                max_settlement_calls: 3,
+            };
+            monitor.start_with_manifest(
+                "model",
+                "chat-completions",
+                1000,
+                "case",
+                "target",
+                &manifest,
+            );
+            monitor.finish("success").unwrap();
+        }
+        let summary = inspect(&path).unwrap();
+        assert_eq!(summary["start"]["harness_version"], "0.1.1");
+        assert_eq!(summary["start"]["system_prompt_sha256"], "abcd1234");
+        assert_eq!(summary["start"]["instruction_sha256"], "ef015678");
+        assert_eq!(summary["start"]["tools"][1], "bash");
+        assert_eq!(summary["start"]["max_settlement_calls"], 3);
+        assert_eq!(summary["start"]["context_policy"], "prune");
+        let raw = std::fs::read_to_string(&path).unwrap();
+        assert!(!raw.contains("prompt text"));
     }
 
     #[test]

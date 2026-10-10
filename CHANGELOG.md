@@ -45,6 +45,17 @@ All notable changes to this project are documented here. The format follows
   `tool_budget_rejections`) are recorded in run journals and the metrics log. A
   failed child's stderr tail is surfaced through operational logs (never the
   report).
+- Settlement phase and run-manifest traceability adapted from an external
+  single-agent harness reference (ARTEX): after the action budget, mutating tools
+  are withdrawn and `--max-settlement-calls` (default 2) read-only calls remain
+  so a run can verify a cited line before reporting; `run_start` records the
+  harness version, prompt/instruction fingerprints, tool names, and effective
+  limits without storing prompt text. Covered by
+  `settlement_allows_read_only_verification_and_rejects_mutation`,
+  `exhausted_budget_enters_read_only_settlement`, and
+  `run_manifest_records_fingerprints_and_limits_without_prompt_text`. The
+  reference review and its rejected/deferred points are in
+  `docs/harness-design.md`.
 
 - Blind live evaluation baseline over the seven `datasets/tiny` fixtures
   (`docs/reports/tiny-baseline-round1.json`): 2/7 completed, 1 exact match, and

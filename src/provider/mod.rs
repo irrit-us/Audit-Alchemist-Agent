@@ -149,6 +149,10 @@ pub struct LlmOptions {
     /// `0` restores fail-fast behavior; repairs never fabricate a report.
     #[arg(long, default_value_t = 2, value_parser = clap::value_parser!(u32).range(0..=8))]
     pub max_output_repairs: u32,
+    /// Read-only tool executions allowed after the main tool budget is spent,
+    /// so a run can still verify a cited line before its final report.
+    #[arg(long, default_value_t = 2, value_parser = clap::value_parser!(u32).range(0..=8))]
+    pub max_settlement_calls: u32,
 }
 
 impl LlmOptions {
@@ -272,6 +276,8 @@ impl LlmOptions {
             self.max_tool_output_bytes.to_string(),
             "--max-output-repairs".into(),
             self.max_output_repairs.to_string(),
+            "--max-settlement-calls".into(),
+            self.max_settlement_calls.to_string(),
         ];
         if let Some(tokens) = self.max_source_tokens {
             args.extend(["--max-source-tokens".into(), tokens.to_string()]);
@@ -333,6 +339,17 @@ fn retry_policy(options: &LlmOptions) -> retry::RetryPolicy {
 }
 
 /// Time left before the overall deadline, never zero for a request timeout.
+/// Stable, non-cryptographic fingerprint for run-manifest identity. It records
+/// that a prompt or instruction changed without storing the text itself.
+fn fingerprint(bytes: &[u8]) -> String {
+    let mut hash = 0xcbf2_9ce4_8422_2325u64;
+    for byte in bytes {
+        hash ^= u64::from(*byte);
+        hash = hash.wrapping_mul(0x0000_0100_0000_01b3);
+    }
+    format!("{hash:016x}")
+}
+
 fn remaining(deadline: Instant) -> Duration {
     deadline
         .saturating_duration_since(Instant::now())
@@ -460,12 +477,30 @@ pub async fn audit_with(
 ) -> Result<Response> {
     let mut monitor =
         crate::monitor::Monitor::new(&options.monitoring, &options.api_key_env, sink)?;
-    monitor.start(
+    let manifest = crate::monitor::RunManifest {
+        harness_version: env!("CARGO_PKG_VERSION").into(),
+        system_prompt_sha256: fingerprint(options.settings.system_prompt().as_bytes()),
+        instruction_sha256: fingerprint(request.instruction.as_bytes()),
+        tools: options
+            .settings
+            .definitions()
+            .iter()
+            .filter_map(|tool| tool["name"].as_str().map(str::to_owned))
+            .collect(),
+        max_tool_calls: options.max_tool_calls,
+        max_tokens: options.max_tokens,
+        max_context_bytes: options.max_context_bytes,
+        context_policy: options.context_policy.as_str().into(),
+        max_output_repairs: options.max_output_repairs,
+        max_settlement_calls: options.max_settlement_calls,
+    };
+    monitor.start_with_manifest(
         &options.model,
         options.effective_wire().as_str(),
         timeout.as_millis() as u64,
         &request.case_id,
         &request.target,
+        &manifest,
     );
     let (sender, mut receiver) = tokio::sync::mpsc::unbounded_channel();
     let mut queue = crate::monitor::QueueSink(sender);
@@ -582,7 +617,8 @@ async fn audit_session(
         crate::tools::WorkspaceTools::configured(root, context, options.settings.clone())?;
     let mut used = 0usize;
     let mut turn_number = 0u32;
-    let mut tools_disabled = false;
+    let mut settlement = false;
+    let mut settlement_used = 0u32;
     let mut repairs = 0u32;
     let mut empty_retries = 0u32;
     let can_archive = matches!(
@@ -593,16 +629,18 @@ async fn audit_session(
         if Instant::now() >= deadline {
             return Err(AuditTimeout.into());
         }
-        // Force a final report turn once the tool budget is spent. The prompt
-        // already says to stop calling tools at zero; removing the tool
-        // definitions makes that instruction enforceable rather than an error.
-        if used >= options.max_tool_calls as usize && !tools_disabled {
-            conversation.disable_tools();
-            tools_disabled = true;
-            sink.on_event(&crate::monitor::operation(
-                "final_turn_forced",
-                serde_json::json!({"used_tool_calls":used,"max_tool_calls":options.max_tool_calls}),
-            ));
+        // Once the action budget is spent, enter settlement: mutating tools are
+        // withdrawn and a small read-only allowance remains so the model can
+        // verify a cited line before returning its report.
+        if used >= options.max_tool_calls as usize && !settlement {
+            begin_settlement(
+                &mut conversation,
+                sink,
+                used,
+                options.max_tool_calls,
+                options.max_settlement_calls,
+            );
+            settlement = true;
         }
         let request_bytes = if can_archive {
             let reduction = conversation.reduce_context(
@@ -683,16 +721,60 @@ async fn audit_session(
                 Err(error) => return Err(error),
             }
         }
+        if settlement {
+            // Settlement keeps only read-only verification. Mutating calls are
+            // returned as paired errors and never executed.
+            let mut results = Vec::new();
+            for call in &turn.calls {
+                if !crate::tools::read_only(&call.name) {
+                    results.push(serde_json::json!({"error":"tool is disabled during settlement; only read-only tools are available"}).to_string());
+                    continue;
+                }
+                if settlement_used >= options.max_settlement_calls {
+                    results.push(
+                        serde_json::json!({"error":"settlement tool budget exhausted"}).to_string(),
+                    );
+                    continue;
+                }
+                settlement_used += 1;
+                sink.on_event(&crate::monitor::operation(
+                    "settlement_call",
+                    serde_json::json!({"name":call.name,"used":settlement_used,"max":options.max_settlement_calls}),
+                ));
+                results.push(
+                    run_tool_call(
+                        options,
+                        call,
+                        used + settlement_used as usize,
+                        0,
+                        &mut tools,
+                        &mut mcp,
+                        deadline,
+                        can_archive,
+                        &mut archive,
+                        sink,
+                    )
+                    .await?,
+                );
+            }
+            if settlement_used >= options.max_settlement_calls {
+                conversation.disable_tools();
+            }
+            conversation.append(&turn, &results)?;
+            continue;
+        }
         if used + turn.calls.len() > options.max_tool_calls as usize {
-            // Reject the whole batch without executing any call, then force a
-            // tool-free final turn. This keeps the no-partial-mutation
-            // invariant while recovering the evidence already gathered.
-            ensure!(
-                !tools_disabled,
-                "agent requested tool calls after the tool budget was exhausted"
+            // Reject the whole batch without executing any call, then enter
+            // settlement. This keeps the no-partial-mutation invariant while
+            // recovering the evidence already gathered.
+            begin_settlement(
+                &mut conversation,
+                sink,
+                used,
+                options.max_tool_calls,
+                options.max_settlement_calls,
             );
-            tools_disabled = true;
-            conversation.disable_tools();
+            settlement = true;
             sink.on_event(&crate::monitor::operation(
                 "tool_budget_rejected",
                 serde_json::json!({
@@ -705,64 +787,123 @@ async fn audit_session(
         let mut results = Vec::new();
         // Preserve call order: a later call may run a PoC created by an earlier one.
         for call in &turn.calls {
-            if Instant::now() >= deadline {
-                return Err(AuditTimeout.into());
-            }
             used += 1;
-            tracing::info!(tool = %call.name, call = used, "executing audit tool");
-            sink.on_event(&StreamEvent::ToolStart {
-                name: call.name.clone(),
-                call_id: call.id.clone(),
-            });
-            debug_capture(options, sink, "tool_arguments", || call.arguments.clone());
-            let tool_started = Instant::now();
-            let mut result = if mcp.contains(&call.name) {
-                mcp.execute(&call.name, &call.arguments, remaining(deadline))
-                    .await
-            } else {
-                tools
-                    .execute(&call.name, &call.arguments, remaining(deadline))
-                    .await
-            };
-            result["remaining_tool_calls"] =
-                serde_json::json!(options.max_tool_calls as usize - used);
-            sink.on_event(&StreamEvent::ToolEnd {
-                name: call.name.clone(),
-                call_id: call.id.clone(),
-                is_error: result.get("error").is_some()
-                    || result
-                        .get("exit_code")
-                        .and_then(Value::as_i64)
-                        .is_some_and(|code| code != 0),
-                elapsed_ms: tool_started.elapsed().as_millis() as u64,
-            });
-            sink.on_event(&crate::monitor::operation(
-                "tool_result",
-                serde_json::json!({
-                    "call_id":call.id,"name":call.name,"exit_code":result.get("exit_code"),
-                    "timed_out":result.get("timed_out"),"truncated":result.get("truncated"),
-                    "result_bytes":crate::context::history::serialized_bytes(&result)?
-                }),
-            ));
-            debug_capture(options, sink, "tool_result", || result.to_string());
-            let original = serde_json::to_string(&result)?;
-            let saved = if can_archive && original.len() > options.max_tool_output_bytes as usize {
-                archive.save(&original)?
-            } else {
-                None
-            };
-            let projected = crate::context::history::project_result(
-                &original,
-                options.max_tool_output_bytes as usize,
-                saved.as_deref(),
-            )?;
-            if projected.len() != original.len() {
-                sink.on_event(&crate::monitor::operation("tool_output_projected", serde_json::json!({"call_id":call.id,"original_bytes":original.len(),"projected_bytes":projected.len(),"archived":saved.is_some()})));
-            }
-            results.push(projected);
+            results.push(
+                run_tool_call(
+                    options,
+                    call,
+                    used,
+                    (options.max_tool_calls as usize - used) as u32,
+                    &mut tools,
+                    &mut mcp,
+                    deadline,
+                    can_archive,
+                    &mut archive,
+                    sink,
+                )
+                .await?,
+            );
         }
         conversation.append(&turn, &results)?;
     }
+}
+
+/// Withdraw mutating tools and leave a bounded read-only allowance. A zero
+/// allowance falls back to a fully tool-free final turn.
+fn begin_settlement(
+    conversation: &mut Conversation,
+    sink: &mut dyn EventSink,
+    used: usize,
+    max_tool_calls: u32,
+    max_settlement_calls: u32,
+) {
+    if max_settlement_calls == 0 {
+        conversation.disable_tools();
+    } else {
+        let names: Vec<String> = crate::tools::definitions()
+            .iter()
+            .filter_map(|tool| tool["name"].as_str().map(str::to_owned))
+            .filter(|name| crate::tools::read_only(name))
+            .collect();
+        let refs: Vec<&str> = names.iter().map(String::as_str).collect();
+        conversation.retain_tools(&refs);
+    }
+    sink.on_event(&crate::monitor::operation(
+        "settlement_start",
+        serde_json::json!({
+            "used_tool_calls":used,
+            "max_tool_calls":max_tool_calls,
+            "max_settlement_calls":max_settlement_calls
+        }),
+    ));
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn run_tool_call(
+    options: &LlmOptions,
+    call: &conversation::ToolCall,
+    ordinal: usize,
+    remaining_tool_calls: u32,
+    tools: &mut crate::tools::WorkspaceTools,
+    mcp: &mut crate::mcp::McpTools,
+    deadline: Instant,
+    can_archive: bool,
+    archive: &mut crate::context::history::ResultArchive,
+    sink: &mut dyn EventSink,
+) -> Result<String> {
+    if Instant::now() >= deadline {
+        return Err(AuditTimeout.into());
+    }
+    tracing::info!(tool = %call.name, call = ordinal, "executing audit tool");
+    sink.on_event(&StreamEvent::ToolStart {
+        name: call.name.clone(),
+        call_id: call.id.clone(),
+    });
+    debug_capture(options, sink, "tool_arguments", || call.arguments.clone());
+    let tool_started = Instant::now();
+    let mut result = if mcp.contains(&call.name) {
+        mcp.execute(&call.name, &call.arguments, remaining(deadline))
+            .await
+    } else {
+        tools
+            .execute(&call.name, &call.arguments, remaining(deadline))
+            .await
+    };
+    result["remaining_tool_calls"] = serde_json::json!(remaining_tool_calls);
+    sink.on_event(&StreamEvent::ToolEnd {
+        name: call.name.clone(),
+        call_id: call.id.clone(),
+        is_error: result.get("error").is_some()
+            || result
+                .get("exit_code")
+                .and_then(Value::as_i64)
+                .is_some_and(|code| code != 0),
+        elapsed_ms: tool_started.elapsed().as_millis() as u64,
+    });
+    sink.on_event(&crate::monitor::operation(
+        "tool_result",
+        serde_json::json!({
+            "call_id":call.id,"name":call.name,"exit_code":result.get("exit_code"),
+            "timed_out":result.get("timed_out"),"truncated":result.get("truncated"),
+            "result_bytes":crate::context::history::serialized_bytes(&result)?
+        }),
+    ));
+    debug_capture(options, sink, "tool_result", || result.to_string());
+    let original = serde_json::to_string(&result)?;
+    let saved = if can_archive && original.len() > options.max_tool_output_bytes as usize {
+        archive.save(&original)?
+    } else {
+        None
+    };
+    let projected = crate::context::history::project_result(
+        &original,
+        options.max_tool_output_bytes as usize,
+        saved.as_deref(),
+    )?;
+    if projected.len() != original.len() {
+        sink.on_event(&crate::monitor::operation("tool_output_projected", serde_json::json!({"call_id":call.id,"original_bytes":original.len(),"projected_bytes":projected.len(),"archived":saved.is_some()})));
+    }
+    Ok(projected)
 }
 
 /// Parse and validate the final report. Errors are returned to the model as

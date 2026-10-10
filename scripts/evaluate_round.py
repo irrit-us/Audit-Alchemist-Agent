@@ -153,7 +153,7 @@ def summarize(output, review_path=None):
             for name, count in counts.items():
                 group[name] = group.get(name, 0) + count
         for summary in record["summaries"]:
-            for name in ("turns", "tools", "tool_errors", "retries", "output_repairs", "empty_completions", "tool_budget_rejections"):
+            for name in ("turns", "tools", "tool_errors", "retries", "output_repairs", "empty_completions", "tool_budget_rejections", "settlements", "settlement_calls"):
                 group["operational_totals"][name] = group["operational_totals"].get(name, 0) + summary.get(name, 0)
             usage = summary.get("usage")
             if usage and any(usage.values()):
@@ -219,6 +219,8 @@ def log_records(output, summary, round_number, date=None):
             "output_repairs": operational.get("output_repairs", 0),
             "empty_completions": operational.get("empty_completions", 0),
             "tool_budget_rejections": operational.get("tool_budget_rejections", 0),
+            "settlements": operational.get("settlements", 0),
+            "settlement_calls": operational.get("settlement_calls", 0),
             "tokens": {name: operational.get(name, 0) for name in
                        ("prompt_tokens", "completion_tokens", "reasoning_tokens", "total_tokens")},
         })

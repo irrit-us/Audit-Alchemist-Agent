@@ -298,6 +298,24 @@ fn calls() -> Vec<Value> {
     ]
 }
 
+fn tool_names(request: &Value) -> Vec<String> {
+    request["tools"]
+        .as_array()
+        .map(|tools| {
+            tools
+                .iter()
+                .map(|tool| {
+                    tool.get("name")
+                        .and_then(Value::as_str)
+                        .or_else(|| tool.pointer("/function/name").and_then(Value::as_str))
+                        .unwrap()
+                        .to_owned()
+                })
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
 fn sse(value: Value) -> String {
     format!("data: {value}\n\n")
 }
@@ -538,7 +556,7 @@ fn all_wires_explore_write_run_poc_and_replay_native_tool_results() {
 }
 
 #[test]
-fn exhausted_budget_forces_a_final_report_without_tools() {
+fn exhausted_budget_enters_read_only_settlement() {
     for wire in ["chat-completions", "responses", "anthropic"] {
         let dir = tempfile::tempdir().unwrap();
         std::fs::write(dir.path().join("entry.py"), "from helper import run\n").unwrap();
@@ -547,8 +565,8 @@ fn exhausted_budget_forces_a_final_report_without_tools() {
             "def run(name):\n    return eval(name)\n",
         )
         .unwrap();
-        // The first turn consumes the whole budget; the next request must drop
-        // the tool definitions so the model has to return its final report.
+        // The first turn consumes the whole budget; the next request must carry
+        // only read-only tools so the model can verify evidence before reporting.
         let (endpoint, rx, task) = server(vec![tool_turn(wire), final_turn(wire)]);
         let output = run(wire, dir.path(), &endpoint, "4");
         assert!(
@@ -560,9 +578,10 @@ fn exhausted_budget_forces_a_final_report_without_tools() {
         let first = rx.recv().unwrap();
         assert_eq!(first["tools"].as_array().unwrap().len(), 7);
         let second = rx.recv().unwrap();
-        assert!(
-            second.get("tools").is_none(),
-            "{wire} still offered tools after the budget"
+        assert_eq!(
+            tool_names(&second),
+            vec!["load_skill", "read_file", "list_files", "search"],
+            "{wire} did not restrict to read-only tools"
         );
         let report: Value = serde_json::from_slice(&output.stdout).unwrap();
         assert_eq!(report["findings"][0]["cwe"], "CWE-95");
@@ -570,11 +589,49 @@ fn exhausted_budget_forces_a_final_report_without_tools() {
 }
 
 #[test]
+fn settlement_allows_read_only_verification_and_rejects_mutation() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(dir.path().join("entry.py"), "from helper import run\n").unwrap();
+    std::fs::write(
+        dir.path().join("helper.py"),
+        "def run(name):\n    return eval(name)\n",
+    )
+    .unwrap();
+    // Budget of one call: the first four-call batch is rejected and settlement
+    // runs. The second turn reads helper.py and load_skill, while write_file and
+    // bash must be rejected without effect. The third turn returns the report.
+    let (endpoint, rx, task) = server(vec![
+        tool_turn("chat-completions"),
+        tool_turn("chat-completions"),
+        final_turn("chat-completions"),
+    ]);
+    let output = run("chat-completions", dir.path(), &endpoint, "1");
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    task.join().unwrap();
+    let _first = rx.recv().unwrap();
+    let second = rx.recv().unwrap();
+    assert_eq!(
+        tool_names(&second),
+        vec!["load_skill", "read_file", "list_files", "search"]
+    );
+    let third = rx.recv().unwrap();
+    assert!(tool_names(&third).is_empty());
+    // Bash and write_file were withdrawn during settlement, so no PoC exists.
+    assert!(!dir.path().join("poc.sh").exists());
+    let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(report["findings"][0]["path"], "helper.py");
+}
+
+#[test]
 fn over_budget_batch_is_rejected_then_finalizes_without_mutation() {
     let dir = tempfile::tempdir().unwrap();
     std::fs::write(dir.path().join("entry.py"), "pass\n").unwrap();
     // The first turn asks for four tools against a one-call budget. None may
-    // execute; the harness disables tools and asks for a final empty report.
+    // execute; the harness enters read-only settlement and asks for a report.
     let (endpoint, rx, task) = server(vec![
         tool_turn("chat-completions"),
         empty_final_turn("chat-completions"),
@@ -589,7 +646,10 @@ fn over_budget_batch_is_rejected_then_finalizes_without_mutation() {
     task.join().unwrap();
     let _first = rx.recv().unwrap();
     let second = rx.recv().unwrap();
-    assert!(second.get("tools").is_none());
+    assert_eq!(
+        tool_names(&second),
+        vec!["load_skill", "read_file", "list_files", "search"]
+    );
     assert!(!dir.path().join("poc.sh").exists());
     let report: Value = serde_json::from_slice(&output.stdout).unwrap();
     assert_eq!(report["findings"].as_array().unwrap().len(), 0);

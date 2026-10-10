@@ -46,6 +46,26 @@ failure to justify it. Live evidence is in [Validation](validation.md).
 | Auto-retry read-only tools | Goose | Candidate | Observed failures are model/provider-side; add on a measured idempotent-tool failure rate |
 | Native `glob`/`grep` tools | Codex, OpenCode | Partial | `search` already provides batched, bounded search; no measured need for more tools |
 
+## External reference review: ARTEX agent harness
+
+Reviewed 2026-10-10 against an external single-agent harness design reference
+(ARTEX: role assembly, model/tool loop, permissions, context management,
+recovery, budgets, settlement, observability, testing). The reference is design
+guidance; this project did not run ARTEX and does not claim its reported gaps or
+mechanisms beyond what our own tests establish. Adoptions below are verified by
+this repository's tests.
+
+| ARTEX design point | Disposition here | Independent verification |
+| --- | --- | --- |
+| Settlement phase with its own budget and a capability whitelist | Adopted: `--max-settlement-calls` (default 2) withdraws mutating tools and keeps read-only ones after the action budget, so a run can still verify a cited line | `settlement_allows_read_only_verification_and_rejects_mutation`; `exhausted_budget_enters_read_only_settlement` |
+| Per-run configuration traceability (model, prompt, tools, policy versions) | Adopted: `run_start` records harness version, prompt/instruction fingerprints, tool names, and effective limits | `run_manifest_records_fingerprints_and_limits_without_prompt_text` |
+| Retries must know whether output is committed and side effects exist | Already satisfied: tool calls run only after a complete turn, and transport retries stop before any tool executes | `incomplete_tool_streams_never_execute_calls`, `exhausted_budget_enters_read_only_settlement` |
+| Distinguish empty completion from thinking-only or truncated output | Partial: empty completions are retried as transient (`empty_completion_retry`); a non-`stop`/`tool_calls` finish reason still fails | `empty_completion_is_retried_before_failing`, provider truncation test |
+| One dispatcher for direct, deferred, and MCP calls | Partial: native and MCP calls share the tool budget, paired results, and settlement whitelist; MCP read-only status is unknown and treated as mutating | MCP fixtures, settlement tests |
+| Multi-tier context compaction (micro/auto/reactive) | Deferred: deterministic pruning never fires at the default and a forced 128 KiB cap was rejected in round 15 | [Validation](validation.md) round 15 |
+| Background task management and resume/transcripts | Out of scope: Bash is synchronous with a deadline; journals are diagnostics, not resumable checkpoints | `tool_lifecycle.rs` |
+| Domain acceptance separate from model stop | Partially adopted: evaluation scores exact/line/reviewed findings, while a single audit returns one validated JSON report | evaluation tests |
+
 ## Recommended boundaries
 
 The model chooses investigation steps. Rust owns parsing, budgets, process

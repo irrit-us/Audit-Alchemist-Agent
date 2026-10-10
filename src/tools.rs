@@ -25,6 +25,13 @@ use tokio::{io::AsyncReadExt, process::Command};
 pub const OUTPUT_BYTES: usize = 32_768;
 const FILE_BYTES: usize = 1_048_576;
 
+/// Native tools that only inspect state. They remain available during the
+/// settlement phase, when mutating tools (Bash, write, edit) are withdrawn.
+/// MCP tools are treated as mutating because their semantics are unknown.
+pub fn read_only(name: &str) -> bool {
+    matches!(name, "read_file" | "list_files" | "search" | "load_skill")
+}
+
 pub fn definitions() -> Vec<Value> {
     let string = || json!({"type":"string"});
     let integer = || json!({"type":"integer","minimum":1});

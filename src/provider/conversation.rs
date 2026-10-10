@@ -100,6 +100,21 @@ impl Conversation {
         }
     }
 
+    /// Keep only the named tools in the request schema. Used to withdraw
+    /// mutating tools during settlement while leaving read-only verification.
+    pub fn retain_tools(&mut self, names: &[&str]) {
+        let Some(tools) = self.body.get_mut("tools").and_then(Value::as_array_mut) else {
+            return;
+        };
+        tools.retain(|tool| {
+            let name = tool
+                .get("name")
+                .and_then(Value::as_str)
+                .or_else(|| tool.pointer("/function/name").and_then(Value::as_str));
+            name.is_some_and(|name| names.contains(&name))
+        });
+    }
+
     /// Stop offering tools so a budget-exhausted run must return its report.
     /// The system prompt already tells the model to report when
     /// `remaining_tool_calls` is zero; this makes the contract enforceable
