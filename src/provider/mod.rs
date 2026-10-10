@@ -29,7 +29,7 @@ use std::{
 };
 
 use self::{
-    conversation::{Conversation, Turn, TurnDecoder},
+    conversation::{Conversation, EmptyCompletion, Turn, TurnDecoder},
     events::{EventSink, StreamEvent},
     sse::SseLines,
     wire::WireApi,
@@ -145,6 +145,10 @@ pub struct LlmOptions {
     /// Maximum JSON bytes per model-visible tool result, including truncation metadata.
     #[arg(long, default_value_t = 32768, value_parser = clap::value_parser!(u32).range(1024..=131072))]
     pub max_tool_output_bytes: u32,
+    /// Bounded retries when the final report fails JSON or evidence validation.
+    /// `0` restores fail-fast behavior; repairs never fabricate a report.
+    #[arg(long, default_value_t = 2, value_parser = clap::value_parser!(u32).range(0..=8))]
+    pub max_output_repairs: u32,
 }
 
 impl LlmOptions {
@@ -248,6 +252,8 @@ impl LlmOptions {
             self.max_source_bytes.to_string(),
             "--max-tokens".into(),
             self.max_tokens.to_string(),
+            "--max-stream-bytes".into(),
+            self.max_stream_bytes.to_string(),
             "--max-attempts".into(),
             self.max_attempts.to_string(),
             "--retry-base-ms".into(),
@@ -264,9 +270,14 @@ impl LlmOptions {
             self.context_keep_turns.to_string(),
             "--max-tool-output-bytes".into(),
             self.max_tool_output_bytes.to_string(),
+            "--max-output-repairs".into(),
+            self.max_output_repairs.to_string(),
         ];
         if let Some(tokens) = self.max_source_tokens {
             args.extend(["--max-source-tokens".into(), tokens.to_string()]);
+        }
+        if let Some(effort) = self.reasoning_effort {
+            args.extend(["--reasoning-effort".into(), effort.as_str().into()]);
         }
         if let Some(endpoint) = &self.endpoint {
             args.extend(["--endpoint".into(), endpoint.clone()]);
@@ -571,6 +582,9 @@ async fn audit_session(
         crate::tools::WorkspaceTools::configured(root, context, options.settings.clone())?;
     let mut used = 0usize;
     let mut turn_number = 0u32;
+    let mut tools_disabled = false;
+    let mut repairs = 0u32;
+    let mut empty_retries = 0u32;
     let can_archive = matches!(
         options.context_policy,
         crate::context::history::ContextPolicy::Prune
@@ -578,6 +592,17 @@ async fn audit_session(
     loop {
         if Instant::now() >= deadline {
             return Err(AuditTimeout.into());
+        }
+        // Force a final report turn once the tool budget is spent. The prompt
+        // already says to stop calling tools at zero; removing the tool
+        // definitions makes that instruction enforceable rather than an error.
+        if used >= options.max_tool_calls as usize && !tools_disabled {
+            conversation.disable_tools();
+            tools_disabled = true;
+            sink.on_event(&crate::monitor::operation(
+                "final_turn_forced",
+                serde_json::json!({"used_tool_calls":used,"max_tool_calls":options.max_tool_calls}),
+            ));
         }
         let request_bytes = if can_archive {
             let reduction = conversation.reduce_context(
@@ -611,7 +636,21 @@ async fn audit_session(
         ));
         debug_capture(options, sink, "request", || conversation.body.to_string());
         let started = Instant::now();
-        let turn = complete(options, &client, &conversation.body, deadline, sink).await?;
+        let turn = match complete(options, &client, &conversation.body, deadline, sink).await {
+            Ok(turn) => turn,
+            // A provider that completes a stream with no text or tool calls is a
+            // transient response defect; retry the unchanged request before
+            // spending the run. Tool mutations are still never replayed.
+            Err(error) if error.is::<EmptyCompletion>() && empty_retries < options.max_attempts => {
+                empty_retries += 1;
+                sink.on_event(&crate::monitor::operation(
+                    "empty_completion_retry",
+                    serde_json::json!({"attempt":empty_retries,"max_attempts":options.max_attempts}),
+                ));
+                continue;
+            }
+            Err(error) => return Err(error),
+        };
         sink.on_event(&StreamEvent::Usage(turn.usage));
         sink.on_event(&crate::monitor::operation(
             "turn_end",
@@ -622,15 +661,27 @@ async fn audit_session(
         ));
         debug_capture(options, sink, "response", || turn.text.clone());
         if turn.calls.is_empty() {
-            let findings: Response = serde_json::from_str(&turn.text)
-                .context("model must return a JSON response without Markdown fences")?;
-            findings.validate()?;
-            for finding in &findings.findings {
-                tools.validate_finding(finding)?;
+            match validate_final(&turn.text, &tools) {
+                Ok(findings) => {
+                    mcp.shutdown().await;
+                    sink.on_event(&StreamEvent::Done);
+                    return Ok(findings);
+                }
+                Err(error) if repairs < options.max_output_repairs => {
+                    repairs += 1;
+                    conversation.append_feedback(&turn, &repair_message(&error))?;
+                    sink.on_event(&crate::monitor::operation(
+                        "output_repair",
+                        serde_json::json!({
+                            "attempt":repairs,
+                            "max_repairs":options.max_output_repairs,
+                            "error":format!("{error:#}")
+                        }),
+                    ));
+                    continue;
+                }
+                Err(error) => return Err(error),
             }
-            mcp.shutdown().await;
-            sink.on_event(&StreamEvent::Done);
-            return Ok(findings);
         }
         ensure!(
             used + turn.calls.len() <= options.max_tool_calls as usize,
@@ -697,6 +748,26 @@ async fn audit_session(
         }
         conversation.append(&turn, &results)?;
     }
+}
+
+/// Parse and validate the final report. Errors are returned to the model as
+/// bounded repair feedback; the run still fails if the budget is exhausted.
+fn validate_final(text: &str, tools: &crate::tools::WorkspaceTools) -> Result<Response> {
+    let findings: Response = serde_json::from_str(text)
+        .context("model must return a JSON response without Markdown fences")?;
+    findings.validate()?;
+    for finding in &findings.findings {
+        tools.validate_finding(finding)?;
+    }
+    Ok(findings)
+}
+
+fn repair_message(error: &anyhow::Error) -> String {
+    format!(
+        "Your previous response was rejected during validation: {error:#}. \
+         Return exactly one JSON object matching the required schema, with no prose \
+         or Markdown fences. Keep supported findings and correct only the rejected fields."
+    )
 }
 
 fn debug_capture(

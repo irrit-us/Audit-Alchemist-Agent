@@ -21,6 +21,19 @@ pub struct Turn {
     assistant: Vec<Value>,
 }
 
+/// The provider completed a stream without text or tool calls. Treated as a
+/// transient response defect so the caller can retry the unchanged request.
+#[derive(Debug)]
+pub struct EmptyCompletion;
+
+impl std::fmt::Display for EmptyCompletion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("model response contained no output text or tool calls")
+    }
+}
+
+impl std::error::Error for EmptyCompletion {}
+
 pub struct Conversation {
     pub body: Value,
     wire: WireApi,
@@ -87,6 +100,16 @@ impl Conversation {
         }
     }
 
+    /// Stop offering tools so a budget-exhausted run must return its report.
+    /// The system prompt already tells the model to report when
+    /// `remaining_tool_calls` is zero; this makes the contract enforceable
+    /// instead of failing the run when the model still asks for a tool.
+    pub fn disable_tools(&mut self) {
+        if let Some(body) = self.body.as_object_mut() {
+            body.remove("tools");
+        }
+    }
+
     pub fn append(&mut self, turn: &Turn, results: &[String]) -> Result<()> {
         ensure!(
             turn.calls.len() == results.len(),
@@ -131,6 +154,30 @@ impl Conversation {
         }
         if !anthropic.is_empty() {
             history.push(json!({"role":"user","content":anthropic}));
+        }
+        Ok(())
+    }
+
+    /// Append a rejected final answer and a corrective user message. Used only
+    /// for bounded validation feedback, never for tool results, so the model
+    /// can re-emit without losing the rejected claim.
+    pub fn append_feedback(&mut self, turn: &Turn, message: &str) -> Result<()> {
+        let key = if self.wire == WireApi::Responses {
+            "input"
+        } else {
+            "messages"
+        };
+        let history = self
+            .body
+            .get_mut(key)
+            .and_then(Value::as_array_mut)
+            .context("missing conversation history")?;
+        history.extend(turn.assistant.iter().cloned());
+        match self.wire {
+            WireApi::ChatCompletions => history.push(json!({"role":"user","content":message})),
+            WireApi::Responses => history
+                .push(json!({"role":"user","content":[{"type":"input_text","text":message}]})),
+            WireApi::Anthropic => history.push(json!({"role":"user","content":message})),
         }
         Ok(())
     }
@@ -371,10 +418,9 @@ impl TurnDecoder {
                 "invalid or duplicate tool call id/name"
             );
         }
-        ensure!(
-            !self.stream.text.trim().is_empty() || !calls.is_empty(),
-            "model response contained no output text or tool calls"
-        );
+        if self.stream.text.trim().is_empty() && calls.is_empty() {
+            return Err(EmptyCompletion.into());
+        }
         Ok(Turn {
             text: self.stream.text,
             usage: self.stream.usage,

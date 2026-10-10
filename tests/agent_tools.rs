@@ -475,6 +475,38 @@ fn all_wires_explore_write_run_poc_and_replay_native_tool_results() {
 }
 
 #[test]
+fn exhausted_budget_forces_a_final_report_without_tools() {
+    for wire in ["chat-completions", "responses", "anthropic"] {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("entry.py"), "from helper import run\n").unwrap();
+        std::fs::write(
+            dir.path().join("helper.py"),
+            "def run(name):\n    return eval(name)\n",
+        )
+        .unwrap();
+        // The first turn consumes the whole budget; the next request must drop
+        // the tool definitions so the model has to return its final report.
+        let (endpoint, rx, task) = server(vec![tool_turn(wire), final_turn(wire)]);
+        let output = run(wire, dir.path(), &endpoint, "4");
+        assert!(
+            output.status.success(),
+            "{wire}: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        task.join().unwrap();
+        let first = rx.recv().unwrap();
+        assert_eq!(first["tools"].as_array().unwrap().len(), 7);
+        let second = rx.recv().unwrap();
+        assert!(
+            second.get("tools").is_none(),
+            "{wire} still offered tools after the budget"
+        );
+        let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+        assert_eq!(report["findings"][0]["cwe"], "CWE-95");
+    }
+}
+
+#[test]
 fn over_budget_batch_fails_before_any_tool_mutation() {
     let dir = tempfile::tempdir().unwrap();
     std::fs::write(dir.path().join("entry.py"), "pass\n").unwrap();

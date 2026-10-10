@@ -55,6 +55,8 @@ pub struct Monitor<'a> {
     tools: u64,
     tool_errors: u64,
     retries: u64,
+    output_repairs: u64,
+    empty_completions: u64,
     completed_usage: Usage,
     current_usage: Usage,
 }
@@ -101,6 +103,8 @@ impl<'a> Monitor<'a> {
             tools: 0,
             tool_errors: 0,
             retries: 0,
+            output_repairs: 0,
+            empty_completions: 0,
             completed_usage: Usage::default(),
             current_usage: Usage::default(),
         })
@@ -127,6 +131,8 @@ impl<'a> Monitor<'a> {
         self.on_event(&operation("run_end", json!({"outcome":outcome,"phase":self.phase,
             "elapsed_ms":self.start.elapsed().as_millis() as u64,"turns":self.turns,
             "tools":self.tools,"tool_errors":self.tool_errors,"retries":self.retries,
+            "output_repairs":self.output_repairs,
+            "empty_completions":self.empty_completions,
             "usage":add(self.completed_usage, self.current_usage),"trace_truncated":self.truncated})));
         if let Some(error) = &self.error {
             anyhow::bail!("run trace write failed: {error}");
@@ -215,6 +221,13 @@ impl EventSink for Monitor<'_> {
             }
             StreamEvent::Operation { name, .. } if name == "retry" => {
                 self.retries += 1;
+            }
+            StreamEvent::Operation { name, .. } if name == "output_repair" => {
+                self.output_repairs += 1;
+                self.phase = "repairing".into();
+            }
+            StreamEvent::Operation { name, .. } if name == "empty_completion_retry" => {
+                self.empty_completions += 1;
             }
             StreamEvent::Operation { name, .. } if name == "turn_end" => {
                 self.phase = "validating".into();

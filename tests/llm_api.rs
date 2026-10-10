@@ -104,6 +104,8 @@ fn audit(endpoint: &str) -> std::process::Output {
             "fixture-model",
             "--max-attempts",
             "1",
+            "--max-output-repairs",
+            "0",
             "--timeout-ms",
             "5000",
         ])
@@ -139,6 +141,56 @@ fn plain_api_audit_transmits_only_scoped_source_and_validates_findings() {
         .unwrap()
         .contains("shell=True"));
     assert!(!String::from_utf8_lossy(&output.stdout).contains("fixture-key"));
+}
+
+#[test]
+fn evaluation_forwards_reasoning_effort_and_stream_limit_to_child() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(dir.path().join("source.py"), "print('safe')\n").unwrap();
+    std::fs::write(dir.path().join("dataset.json"), serde_json::json!({
+        "schema_version": 1, "name": "forwarding", "cases": [{
+            "id": "safe", "target": "source.py", "instruction": "Audit this file.", "expected": []
+        }]
+    }).to_string()).unwrap();
+    let (endpoint, receiver, handle) = fixture(
+        200,
+        serde_json::json!({"schema_version":1,"findings":[]}),
+        "stop",
+    );
+    let output = Command::new(env!("CARGO_BIN_EXE_alchemist"))
+        .args(["evaluate", "--dataset"])
+        .arg(dir.path().join("dataset.json"))
+        .args([
+            "--endpoint",
+            &endpoint,
+            "--model",
+            "fixture-model",
+            "--reasoning-effort",
+            "low",
+            "--max-stream-bytes",
+            "3145728",
+            "--max-attempts",
+            "1",
+            "--timeout-ms",
+            "5000",
+        ])
+        .env("AUDIT_API_KEY", "fixture-key")
+        .output()
+        .unwrap();
+    let request = receiver.recv_timeout(Duration::from_secs(2)).unwrap();
+    handle.join().unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(request["reasoning_effort"], "low");
+    let report: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    let args = report["args"].as_array().unwrap();
+    assert!(args
+        .windows(2)
+        .any(|pair| pair[0] == "--max-stream-bytes" && pair[1] == "3145728"));
+    assert_eq!(report["metrics"]["successful_cases"], 1);
 }
 
 #[test]

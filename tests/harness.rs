@@ -247,8 +247,18 @@ fn real_world_datasets_validate() {
     for manifest in manifests {
         let (dataset, _) = audit_harness::dataset::load(&root.join(manifest)).unwrap();
         assert!(!dataset.cases.is_empty(), "{manifest}");
+        // Cases carry at most one labeled root cause; safe controls deliberately
+        // carry none so false-positive behavior is measured, not asserted away.
+        assert!(
+            dataset.cases.iter().any(|case| !case.expected.is_empty()),
+            "{manifest} needs at least one labeled finding"
+        );
         for case in &dataset.cases {
-            assert_eq!(case.expected.len(), 1, "{manifest} {}", case.id);
+            assert!(
+                case.expected.len() <= 1,
+                "{manifest} {} has multiple expected findings",
+                case.id
+            );
         }
     }
 }

@@ -1,0 +1,30 @@
+# Round-9 focused A/B on the case that produced an invalid final report in
+# round 8 (an unknown `evidence_note` field). Six trials per variant.
+trials = 6
+workers = 4
+instruction = "Audit the target for exploitable security vulnerabilities. Report concrete root causes with exact source lines and explain how an attacker reaches each unsafe operation. Your final message must be exactly the JSON object, beginning with '{' and ending with '}', with no text before or after it."
+
+[prompts]
+baseline = "prompts/audit.txt"
+candidate = "prompts/audit.txt"
+
+[limits]
+model = "deepseek-flash"
+endpoint = "https://api.deepseek.com/chat/completions"
+max_tokens = 32768
+max_tool_calls = 16
+timeout_ms = 600000
+max_attempts = 5
+reasoning_effort = "low"
+max_stream_bytes = 8388608
+jobs = 1
+
+[limits_by_variant.baseline]
+max_output_repairs = 0
+
+[limits_by_variant.candidate]
+max_output_repairs = 2
+
+[[datasets]]
+path = "datasets/tiny/zk-email-sha256/audit/dataset.json"
+case = "sha256-length-comparator-unconstrained"

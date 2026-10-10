@@ -160,10 +160,54 @@ fn waiting_provider_emits_heartbeat_and_records_timeout() {
 }
 
 #[test]
+fn invalid_final_output_is_repaired_within_budget() {
+    let dir = tempfile::tempdir().unwrap();
+    let (url, task) = server(vec![
+        (200, 0, answer("not-json")),
+        (200, 0, answer(r#"{"schema_version":1,"findings":[]}"#)),
+    ]);
+    let output = run(dir.path(), &url, &["--format", "quiet"]);
+    task.join().unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let (summary, raw) = trace(dir.path());
+    assert_eq!(summary["summary"]["outcome"], "success");
+    assert_eq!(summary["summary"]["output_repairs"], 1);
+    assert!(raw.contains("output_repair"));
+}
+
+#[test]
+fn empty_completion_is_retried_before_failing() {
+    let dir = tempfile::tempdir().unwrap();
+    let (url, task) = server(vec![
+        (200, 0, answer("")),
+        (200, 0, answer(r#"{"schema_version":1,"findings":[]}"#)),
+    ]);
+    let output = run(dir.path(), &url, &["--format", "quiet"]);
+    task.join().unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let (summary, raw) = trace(dir.path());
+    assert_eq!(summary["summary"]["outcome"], "success");
+    assert_eq!(summary["summary"]["empty_completions"], 1);
+    assert!(raw.contains("empty_completion_retry"));
+}
+
+#[test]
 fn invalid_final_output_is_an_error_at_validation_and_skills_need_no_credentials() {
     let dir = tempfile::tempdir().unwrap();
     let (url, task) = server(vec![(200, 0, answer("not-json"))]);
-    let output = run(dir.path(), &url, &["--format", "quiet"]);
+    let output = run(
+        dir.path(),
+        &url,
+        &["--format", "quiet", "--max-output-repairs", "0"],
+    );
     task.join().unwrap();
     assert_eq!(output.status.code(), Some(2));
     let (summary, _) = trace(dir.path());

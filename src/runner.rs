@@ -68,6 +68,17 @@ impl std::fmt::Display for OutputLimit {
 }
 impl std::error::Error for OutputLimit {}
 
+/// Bounded, lossy tail of a failed child's stderr for operational diagnostics.
+fn stderr_tail(bytes: &[u8]) -> String {
+    const TAIL: usize = 2000;
+    let slice = if bytes.len() > TAIL {
+        &bytes[bytes.len() - TAIL..]
+    } else {
+        bytes
+    };
+    String::from_utf8_lossy(slice).trim().to_string()
+}
+
 async fn bounded_read(mut reader: impl AsyncRead + Unpin, limit: usize) -> Result<Vec<u8>> {
     let mut bytes = Vec::new();
     (&mut reader)
@@ -184,13 +195,13 @@ pub async fn run(config: &RunConfig, request: Request) -> RunResult {
             drop(stdin);
             Ok::<_, anyhow::Error>(())
         };
-        let (_, stdout, _stderr, status) = tokio::try_join!(
+        let (_, stdout, stderr, status) = tokio::try_join!(
             input,
             bounded_read(stdout, config.max_output_bytes),
             bounded_read(stderr, config.max_output_bytes),
             async { child.wait().await.context("wait for agent") }
         )?;
-        Ok::<_, anyhow::Error>((stdout, status))
+        Ok::<_, anyhow::Error>((stdout, stderr, status))
     };
     match tokio::time::timeout(config.timeout, exchange).await {
         Err(_) => {
@@ -205,11 +216,17 @@ pub async fn run(config: &RunConfig, request: Request) -> RunResult {
             };
             result.error = Some(format!("{error:#}"));
         }
-        Ok(Ok((stdout, status))) => {
+        Ok(Ok((stdout, stderr, status))) => {
             result.exit_code = status.code();
             if !status.success() {
                 result.outcome = Outcome::NonzeroExit;
                 result.error = Some(format!("agent exited with {status}"));
+                let detail = stderr_tail(&stderr);
+                if !detail.is_empty() {
+                    // Operational diagnostics stay on stderr; the report stays
+                    // generic so a child error cannot leak provider details.
+                    tracing::warn!(case_id = %request.case_id, "agent stderr: {detail}");
+                }
             } else {
                 let parsed = serde_json::from_slice::<Response>(&stdout)
                     .context("parse agent response")
