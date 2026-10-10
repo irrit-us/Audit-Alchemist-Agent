@@ -1,0 +1,102 @@
+{
+  "2f08f44d9d5fb63fe15daf7f138b2650d8a48329a5028a896ed2ebca0dbc0282:argon2i32-small-block-count:47062f6d633be5a107ef4992f42af1a95105017aa92d2353997467c060c8ce0d": {
+    "evidence": "config.nb_blocks = nb_blocks is never range-checked; monocypher.c derives the segment size and reads blocks from the caller-sized work area. Same undersized-work-area root cause as the expected line-345 sink.",
+    "verdict": "alternate_match"
+  },
+  "2f08f44d9d5fb63fe15daf7f138b2650d8a48329a5028a896ed2ebca0dbc0282:argon2i32-small-block-count:885cde05dfc9714743fceacdfe6e46f394d72438552e943fe14de3f8f8036108": {
+    "evidence": "Blake2b.__init__ passes unbounded len(key) into crypto_blake2b_keyed_init, the same fixed key_block[128] copy as line 281. Genuine separate wrapper defect from the expected argon2 undersized work area.",
+    "verdict": "valid_distinct"
+  },
+  "35c40d8519d89a9b56e611391a59941b023822c123a4468b572c42021bb903fb:sha256-length-comparator-unconstrained:0a20b62c8838f1c9ef62c2bf40011bed37b2d227b5de730f5042ec34adbf925d": {
+    "evidence": "Sha256General/Sha256Partial derive inBlockIndex from an unbounded paddedInLength and feed inBlockIndex-1 into ItemAtIndex, whose LessThan lacks a range check. Same comparator/selector soundness defect as the expected line-126 sink.",
+    "verdict": "alternate_match"
+  },
+  "3a6275dcda3c0182e89c05ba9f24c872c6826da215efb7ccbef475259fd2f789:argon2i32-small-block-count:08a17eab11c1dfda3abb7d963f7e582b50968ad9642e218a764a4cc44ae9a483": {
+    "evidence": "lock()/unlock() pass caller-controlled key and nonce buffers into native routines declaring key[32]/nonce[24] without a length check; the incremental wrapper guards lengths at lines 214-218. Distinct AEAD bounds defect; no native crash or disclosure reproduced.",
+    "verdict": "valid_distinct"
+  },
+  "3a6275dcda3c0182e89c05ba9f24c872c6826da215efb7ccbef475259fd2f789:argon2i32-small-block-count:80fbbbe9bb13d560b9963b93e534678b8f92df0e6d6f93884d5e5322efc995c7": {
+    "evidence": "malloc at line 345 is unchecked before crypto_argon2 consumes work_area at 347; a failed allocation dereferences NULL. Distinct availability failure from a successfully sized undersized allocation; OOM was not executed.",
+    "verdict": "valid_distinct"
+  },
+  "3bc7864dd6594470102145f94180c1e2a901bf11097b81f54426105c16a61f60:iss-array-loose-match:790fb0c1b3d80a9a5d2028b9660520b9f96265ad415f8b38e96d3fe3ce7be47d": {
+    "evidence": "cacheSet applies the exp bound only inside hasIat; a signed token with exp but no numeric iat stays verified after expiry under cache:true. Independently reproduced; cache opt-in is required.",
+    "verdict": "valid_distinct"
+  },
+  "3bc7864dd6594470102145f94180c1e2a901bf11097b81f54426105c16a61f60:iss-array-loose-match:d36986b6543654cf6f15e2f0f1be9b095f8d57f7f8a48beec601228e652eb287": {
+    "evidence": "The allowed aud/iss/sub/nonce/jti validators are skipped when the claim is absent. This is the library's documented requiredClaims separation and the source states the assumption; no caller that configured the documented required claim is bypassed. Counts as intended opt-in behavior, not a supported finding.",
+    "verdict": "invalid"
+  },
+  "456e7197f6af542efacb1c89f3800b8152e86fd7bf991bda14336c4237b42a3d:intoiter-drop-panic-double-free:070418273f4233e9c69463f76cb26db2694d936b60d4cb44c61694ff60a4b537": {
+    "evidence": "clear drops its slice at 1084 before setting len to zero at 1085, so a destructor panic leaves a stale live length that a later drop re-drops. reference/FIX.md independently patches this path; distinct from IntoIter cleanup.",
+    "verdict": "valid_distinct"
+  },
+  "456e7197f6af542efacb1c89f3800b8152e86fd7bf991bda14336c4237b42a3d:intoiter-drop-panic-double-free:2dcb812ece77ba605d859e2423a26de615fe471abd574f7ea7fc9602400b0d41": {
+    "evidence": "IntoIter::drop drops its tail before zeroing len, so a destructor panic drops the stale local vector again. Same expected root cause at the adjacent unsafe operation.",
+    "verdict": "alternate_match"
+  },
+  "5179dc183afb586a2548ed584c302d3d4c9399cbff929ae353557d37e23355f3:intoiter-drop-panic-double-free:7764d76ba37044355b1a9d0c5bf31cde5f539695d82fab5d26bbf1b0a7c6f53e": {
+    "evidence": "clear drops its slice at 1084 before setting len to zero at 1085, so a destructor panic leaves a stale live length that a later drop re-drops. reference/FIX.md independently patches this path; distinct from IntoIter cleanup.",
+    "verdict": "valid_distinct"
+  },
+  "5179dc183afb586a2548ed584c302d3d4c9399cbff929ae353557d37e23355f3:intoiter-drop-panic-double-free:83c105d1e48346b27ce104d1f4134c887ab88105d9142c827c267db66dbb737e": {
+    "evidence": "IntoIter::drop drops its tail before zeroing len, so a destructor panic drops the stale local vector again. Same expected root cause at the adjacent unsafe operation.",
+    "verdict": "alternate_match"
+  },
+  "57f6858cc96f478d2dc46c75bb1e770d2681459050e2852fa3d305df9acdd1b6:iss-array-loose-match:cb4cd3ce1b1263e178a46c02fd51be26a772173d7b8c890d314ccbba828c952c": {
+    "evidence": "cacheSet derives the cached validity window only when a numeric iat exists, so cache:true keeps accepting a signed exp token without iat after expiry. round4-jwt-verification.json shows uncached and numeric-iat controls reject; cache opt-in is required.",
+    "verdict": "valid_distinct"
+  },
+  "6519b522294b9582b66e643f9472895d7e12196fffadff7c304a2491564e2965:iss-array-loose-match:de098e0c7a75e7914200dd28836d4d5f91853151992edad8eb4c85904c187be5": {
+    "evidence": "verifyToken rejects a missing signature only when the key is truthy; key:null with algorithms:['HS256'] accepts an HS256 header with an empty signature. round4-jwt-verification.json confirms real-key and async-null-key paths reject. Conditional on an invalid key configuration, not a bypass of a correctly keyed verifier.",
+    "verdict": "valid_distinct"
+  },
+  "887648ccc31d42a76d41bc0f70ee4885b7e7327811a3319022334451d77a1c30:sha256-length-comparator-unconstrained:582495427260f0c59c2f696e459a55ca6261dddd69d2622d03c84d5305b775e9": {
+    "evidence": "Sha256General/Sha256Partial derive inBlockIndex from an unbounded paddedInLength and feed inBlockIndex-1 into ItemAtIndex, whose LessThan lacks a range check. Same comparator/selector soundness defect as the expected line-126 sink.",
+    "verdict": "alternate_match"
+  },
+  "887648ccc31d42a76d41bc0f70ee4885b7e7327811a3319022334451d77a1c30:sha256-length-comparator-unconstrained:a3d7460ca42a190f330072349d7e1dd3489ba6411cdb7af88401fe914bba0045": {
+    "evidence": "Sha256Partial has the identical unguarded inBlockIndex derivation and line-292 selector as Sha256General; same comparator soundness root cause at another sink.",
+    "verdict": "alternate_match"
+  },
+  "8ee74c03f4cb5d89ba868c8194dfcc7b813600882281c27a5020545a586a71da:iss-array-loose-match:5e0a44a6a027630b5950e62f04b4334ae808559662989a00fb797d86cb8a50be": {
+    "evidence": "verifyToken rejects a missing signature only when the key is truthy; key:null with algorithms:['HS256'] accepts an HS256 header with an empty signature. round4-jwt-verification.json confirms real-key and async-null-key paths reject. Conditional on an invalid key configuration, not a bypass of a correctly keyed verifier.",
+    "verdict": "valid_distinct"
+  },
+  "8ee74c03f4cb5d89ba868c8194dfcc7b813600882281c27a5020545a586a71da:iss-array-loose-match:8fc33fc01aabdbc0579371f4d70b52f342061b497da4767f9d63d56def72c481": {
+    "evidence": "cacheSet derives the cached validity window only when a numeric iat exists, so cache:true keeps accepting a signed exp token without iat after expiry. round4-jwt-verification.json shows uncached and numeric-iat controls reject; cache opt-in is required.",
+    "verdict": "valid_distinct"
+  },
+  "961c0f58df439d32b72e91942bae804309d5e3da57ccb9039fa29d3abd80910d:sha256-length-comparator-unconstrained:9622e031c3b44fe3a578706af85e67315b0660a93e637dc8b33d91534928b397": {
+    "evidence": "Sha256General/Sha256Partial derive inBlockIndex from an unbounded paddedInLength and feed inBlockIndex-1 into ItemAtIndex, whose LessThan lacks a range check. Same comparator/selector soundness defect as the expected line-126 sink.",
+    "verdict": "alternate_match"
+  },
+  "961c0f58df439d32b72e91942bae804309d5e3da57ccb9039fa29d3abd80910d:sha256-length-comparator-unconstrained:a0056d3e09c2faa34683078eda7bac12c40ac8d0bfb8d65303c2405ce7d2ab61": {
+    "evidence": "sha.circom:130-131 explicitly delegates padding to callers; selecting the declared prefix is the component interface. Same reasoning as the round-4 review, not a demonstrated caller violation.",
+    "verdict": "invalid"
+  },
+  "ad3fd16bcb5a34a0429f839f14636277c0f1bd4e6fd4be5382dcd9853289e2ae:lock-symlink-truncation:71832d7bcdcf26db6e2e39cae0a050ac6c4c2b10494e7460536b763aabf40fca": {
+    "evidence": "Windows reparse-point path. The case instruction scopes to the Unix lock-acquisition path only; genuine code but outside this case boundary.",
+    "verdict": "out_of_scope"
+  },
+  "bada7bd1072b60606f274345994746895f30ea8caf40290e12a98c0e7afa7f08:argon2i32-small-block-count:386b587366fe7442386e5ae5f8b48d8193ba9d6879cef0213c04069bed106069": {
+    "evidence": "blake2b passes unbounded len(key) into crypto_blake2b_keyed, whose native copy fills key_block[128]; a long key overflows the stack. Same genuine wrapper defect as line 281 CWE-121, distinct from the expected argon2 work-area issue.",
+    "verdict": "valid_distinct"
+  },
+  "bada7bd1072b60606f274345994746895f30ea8caf40290e12a98c0e7afa7f08:argon2i32-small-block-count:5a5dc16b2be143f2d09c08ccb990c7faf0229539e7242a784d3d7a575e3e6b75": {
+    "evidence": "lock()/unlock() pass caller-controlled key and nonce buffers into native routines declaring key[32]/nonce[24] without a length check; the incremental wrapper guards lengths at lines 214-218. Distinct AEAD bounds defect; no native crash or disclosure reproduced.",
+    "verdict": "valid_distinct"
+  },
+  "bada7bd1072b60606f274345994746895f30ea8caf40290e12a98c0e7afa7f08:argon2i32-small-block-count:5fcbd5f7efa0b8a0ded16a762d17f69529bbd886bd38307c119bea56e3b09e15": {
+    "evidence": "Unvalidated nb_blocks sizes the work area while native Argon2 reads initialized blocks; same expected undersized-work-area root cause with an alternate CWE at the expected line.",
+    "verdict": "alternate_match"
+  },
+  "e8ae9081982c8b9bf3f26b9649e9626eb465e80b690e9ac4aa9b330d583492b1:lock-symlink-truncation:70766b70d5ae0895dc295634dcb4623c856fe4e596d968bc2186d3fd36168de6": {
+    "evidence": "os.open at line 44 follows the attacker-controlled lock path with O_TRUNC set at line 41 and no O_NOFOLLOW; same protected-file truncation root cause one line after the expected sink. Directory write access and victim write permission are prerequisites.",
+    "verdict": "alternate_match"
+  },
+  "fbceda36d6b6837f17e90bbde362972723d78da6193beb045265b9eeb66dc43f:sha256-length-comparator-unconstrained:5f5c7707d036b02404cf6507ad9d2ec1fa0cda2156712c08d2f41f60f7d25734": {
+    "evidence": "preHash is the documented caller-provided precomputed state of Sha256BytesPartial. reference/FIX.md fixes the comparator and only documents the preHash bit-length assumption; binding preHash to a trusted state is the caller's responsibility and no misuse is demonstrated.",
+    "verdict": "invalid"
+  }
+}

@@ -156,6 +156,7 @@ See [Authentication](authentication.md) for the credential details.
 | `--context-keep-turns <N>` | `2` | 1–32 recent complete tool turns protected from history pruning |
 | `--max-tool-output-bytes <N>` | `32768` | 1024–131072 bytes per model-visible JSON tool result, including metadata |
 | `--max-tokens <N>` | `4096` | 1–32768 requested output tokens |
+| `--max-output-repairs <N>` | `2` | 0–8 bounded retries after the final report fails JSON, schema, or evidence validation; `0` fails fast. A repair never fabricates a report |
 | `--max-stream-bytes <N>` | `8388608` (8 MiB) | 1048576–33554432 streamed bytes per response, including SSE framing. Reasoning models can emit far more raw SSE than assembled text |
 | `--timeout-ms <N>` | `60000` | 1–3600000 wall-clock deadline |
 | `--max-output-bytes <N>` | `1048576` (1 MiB) | 1–16777216 stdout/stderr cap per run |
@@ -238,9 +239,11 @@ control the live stream and findings summary on stderr.
 
 Transient failures (connection, TLS, timeout, and HTTP 408/425/429/500/502/503/504/529)
 are retried with exponential backoff plus jitter, honoring `Retry-After`, and
-always inside the run deadline. A successful response is never retried, even
-when its content is invalid. A 401 from the Codex backend triggers one forced
-re-authentication and retry.
+always inside the run deadline. A completed stream with no text and no tool calls
+is also retried up to `--max-attempts` times without replaying any tool. A
+response with text is never retried for transport reasons; if its final report
+fails validation, `--max-output-repairs` returns the error to the model instead.
+A 401 from the Codex backend triggers one forced re-authentication and retry.
 
 ### `audit` and `evaluate` specifics
 

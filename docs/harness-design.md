@@ -25,6 +25,27 @@ references; this review does not claim to re-audit their current source or copy
 their permission model. The constraints below are chosen for this project's
 audit workload and existing contracts.
 
+## Well-known harness strategies
+
+Reusable patterns from widely used coding/agent harnesses, mapped to this
+project. **Adopted** means code, a deterministic test, and (where stated) a live
+round; **candidate** means documented with an acceptance criterion but not
+implemented; **rejected** means it conflicts with an invariant or has no observed
+failure to justify it. Live evidence is in [Validation](validation.md).
+
+| Strategy | Source harnesses | Status | Evidence |
+| --- | --- | --- | --- |
+| Force a tool-free final answer when the action budget is spent | Codex, Claude Code | Adopted | `Conversation::disable_tools` + `final_turn_forced`; `exhausted_budget_forces_a_final_report_without_tools`; round 5 |
+| Bounded final-output repair: return JSON/schema/evidence errors to the model | OpenAI strict schemas, Codex, Claude Code | Adopted | `--max-output-repairs` (default 2); `invalid_final_output_is_repaired_within_budget`; round 9 repaired two live malformed reports |
+| Retry empty/no-content completions as transient provider responses | OpenAI/Anthropic SDK retries, Codex | Adopted | typed `EmptyCompletion` + `empty_completion_retry`; `empty_completion_is_retried_before_failing`; round 7 failure class absent in round 8 |
+| Surface a failed child's stderr tail without putting it in the report | Codex/Claude Code verbose modes | Adopted | `runner::stderr_tail` warn; captured and redacted into evaluation `stderr.log` |
+| Plan/todo tool (`update_plan`/`TodoWrite`) | Codex, Claude Code | Candidate | Bounded single-case audits; add only if a measured trajectory shows lost task state |
+| Diff/patch editing (`apply_patch`) | Codex, Aider | Candidate | Audits are read-heavy; add on a measured edit-failure rate, not by default |
+| Read-result cache/dedup | Cursor, Aider | Candidate | Measure duplicate-read tokens first; pruning already bounds old results |
+| LLM context compaction/summarization | Claude Code | Rejected for now | Lossy evidence and extra model calls; deterministic pruning preserves raw replay |
+| Auto-retry read-only tools | Goose | Candidate | Observed failures are model/provider-side; add on a measured idempotent-tool failure rate |
+| Native `glob`/`grep` tools | Codex, OpenCode | Partial | `search` already provides batched, bounded search; no measured need for more tools |
+
 ## Recommended boundaries
 
 The model chooses investigation steps. Rust owns parsing, budgets, process
@@ -68,11 +89,13 @@ revisions and repeat trials. Keep held-out cases separate from tuning cases.
 
 Measure supported findings, false positives on safe controls, misses, execution
 failures, completed-run latency, timeout frequency, tool calls/errors/retries,
-and available token usage. Include failures rather than selecting only successful
-runs. Report sample size and variability; choose any acceptable quality/latency
-tradeoff before examining the candidate results. Monetary comparisons require
-known usage and a dated pricing basis. Fewer tokens alone is not evidence of
-better auditing.
+recovery counters (output repairs, empty-completion retries), and available token
+usage. Include failures rather than selecting only successful runs. Report sample
+size and variability; a recovery counter is direct evidence only when the
+recovery path actually fired, not merely when the variant succeeded. Choose any
+acceptable quality/latency tradeoff before examining the candidate results.
+Monetary comparisons require known usage and a dated pricing basis. Fewer tokens
+alone is not evidence of better auditing.
 
 Deterministic fixture tests can establish protocol correctness and reproducible
 failure handling. They cannot establish better vulnerability discovery. Record

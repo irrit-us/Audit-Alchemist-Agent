@@ -1,5 +1,84 @@
 # Validation
 
+## Harness strategy rounds 6-9: 2026-10-10
+
+Implemented and evaluated two recovery strategies selected from well-known
+harnesses (`docs/harness-design.md`): bounded final-output repair
+(`--max-output-repairs`) and empty-completion retry (a completed stream with no
+text or tool calls is retried up to `--max-attempts`). A runner change also
+surfaces a failed child's stderr tail into the evaluation `stderr.log`
+(redacted), which exposed the failure classes.
+
+| Round | Cases x trials | Variant (repairs) | Success | Output repairs | Empty retries | Failure class seen |
+| --- | --- | --- | ---: | ---: | ---: | --- |
+| 6 | 7 x 2 | baseline (0) | 10/14 | 0 | 0 | 4 invalid final reports (phase `validating`) |
+| 6 | 7 x 2 | candidate (2) | 14/14 | 0 | 0 | none |
+| 7 | 4 x 3 | baseline (0) | 12/12 | 0 | 0 | none |
+| 7 | 4 x 3 | candidate (2) | 11/12 | 0 | 0 | 1 empty completion |
+| 8 | 4 x 3 | baseline (0) | 11/12 | 0 | 0 | 1 unknown `evidence_note` field |
+| 8 | 4 x 3 | candidate (2) | 12/12 | 0 | 0 | none |
+| 9 | 1 x 6 | baseline (0) | 6/6 | 0 | 0 | none |
+| 9 | 1 x 6 | candidate (2) | 6/6 | 2 | 0 | two malformed JSON reports repaired live |
+
+Round 6 used the full seven-fixture plan and was reviewed
+(`reports/round6-reviews.json`); rounds 7-9 are targeted strategy experiments
+and their non-matching findings are logged unreviewed. The repair path was not
+hit in round 6's candidate by chance, so round 9 concentrated six `sha256` trials
+on the case that produced the unknown-field failure in round 8. There the
+candidate repaired two malformed final reports ("expected `,` or `}`" and
+"invalid length 0") that would have failed with repairs disabled. The
+empty-completion retry addresses the exact round-7 failure; round 8 produced no
+empty completions.
+
+Recovery counters are direct evidence only when the path fires. Rounds 6-9 are
+small samples with provider variance; they do not establish a general quality
+gain, and the targeted exact-match metrics are too small to compare. Full
+reports: [6](reports/tiny-round6.json), [7](reports/tiny-round7.json),
+[8](reports/tiny-round8.json), [9](reports/tiny-round9.json); review:
+[round 6](reports/round6-reviews.json).
+
+## Paired prompt rounds 4-5: 2026-10-10
+
+Rounds 4 and 5 compare the pre-threshold prompt with the default threshold
+prompt on the same seven fixtures, blind instruction, `deepseek-flash`,
+`--reasoning-effort low`, `--max-tool-calls 16`, `--max-tokens 32768`, two
+trials per variant, and all trials recorded (no best-of selection). Round 4 used
+the fixed limit forwarding; round 5 added the forced final-report turn described
+below. Full reports: [round 4](reports/tiny-round4.json),
+[round 5](reports/tiny-round5.json); per-finding reviews:
+[round 4](reports/round4-reviews.json), [round 5](reports/round5-reviews.json).
+
+| Metric (14 trials/variant) | R4 old | R4 threshold | R5 old | R5 threshold |
+| --- | ---: | ---: | ---: | ---: |
+| Successful trials | 12 | 12 | 12 | 13 |
+| Exact TP / FP / misses | 3 / 16 / 11 | 1 / 16 / 13 | 2 / 14 / 12 | 3 / 11 / 11 |
+| Exact precision / recall / F1 | .158 / .214 / .182 | .059 / .071 / .065 | .125 / .143 / .133 | .214 / .214 / .214 |
+| unexpected_valid / invalid / other | 15 / 0 / 1 | 14 / 2 / 0 | 12 / 2 / 0 | 9 / 1 / 1 |
+| Turns / tools / tool errors | 159 / 206 / 32 | 146 / 209 / 27 | 159 / 197 / 24 | 142 / 204 / 36 |
+| Total provider tokens | 5,890,648 | 4,266,173 | 5,131,847 | 4,334,057 |
+
+The threshold prompt is consistently cheaper (about 16-28% fewer tokens) and
+removes the low-impact class from the default report. Exact F1 is dominated by
+alternate sinks and labels: the reviews classify 12/14, 14/16, 12/14, and 9/11
+non-exact findings as genuine, so exact precision substantially understates
+recovered root causes. Each variant has only 14 trials, so the exact-F1 ordering
+is noisy; the review metric `unexpected_valid` is the aggregate to compare.
+
+Round 5 validates one harness fix and one dataset change. First, when the tool
+budget is spent the provider no longer sends the tool definitions, so a model
+that kept calling tools is forced to return its JSON report instead of ending
+with `agent exhausted --max-tool-calls without a final report`. The contract is
+covered on all three wires by
+`exhausted_budget_forces_a_final_report_without_tools` in `tests/agent_tools.rs`.
+Fifteen of the 28 round-5 runs used the forced turn; the threshold variant
+completed 13/14 trials versus 12/14 in round 4. The three remaining failures are
+final-report validation errors, not budget exhaustion. Second, the reviewed
+secondary causes from rounds 1-3 are now cases in the tiny submodule, together
+with the `unsigned-opt-in-control` safe control whose expected set is empty.
+
+These are small-sample tuning results; they do not establish general discovery
+quality, and the exact keys and severity labels remain deliberate tuning choices.
+
 ## Unexpected-finding verification and secondary cases: 2026-10-09
 
 Across rounds 1-3, every non-exact-match finding was checked against the

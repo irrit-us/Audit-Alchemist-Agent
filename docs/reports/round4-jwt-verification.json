@@ -1,0 +1,13 @@
+{
+  "unsigned_opt_in": "accepted as explicitly configured",
+  "unsigned_with_key": "rejected",
+  "unsigned_disallowed_algorithm": "rejected",
+  "empty_hs256_with_null_key": "accepted: signed-algorithm verification bypass under invalid key configuration",
+  "empty_hs256_with_real_key": "rejected",
+  "expired_signed_no_iat_cached": "accepted: confirmed expiry bypass",
+  "expired_signed_no_iat_uncached": "rejected",
+  "expired_signed_with_iat_cached": "rejected",
+  "signed_max_age_cached": "accepted after maxAge: confirmed lifetime bypass when exp is later",
+  "signed_max_age_uncached": "rejected",
+  "scope": "cache:true required; no universal authentication bypass; default cacheTTL is 600000 ms"
+}

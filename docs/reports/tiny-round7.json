@@ -1,0 +1,727 @@
+{
+  "schema_version": 1,
+  "groups": {
+    "candidate": {
+      "trials": 12,
+      "success": 11,
+      "failed": 1,
+      "tp": 1,
+      "fp": 10,
+      "fn": 11,
+      "latencies_ms": [
+        29163,
+        99029,
+        24387,
+        185503,
+        71486,
+        170728,
+        60110,
+        171116,
+        48949,
+        141486,
+        29100,
+        174835
+      ],
+      "completed_latencies_ms": [
+        29163,
+        99029,
+        24387,
+        185503,
+        71486,
+        170728,
+        60110,
+        171116,
+        48949,
+        141486,
+        174835
+      ],
+      "timeouts": 0,
+      "operational_totals": {
+        "turns": 134,
+        "tools": 177,
+        "tool_errors": 25,
+        "retries": 0,
+        "output_repairs": 0,
+        "empty_completions": 0,
+        "completion_tokens": 180238,
+        "prompt_tokens": 5247696,
+        "reasoning_tokens": 159134,
+        "total_tokens": 5427934
+      },
+      "runs_with_usage": 12,
+      "unexpected_total": 10,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 10,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0,
+      "precision": 0.09090909090909091,
+      "recall": 0.08333333333333333,
+      "f1": 0.08695652173913043,
+      "latencies_ms_mean": 100491,
+      "latencies_ms_stdev": 64288.12627114392,
+      "completed_latencies_ms_mean": 106981.09090909091,
+      "completed_latencies_ms_stdev": 63168.493739291494
+    },
+    "baseline": {
+      "trials": 12,
+      "success": 12,
+      "failed": 0,
+      "tp": 0,
+      "fp": 10,
+      "fn": 12,
+      "latencies_ms": [
+        31622,
+        26558,
+        103502,
+        244856,
+        101097,
+        36255,
+        46605,
+        121472,
+        25222,
+        88939,
+        47424,
+        135412
+      ],
+      "completed_latencies_ms": [
+        31622,
+        26558,
+        103502,
+        244856,
+        101097,
+        36255,
+        46605,
+        121472,
+        25222,
+        88939,
+        47424,
+        135412
+      ],
+      "timeouts": 0,
+      "operational_totals": {
+        "turns": 134,
+        "tools": 180,
+        "tool_errors": 20,
+        "retries": 0,
+        "output_repairs": 0,
+        "empty_completions": 0,
+        "completion_tokens": 157642,
+        "prompt_tokens": 5001468,
+        "reasoning_tokens": 134506,
+        "total_tokens": 5159110
+      },
+      "runs_with_usage": 12,
+      "unexpected_total": 10,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 10,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "latencies_ms_mean": 84080.33333333333,
+      "latencies_ms_stdev": 64054.39117348677,
+      "completed_latencies_ms_mean": 84080.33333333333,
+      "completed_latencies_ms_stdev": 64054.39117348677
+    }
+  },
+  "case_metrics": [
+    {
+      "run": "lock-symlink-truncation-1-candidate",
+      "variant": "candidate",
+      "unexpected_total": 1,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 1,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "lock-symlink-truncation-1-baseline",
+      "variant": "baseline",
+      "unexpected_total": 1,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 1,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "intoiter-drop-panic-double-free-1-candidate",
+      "variant": "candidate",
+      "unexpected_total": 2,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 2,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "unsettled-bad-debt-liquidation-1-baseline",
+      "variant": "baseline",
+      "unexpected_total": 0,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 0,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-1-baseline",
+      "variant": "baseline",
+      "unexpected_total": 2,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 2,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "unsettled-bad-debt-liquidation-1-candidate",
+      "variant": "candidate",
+      "unexpected_total": 0,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 0,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-1-candidate",
+      "variant": "candidate",
+      "unexpected_total": 0,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 0,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "intoiter-drop-panic-double-free-1-baseline",
+      "variant": "baseline",
+      "unexpected_total": 0,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 0,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "intoiter-drop-panic-double-free-2-baseline",
+      "variant": "baseline",
+      "unexpected_total": 2,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 2,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "lock-symlink-truncation-2-baseline",
+      "variant": "baseline",
+      "unexpected_total": 1,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 1,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "lock-symlink-truncation-2-candidate",
+      "variant": "candidate",
+      "unexpected_total": 1,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 1,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "intoiter-drop-panic-double-free-2-candidate",
+      "variant": "candidate",
+      "unexpected_total": 1,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 1,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "unsettled-bad-debt-liquidation-2-candidate",
+      "variant": "candidate",
+      "unexpected_total": 1,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 1,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "unsettled-bad-debt-liquidation-2-baseline",
+      "variant": "baseline",
+      "unexpected_total": 0,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 0,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-2-baseline",
+      "variant": "baseline",
+      "unexpected_total": 1,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 1,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-2-candidate",
+      "variant": "candidate",
+      "unexpected_total": 1,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 1,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "lock-symlink-truncation-3-baseline",
+      "variant": "baseline",
+      "unexpected_total": 0,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 0,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "intoiter-drop-panic-double-free-3-baseline",
+      "variant": "baseline",
+      "unexpected_total": 2,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 2,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "lock-symlink-truncation-3-candidate",
+      "variant": "candidate",
+      "unexpected_total": 1,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 1,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "intoiter-drop-panic-double-free-3-candidate",
+      "variant": "candidate",
+      "unexpected_total": 1,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 1,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "unsettled-bad-debt-liquidation-3-baseline",
+      "variant": "baseline",
+      "unexpected_total": 0,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 0,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "unsettled-bad-debt-liquidation-3-candidate",
+      "variant": "candidate",
+      "unexpected_total": 0,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 0,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-3-baseline",
+      "variant": "baseline",
+      "unexpected_total": 1,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 1,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-3-candidate",
+      "variant": "candidate",
+      "unexpected_total": 1,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 1,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    }
+  ],
+  "review_queue": [
+    {
+      "run": "lock-symlink-truncation-1-candidate",
+      "variant": "candidate",
+      "review_id": "97f1d3655e1bbce49e5aecef5f8a42b5294443a84b84b848fde8c8e4620c42f4:lock-symlink-truncation:d3744937b04fe7762b539efeb20a33628055117acd749220fa1246644e0638f1",
+      "finding": {
+        "cwe": "CWE-59",
+        "path": "filelock/_unix.py",
+        "line": 44,
+        "severity": "medium",
+        "title": "Lock acquisition opens lock_file with O_TRUNC following symlinks",
+        "evidence": "UnixFileLock._acquire computes open_flags = os.O_RDWR | os.O_TRUNC (line 41) and calls os.open(self.lock_file, open_flags, mode) (line 44). The path passed as lock_file is fully attacker/environment controlled (BaseFileLock stores os.fspath(lock_file) in the context, _api.py line 184). When the lock_file path is a symlink (or contains a symlinked parent), os.open follows it and O_RDWR|O_TRUNC destroys the contents of the symlink target before flock is taken; no O_NOFOLLOW, lstat check, or O_EXCL guard exists to prevent following the link. An attacker who can pre-create a symlink at a path the application uses for its lock file causes the pointed-to file to be truncated to zero bytes on the next acquire, an integrity/availability impact on an arbitrary victim file reachable through the link. Note: source inspection establishes the reachable flow (attacker-controlled path -> O_TRUNC open at line 44); an end-to-end truncation PoC could not be confirmed in this environment because the imported/installed package resolved to a different build than the audited source."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "lock-symlink-truncation-1-baseline",
+      "variant": "baseline",
+      "review_id": "50af8f684afc8adbd18c9aae38ba22fa708cf358f146c0d32d81e0d2bb444510:lock-symlink-truncation:d262f49abfd372dad982101759ad52c3887b23459f4bdddb244ca5862aa019b2",
+      "finding": {
+        "cwe": "CWE-59",
+        "path": "filelock/_unix.py",
+        "line": 44,
+        "severity": "medium",
+        "title": "Symlink-following lock open with O_TRUNC allows truncation of an attacker-chosen victim file",
+        "evidence": "UnixFileLock._acquire (the default FileLock backend on non-win32 via filelock/__init__.py line 38) builds open_flags = os.O_RDWR | os.O_TRUNC (filelock/_unix.py:41) and, when Path(self.lock_file).exists() is False, adds os.O_CREAT (lines 42-43), then calls os.open(self.lock_file, open_flags, self._context.mode) at line 44. The sink is the lock path passed by the caller into FileLock(lock_file) and stored at filelock/_api.py:184. No O_NOFOLLOW is set and no check is made that the resolved target is a regular file (only raise_on_not_writable_file/stat checks are applied on the soft/Windows paths, not here). Because O_TRUNC is always included, if lock_file lives in a shared, attacker-writable location (e.g. a /tmp or per-tenant directory) and the attacker pre-creates a symlink at that path pointing at a file the victim process can write, os.open follows the symlink and truncates the victim file to zero bytes on lock acquisition, corrupting its contents (integrity violation). The lockfile is also intentionally never removed on this path and fchmod is applied to whatever is opened (lines 45-46), compounding the effect on the symlink target. The same symlink-following pattern reaches Path(self.lock_file).unlink() at filelock/_soft.py:42 and the O_EXCL open at filelock/_soft.py:27 for SoftFileLock, so the root cause is the unchecked follow of a caller-controlled lock path in attacker-influenced directories. Realistic prerequisite: the application derives/accepts the lock file path from user- or tenant-controlled input rather than a trusted config value, and the containing directory is writable by the attacker."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "intoiter-drop-panic-double-free-1-candidate",
+      "variant": "candidate",
+      "review_id": "ca8f4552cd235a3e1a2d81aca2ed7c9dd4e32443cc3df0936d8c1b260f747613:intoiter-drop-panic-double-free:4e91c8faa2bad9149a5d8f9c0d8172edfb49e6b90570826bf7a1d728234a597d",
+      "finding": {
+        "cwe": "CWE-415",
+        "path": "src/lib.rs",
+        "line": 1084,
+        "severity": "high",
+        "title": "ThinVec::clear double-drops elements when an element Drop panics (double free)",
+        "evidence": "`clear` drops the live slice and only then updates the length: `ptr::drop_in_place(&mut self[..])` (line 1084) followed by `self.set_len(0)` (line 1085). If any element's `Drop` panics, unwinding skips `set_len(0)`, so the vector still reports its old length. When the `ThinVec` is subsequently dropped (or `clear`/destruction is retried), `impl Drop for ThinVec` (line 1910) runs `ptr::drop_in_place(&mut this[..])` over the same already-dropped, freed elements again. No guard resets the length before the potentially-panicking drop, so a type whose `Drop` can panic (reachable via attacker-influenced elements during unwind with panic=unwind) yields a double free/use-after-free. Confirmed by a local PoC built against this exact source: after a panicking `clear()` the vector's `len()` was still 2, and dropping it caused 2 additional drops (element 0 dropped twice) \u2014 for an element owning heap memory this is a double free. Upstream fixed this by wrapping the drop in a `DropGuard` that sets `len` to 0 even on panic; this version (0.2.15) lacks it."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "intoiter-drop-panic-double-free-1-candidate",
+      "variant": "candidate",
+      "review_id": "ca8f4552cd235a3e1a2d81aca2ed7c9dd4e32443cc3df0936d8c1b260f747613:intoiter-drop-panic-double-free:d4f35cdf15eeecee8018b724a94893036f1b26291b85a269362e9a88418851c0",
+      "finding": {
+        "cwe": "CWE-415",
+        "path": "src/lib.rs",
+        "line": 2547,
+        "severity": "high",
+        "title": "IntoIter::drop double-drops moved-out elements when an element Drop panics (double free)",
+        "evidence": "`IntoIter::drop` moves the vec into a local (`let mut vec = mem::replace(&mut this.vec, ThinVec::new())`, line 2546), drops the remaining range `ptr::drop_in_place(&mut vec[this.start..])` (line 2547), and only afterwards does `vec.set_len_non_singleton(0)` (line 2548). If an element's `Drop` panics, `set_len_non_singleton(0)` is never reached, and while unwinding the local `vec` is dropped with its original length, re-running `drop_in_place` on the already-dropped range and double-freeing those elements. There is no guard to zero the length before the fallible drop. PoC built against this source: dropping a 2-element `IntoIter` whose second element's `Drop` panics produced 4 drops (each element dropped twice) instead of 2, demonstrating the double drop. Upstream fixed this in 0.2.16 with a `DropGuard`; this version lacks it."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-1-baseline",
+      "variant": "baseline",
+      "review_id": "5f29be48c782c8798022eddc39eedd824a5e458280b0f13285d25c63171d46a0:sha256-length-comparator-unconstrained:781e4951bf820dee45bfcd3362536d31e5f9a22345682a05985ac4654bdb3b20",
+      "finding": {
+        "cwe": "CWE-1284",
+        "path": "sha.circom",
+        "line": 110,
+        "severity": "high",
+        "title": "Unconstrained paddedInLength in SHA256 templates yields attacker-chosen all-zero hash",
+        "evidence": "In Sha256General (and identically Sha256Partial at lines 233-234) the prover-supplied signal paddedInLength is the only driver of the block index: line 110 `inBlockIndex <-- (paddedInLength >> 9);` produces the witness and line 111 `paddedInLength === inBlockIndex * 512;` is its sole constraint. paddedInLength is never constrained to a bit width (no Num2Bits), and the only range check, bitLengthVerifier = LessEqThan(maxBitsPaddedBits) at lines 125-128, compares an unconstrained field element. circomlib LessThan/LessEqThan computes in[0]+2^n-in[1] modulo the BN254 prime p, so a small negative residue such as paddedInLength = p - 2560 (i.e. -5*512) makes that sum wrap to a small value and the check returns 1. The attacker also rewrites the witness computation to `inBlockIndex <-- (paddedInLength / 512);` so the equality still holds, giving inBlockIndex = p - 5 and thus `arraySelectors[k].index <== inBlockIndex - 1` (line 195) = p - 6, far outside [0, maxBlocks). ItemAtIndex then sums eqs[i]=IsEqual(i,index) which are all 0 for every in-range i, so every one of the 256 `out[k]` bits is 0. A prover can therefore forge a valid proof that Sha256Bytes/Sha256General (or the Partial variants) hash any prover-chosen input to the all-zero 256-bit digest. The commented-out floorVerifier checks (lines 113-122) do not compensate, and no constraint ties paddedInLength to the documented `ceil(log2(maxBitLength))` bits. Consumers that use these SHA256 templates standalone are fully affected; EmailVerifier is only saved by AssertZeroPadding elsewhere."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-1-baseline",
+      "variant": "baseline",
+      "review_id": "5f29be48c782c8798022eddc39eedd824a5e458280b0f13285d25c63171d46a0:sha256-length-comparator-unconstrained:09ffe0f7cd8f7339e2350fdb7465c52b5370796982ab017eecb2828226225d62",
+      "finding": {
+        "cwe": "CWE-125",
+        "path": "array.circom",
+        "line": 28,
+        "severity": "high",
+        "title": "ItemAtIndex index range check is bypassable and out-of-range selection silently returns 0",
+        "evidence": "ItemAtIndex is the selection sink used by sha.circom line 191/195. Its range guard is `component lessThan = LessThan(bitLength); lessThan.in[0] <== index; lessThan.in[1] <== maxArrayLen; lessThan.out === 1;` (lines 25-28). The index signal is never range-constrained (no Num2Bits on index), and circomlib LessThan checks the field-wrapped quantity in[0]+2^bitLength-in[1]; a negative residue index = p-6 wraps to a tiny value plus maxArrayLen, so LessThan reports 1 and the guard passes for an index far outside the array. The selector body then has no fallback: it computes eqs[i]=IsEqual(i,index) over i=0..maxArrayLen-1 and `out <== calcTotal.sum` (line 41), and because none of i equals the out-of-range index every term is 0, so out is 0 for every selected element. There is no constraint (e.g. sum of eqs[i] == 1) proving the index actually matched an in-range element. This lets an attacker force ItemAtIndex \u2014 and consequently the SHA256 output array in sha.circom \u2014 to the all-zero value, a soundness break."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "intoiter-drop-panic-double-free-2-baseline",
+      "variant": "baseline",
+      "review_id": "c8a8fc34da5ceef8a1b0217ddf089748d144a428268214acdaaa5a9d15d9ccc3:intoiter-drop-panic-double-free:57ef311d80b61040892c2ac636bd8f0c50a6585a76bfd62a9caf8ff85999627a",
+      "finding": {
+        "cwe": "CWE-415",
+        "path": "src/lib.rs",
+        "line": 1084,
+        "severity": "high",
+        "title": "Double-drop on panic in ThinVec::clear (len not reset before unwinding)",
+        "evidence": "clear() calls ptr::drop_in_place(&mut self[..]) and only afterwards resets the length with self.set_len(0) (line 1085). If any element's Drop::drop panics, unwinding escapes before set_len(0) runs, leaving the header length pointing at already-dropped elements. When the ThinVec is subsequently dropped (or the panic is caught and the vec reused), Drop::drop -> drop_non_singleton calls ptr::drop_in_place(&mut this[..]) again over the full stale range, dropping the same T values a second time (double free / use-after-free). The required order is to reset len before invoking the elements' destructors or to use a guard. Upstream confirmed and fixed this exact defect in 0.2.16 by wrapping the operation in a DropGuard that always sets len to 0 and by adding test_panic_clear; the audited source is byte-identical to 0.2.15 (md5 1ec74c4b92701ae3761647afce8434e2), so the vulnerable pre-fix form is present. Reachable by any code that builds a ThinVec of a type whose Drop can panic and then calls clear()."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "intoiter-drop-panic-double-free-2-baseline",
+      "variant": "baseline",
+      "review_id": "c8a8fc34da5ceef8a1b0217ddf089748d144a428268214acdaaa5a9d15d9ccc3:intoiter-drop-panic-double-free:6f08f06cf27a8064ae07524cc0e4ad777b9671b2e1b3f01df8dd50d48a41f9fd",
+      "finding": {
+        "cwe": "CWE-415",
+        "path": "src/lib.rs",
+        "line": 2547,
+        "severity": "high",
+        "title": "Double-drop on panic in IntoIter::drop (len not reset before unwinding)",
+        "evidence": "IntoIter::drop's drop_non_singleton does mem::replace(&mut this.vec, ThinVec::new()) then ptr::drop_in_place(&mut vec[this.start..]) (line 2547), and only then vec.set_len_non_singleton(0) (line 2548). If an element destructor panics, unwinding skips set_len_non_singleton(0); the local vec is itself dropped during unwind, and its Drop runs drop_in_place over the stale length, re-dropping every element from start onward that was already destroyed (double free / use-after-free). The fix must reset the length before dropping the elements (e.g. via a DropGuard). Upstream 0.2.16 fixed exactly this path with a DropGuard that always calls set_len_non_singleton(0) and added test_panic_into_iter; the audited file matches 0.2.15 pre-fix source. Reachable by creating a ThinVec of a panicking-Drop type, calling into_iter(), and advancing/consuming the iterator."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "lock-symlink-truncation-2-baseline",
+      "variant": "baseline",
+      "review_id": "a6956a9d56a6416eedc8fde6da13925478d30470967ff7f483ce2cf8d77929ca:lock-symlink-truncation:2b929a3ddf38b3aea7793ef8c250c516db068069d220df772bbe2e82385af6b3",
+      "finding": {
+        "cwe": "CWE-59",
+        "path": "filelock/_unix.py",
+        "line": 44,
+        "severity": "medium",
+        "title": "Lock file opened through symlinks with O_TRUNC allows arbitrary file truncation",
+        "evidence": "UnixFileLock._acquire derives the lock path from the caller-controlled lock_file argument (os.fspath in filelock/_api.py:184, exposed via the lock_file property at _api.py:201-203) and opens it in _unix.py:41-44 with open_flags = os.O_RDWR | os.O_TRUNC, optionally adding os.O_CREAT. No O_NOFOLLOW / lstat validation / inode check is performed, so the open follows any symlink already present at the lock path. An attacker who can write to the lock file's directory (e.g. a world-writable directory used for lock files, or any shared dir) pre-creates the lock path as a symlink to a victim file. When the application calls acquire(), os.open(O_RDWR|O_TRUNC) follows the link and truncates the victim file to zero bytes, and the subsequent os.fchmod(fd, self._context.mode) at _unix.py:46 additionally rewrites the victim's permission bits (fchmod follows the fd to the linked target). Release (line 63-64) then only unlocks/closes the fd, so the damage is not undone. The only precondition is control over the lock path or its containing directory; no other protection (O_NOFOLLOW, lstat, ownership check) exists in this path. The same missing-link-resolution defense exists in the Windows backend (filelock/_windows.py:28, os.O_RDWR|os.O_CREAT|os.O_TRUNC) and the soft-lock backend (filelock/_soft.py:20-27), so the root cause is opening the user-influenced lock path without refusing to follow links."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "lock-symlink-truncation-2-candidate",
+      "variant": "candidate",
+      "review_id": "30ba18bf9f763f1210e2457d1808bbe5b7d663116f09a85d29b2f311a8d916b0:lock-symlink-truncation:31c1f15e14d57555e114289e62501e3d286e56ec5c087cfbf2c3bdb79cdab428",
+      "finding": {
+        "cwe": "CWE-59",
+        "path": "filelock/_unix.py",
+        "line": 44,
+        "severity": "high",
+        "title": "Symlink-following lock file open truncates arbitrary files",
+        "evidence": "The public entry point FileLock/UnixFileLock.acquire() -> BaseFileLock.acquire() (filelock/_api.py:332) calls UnixFileLock._acquire(). In _acquire, the lock path supplied by the caller (self.lock_file) is turned into open flags at filelock/_unix.py:41-43: open_flags = os.O_RDWR | os.O_TRUNC, with os.O_CREAT added only when Path(self.lock_file).exists() is false (line 42). The path is then passed to os.open(self.lock_file, open_flags, mode) at line 44 without os.O_NOFOLLOW, so the kernel resolves the path and follows any symlink the attacker has placed there. Because O_TRUNC is always set, opening a symlink that points at a victim file truncates that file to zero bytes and, since the lock is only used for flock and the fd is not restricted to a regular file, the attacker-controlled path reaches an arbitrary-file destructive write. The preceding Path.exists() check at line 42 is also a TOCTOU gap: it is evaluated as a separate syscall from the actual open at line 44, so an attacker that can create/replace the lock path between check and open can force the O_CREAT decision either way. Prerequisite: the attacker can control the lock_file path or create a symlink in the lock directory (e.g. a lock placed in a shared/temp directory or a path influenced by untrusted input). No protection (O_NOFOLLOW, lstat/regular-file validation, or fstat after open to confirm the opened inode is the intended lock file) is present, so the symlink is silently followed and the target truncated."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "intoiter-drop-panic-double-free-2-candidate",
+      "variant": "candidate",
+      "review_id": "d43e4b1116bb1422dc6dadfe015573a68613581d0b204673b6bd668d1a58be1a:intoiter-drop-panic-double-free:2275677b3b36a69729a06291a1423ec2d7a0c7f5de08bfefa932701e20f37ea0",
+      "finding": {
+        "cwe": "CWE-190",
+        "path": "src/lib.rs",
+        "line": 1528,
+        "severity": "medium",
+        "title": "Unchecked +1 in ThinVec::drain bounds parsing overflows, bypassing bounds checks and feeding wrapped start/end into set_len and from_raw_parts",
+        "evidence": "Attacker/caller-controlled range is parsed in ThinVec::drain (src/lib.rs:1516-1548). The start bound uses `Bound::Excluded(&n) => n + 1` (line 1524) and the end bound uses `Bound::Included(&n) => n + 1` (line 1528) with no overflow guard, unlike the carefully-checked `slice_range` backport used by `extract_if` (lines 1684-1712). Passing n = usize::MAX (e.g. `v.drain(..=usize::MAX)`) makes `n + 1` wrap to 0 in release builds, so `assert!(start <= end)` and `assert!(end <= len)` (lines 1532-1533) both pass for a range that must be rejected. The wrapped values are then used directly as unsafe-operation inputs: `self.set_len(start)` (line 1537) and `slice::from_raw_parts(self.data_raw().add(start), end - start)` (line 1539), and stored as `Drain { end, tail: len - end }` (lines 1544-1545) which `Drain::drop` uses for `ptr::copy(end, start, self.tail)` and `set_len_non_singleton(old_len + self.tail)` (lines 2712-2715). The real call is reached from entirely safe code, since `drain` only requires `R: RangeBounds<usize>`. The documented contract is to panic for out-of-range inclusive bounds (cf. test_drain_inclusive_out_of_bounds, lines 4051-4056), but the arithmetic overflow silently substitutes a different start/end: `drain(..=usize::MAX)` computes end=0, sets the length to 0 and builds an empty iterator over [0,0), so a requested full drain instead leaks/retains all elements, while `drain((Excluded(usize::MAX), ..))` computes start=0 and drains elements the caller asked to leave untouched. Debug builds panic with an arithmetic-overflow instead of the documented bounds error, giving a reachable availability/behavior difference. The missing `checked_add`/`slice::range`-equivalent guard in the bound computation is the root cause."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "unsettled-bad-debt-liquidation-2-candidate",
+      "variant": "candidate",
+      "review_id": "a1b054a43f264fd54328a48abd81e58fbde306faede0caef685f7f3254e5f6d2:unsettled-bad-debt-liquidation:1448135589b193fcb36a20fae3f7a9036891b85e717247cc228238481182fada",
+      "finding": {
+        "cwe": "CWE-670",
+        "path": "ajna-v2/src/libraries/external/TakerActions.sol",
+        "line": 291,
+        "severity": "medium",
+        "title": "Inverted reserve-auction time gate blocks post-cooldown reserve takes, locking unclaimed reserves",
+        "evidence": "takeReserves gates the sale with `if (kicked != 0 && block.timestamp - kicked <= 72 hours)` (line 291). Per the function's own NatSpec (`@dev not kicked or 72 hours didn't pass NoReservesAuction()`), the intended invariant is that the call must REVERT when 72 hours have NOT yet elapsed, i.e. it should proceed only for `block.timestamp - kicked > 72 hours`. The implemented condition is the exact inverse: reserves can only be purchased inside the first 72-hour window (when `_reserveAuctionPrice` is at its highest, starting near 1e9 per AJNA), and every call at `elapsed > 72 hours` hits the `else` branch and reverts with `NoReservesAuction()` (line 320). Because the reserve-auction price only decays over time (half-life per minute via `_reserveAuctionPrice` in PoolHelper.sol lines 331-341), the intended low-price window is permanently unreachable; after the 72h mark any caller (an unprivileged actor) is forced into a reverting path, so `reserveAuction_.unclaimed` and the associated burn bookkeeping can no longer be consumed through this entrypoint. The protection itself is the faulty control-flow condition; there is no alternate bound on `kicked`/elapsed time elsewhere in the function, so the state update at lines 295-312 is never reached once the cooldown elapses, causing a lasting availability/integrity failure for pool reserves."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-2-baseline",
+      "variant": "baseline",
+      "review_id": "346ed33ac7057733f60f1eec5beaaaa4f5b4310b1f867512056a2fcf0176e534:sha256-length-comparator-unconstrained:454269f5f706c57fa40e92d2a28e0589b60f5aa554fb992a4ee9dfb51aa227f6",
+      "finding": {
+        "cwe": "CWE-191",
+        "path": "sha.circom",
+        "line": 195,
+        "severity": "high",
+        "title": "Block-index underflow bypasses ItemAtIndex bound check, letting a prover forge an all-zero SHA256 output",
+        "evidence": "Input `paddedInLength` (untrusted prover-chosen signal) is only upper-bounded: the length verifier at sha.circom:125-128 (`LessEqThan(maxBitsPaddedBits)`) and the equality at sha.circom:111 (`paddedInLength === inBlockIndex * 512`) both accept `paddedInLength = 0`. There is no lower bound requiring `paddedInLength >= 512`/`inBlockIndex >= 1`. With `paddedInLength = 0`, the witness hint `inBlockIndex <-- (paddedInLength >> 9)` yields `inBlockIndex = 0`, and the unsafe operation at sha.circom:195 `arraySelectors[k].index <== inBlockIndex - 1` computes `0 - 1`, i.e. the field element p-1 (BN254 p = 21888242871839275222246405745257275088548364400416034343698204186575808495617). This out-of-range index is fed to `ItemAtIndex(maxBlocks)` (array.circom:15). The intended protection is the bound check array.circom:25-28 `LessThan(bitLength)` requiring `index < maxBlocks`, but circomlib's `LessThan(n)` only constrains `v = in[0] + 2^n - in[1]` to decompose into n+1 bits; with `in[0] = p-1` the value wraps in the field to a small number (PoC: maxBlocks=1, bitLength=2 -> v=2, top bit 0, out=1), so the check returns 1 and the constraint set is satisfiable instead of rejecting the negative index. Selection is then done via `IsEqual` against each constant i in [0,maxBlocks) (array.circom:34-45), which matches nothing for p-1, so every `arraySelectors[k].out` is 0 and sha.circom:196/293 assigns `out[k] = 0` for all 256 bits. Consequently an attacker can produce a valid proof for the false statement that the SHA256 output is all zero (for arbitrary `paddedIn`), a soundness violation that bypasses downstream hash/authorization checks. PoC `poc/poc_underflow.js` executed under Node confirms the field wrap makes the ItemAtIndex bound pass for index = p-1 while the honest case (paddedInLength = 512, index = 0) also passes. The identical flaw exists at sha.circom:292 (`Sha256Partial`) and is reachable through the exported wrappers Sha256Bytes/Sha256BytesPartial. Required configuration: any instantiation, e.g. `Sha256General(512)` / `Sha256Bytes(64)`; no special prerequisites."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-2-candidate",
+      "variant": "candidate",
+      "review_id": "1cd02f4949782660fc865509dca3881d5ec0b2c43a3a3f367f154f20919cbc8c:sha256-length-comparator-unconstrained:77669be5674f2c4ec057a365dbeb3b7e521cd45760385482eab147d38a7d7cef",
+      "finding": {
+        "cwe": "CWE-129",
+        "path": "sha.circom",
+        "line": 110,
+        "severity": "medium",
+        "title": "Under-constrained inBlockIndex allows out-of-range ItemAtIndex index (hash output forced to 0)",
+        "evidence": "Sha256General/Sha256Partial derive the block index from an attacker-chosen input with a non-deterministic hint `inBlockIndex <-- (paddedInLength >> 9)` (sha.circom:110) and tie it only by `paddedInLength === inBlockIndex * 512` (sha.circom:111). There is no constraint that paddedInLength > 0 or inBlockIndex >= 1. The value is then used as an array index at sha.circom:195 (`arraySelectors[k].index <== inBlockIndex - 1`, identical at sha.circom:292). When the prover supplies paddedInLength = 0 (accepted because the only length guard is `LessEqThan` at sha.circom:125-128, which does not enforce a lower bound), the hint yields inBlockIndex = 0, so index = -1 = p-1 as a field element. ItemAtIndex's intended protection is the range check `LessThan(bitLength); lessThan.in[0] <== index; lessThan.in[1] <== maxArrayLen; lessThan.out === 1` (array.circom:25-28). circomlib LessThan assumes its inputs are < 2^n; feeding p-1 makes its Num2Bits(n+1) input `in[0] + 2^n - in[1]` wrap modulo p to `2^n - maxBlocks - 1` (positive and < 2^n), so bit n is 0 and lessThan.out evaluates to 1: the out-of-range index passes. With index = p-1, IsEqual(i, index) is 0 for every in-range i, so calcTotal sums zeros and every `out[k]` becomes 0 (array.circom:34-45), independent of the arbitrary paddedIn bits the prover supplied. Result: for paddedInLength = 0 a malicious prover can make both Sha256Bytes and Sha256BytesPartial (via Sha256General/Sha256Partial) output an all-zero 256-bit hash for ANY message bits, breaking the binding/soundness of the hash computation; any consumer that treats a zero hash as a valid/enumerated value, or lacks an out-of-circuit `paddedInLength > 0` check, accepts a forged statement. The root cause is the missing lower bound on inBlockIndex in sha.circom combined with reliance on the wraparound-bypassable LessThan guard in ItemAtIndex."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "intoiter-drop-panic-double-free-3-baseline",
+      "variant": "baseline",
+      "review_id": "376eb4303be0710d8bf523259bdf7c1080985f22ed49229db1ff5ef302bda4d9:intoiter-drop-panic-double-free:e1785e2b0ae161d353e25c4f720f6e7cccc3ff9ab5fc7f5d8305f037d8191cd2",
+      "finding": {
+        "cwe": "CWE-415",
+        "path": "src/lib.rs",
+        "line": 1082,
+        "severity": "high",
+        "title": "ThinVec::clear() is not panic-safe; a panicking element Drop leaves a stale length and causes a double drop/free",
+        "evidence": "In the audited source (thin-vec 0.2.15), clear() at lines 1082-1087 is:\n    pub fn clear(&mut self) {\n        unsafe {\n            ptr::drop_in_place(&mut self[..]);\n            self.set_len(0); // could be the singleton\n        }\n    }\nInput/flow: an attacker (or any safe caller) builds a `<ThinVec<T>>` whose element type T has a user-controlled/attacker-influenced `Drop` impl that can panic (line 1084 drops every element in `self[..]`). `drop_in_place` runs the elements' destructors sequentially; if any destructor panics, unwinding starts from inside `drop_in_place` and the following line `self.set_len(0)` (line 1085) is skipped. ThinVec's own length therefore still reports the original `len` even though the buffer's elements were (partially) destroyed. The buffer contents are now logically uninitialized but the vector still claims ownership of `len` live elements. Unsafe operation: on any later `drop`/`truncate`/`clear` of that same vector, `drop_in_place(&mut this[..])` (ThinVec::drop, line 1917) drops the already-dropped range again, producing a double drop, which for owning element types (e.g. `Box<T>`, `String`, `ThinVec`, `Rc`) is a double free; for interior-ref types it is a use-after-free. Failed protections: this version has NO panic guard around the drop; the correctness of `set_len(0)` depends on `drop_in_place` returning normally, which is not guaranteed for safe types with panicking `Drop`. The vulnerability is confirmed by the upstream fix: every later release (0.2.16/0.2.17/0.2.18 present on this system) replaces these two lines with a `DropGuard` that calls `self.0.set_len(0)` in its `Drop`, i.e. it resets the length even on unwind; the 0.2.16 tree also adds `test_panic_clear` asserting the panic path. Required configuration: none beyond the default crate build; any successful panic escaping an element destructor during `clear()` on a non-empty `ThinVec<T>` where T owns heap memory reaches the unsafe double-drop."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "intoiter-drop-panic-double-free-3-baseline",
+      "variant": "baseline",
+      "review_id": "376eb4303be0710d8bf523259bdf7c1080985f22ed49229db1ff5ef302bda4d9:intoiter-drop-panic-double-free:5c13b1ed624a2f14ac7fa9a0766ec6be92e422ddab2cd7a7c32f9fc096c06a44",
+      "finding": {
+        "cwe": "CWE-415",
+        "path": "src/lib.rs",
+        "line": 2544,
+        "severity": "high",
+        "title": "IntoIter::drop is not panic-safe; a panicking element Drop double-drops already-yielded elements",
+        "evidence": "The IntoIter destructor's cold path (lines 2542-2550) is:\n    fn drop_non_singleton<T>(this: &mut IntoIter<T>) {\n        unsafe {\n            let mut vec = mem::replace(&mut this.vec, ThinVec::new());\n            ptr::drop_in_place(&mut vec[this.start..]);\n            vec.set_len_non_singleton(0)\n        }\n    }\nInput/flow: an attacker creates a `ThinVec<T>` whose element `Drop` can panic, moves it into an `IntoIter`, and consumes some prefix with `next()` (this advances `self.start` and `ptr::read`s those elements out, so elements `[0, start)` are already logically moved-out but physically still in the buffer). When the `IntoIter` is dropped, line 2546 `mem::replace` moves the whole vector into the local `vec` (with `len` still counting the consumed prefix), line 2547 drops only `vec[start..]`, and line 2548 is supposed to zero the length so the local `vec` does not re-drop the consumed prefix. Unsafe operation: if any destructor in `vec[start..]` panics, unwinding leaves `vec` (a live `ThinVec<T>` owning `len` elements) to be dropped by its own `Drop` impl, which drops `vec[..]` including the already-consumed `[0, start)` elements, double-dropping them. Failed protections: line 2548 runs only if `drop_in_place` returns normally; the consumed-prefix elements are protected solely by a post-drop length reset, which unwinding bypasses. The upstream fix is visible on this system: 0.2.16/0.2.17/0.2.18 replace this body with a `DropGuard` whose `Drop` calls `self.0.vec.set_len_non_singleton(0)`, and add `test_panic_into_iter`. Required configuration: default build; the sink is reachable from safe code whenever a `T: Drop` panics while an `IntoIter` over a `ThinVec<T>` (with at least one consumed prefix element and one owning element) is dropped."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "lock-symlink-truncation-3-candidate",
+      "variant": "candidate",
+      "review_id": "ab59696f7dc585582302f83c981021332889ff30f0f59a9002b46c0ec265d97d:lock-symlink-truncation:995ff82e360a7a7ac601e13d6136485050ebf896b40c120c5733ec5283efdd47",
+      "finding": {
+        "cwe": "CWE-59",
+        "path": "filelock/_unix.py",
+        "line": 44,
+        "severity": "medium",
+        "title": "UnixFileLock follows symlinks and truncates the target file via O_RDWR|O_TRUNC",
+        "evidence": "Attacker-controlled precondition: any local user who can write to the directory holding the lock path (e.g. a shared/world-writable lock directory such as /tmp or /var/tmp) plants a symlink at the lock file name before the victim's lock is created. Flow: the caller-supplied path reaches UnixFileLock via BaseFileLock.__init__ (filelock/_api.py:184 os.fspath) and is stored as self.lock_file; on acquisition, _acquire() at filelock/_unix.py:39 calls os.open(self.lock_file, open_flags, ...) at line 44 with open_flags = os.O_RDWR | os.O_TRUNC (line 41) and, when the path 'does not exist' (line 42, Path.exists also follows symlinks), os.O_CREAT (line 43). os.open without O_NOFOLLOW resolves the symlink and applies O_TRUNC to the link target, so a victim process can be made to truncate (destroy data in) or create an arbitrary file that the victim UID can write, not merely the intended lock file. The same block then calls os.fchmod(fd, mode) at line 46, altering the resolved target's permissions. Protections are insufficient: no O_NOFOLLOW flag is set and the path is not validated as a regular file, so the symlink is silently followed. (The later upstream implementation added O_NOFOLLOW/O_EXCL and dropped O_TRUNC from the open path, confirming this open-with-truncate behavior as the unsafe operation; the SoftFileLock variant avoids it because its O_CREAT|O_EXCL open fails with EEXIST on an existing symlink, whereas UnixFileLock uses O_RDWR|O_TRUNC without exclusivity.)"
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "intoiter-drop-panic-double-free-3-candidate",
+      "variant": "candidate",
+      "review_id": "3e89674480f43d8d50001fcf26e03527216a519f44dc32c41f0d6265d9613996:intoiter-drop-panic-double-free:e10767e9739bd7a9b06fe91b56e5d61e12d1d8df8987a578c81687b8c3dfa07c",
+      "finding": {
+        "cwe": "CWE-415",
+        "path": "src/lib.rs",
+        "line": 1084,
+        "severity": "medium",
+        "title": "ThinVec::clear double-drops elements when an element Drop panics",
+        "evidence": "`clear()` runs `ptr::drop_in_place(&mut self[..])` and only afterwards `self.set_len(0)` (lines 1082-1086). The length is updated *after* the drop loop, with no unwind guard. If dropping any contained element panics (a type with a panicking user-supplied `Drop` impl, possibly attacker-influenced data), the panic unwinds out of `clear` after some elements have already been dropped but while `self.len()` still reports the old length. If the panic is caught (e.g. `std::panic::catch_unwind` at a library boundary, or a custom panic hook that resumes), the `ThinVec` is left in a corrupted state: its header still claims the pre-clear length, so the not-yet-dropped (and the already-dropped) elements will be dropped again when the vec goes out of scope, producing a double-free / use-after-free. The upstream fix confirms this is a real defect: subsequent releases wrap the same code in a DropGuard whose `Drop` calls `set_len(0)` so the length is decremented even if the element destructor panics (0.2.15 -> 0.2.21 adds `struct DropGuard<'a,T>(&'a mut ThinVec<T>)` with `self.0.set_len(0)` around `ptr::drop_in_place(&mut guard.0[..])`). No other protection (assertion, checked arithmetic, or state fixup) exists in this version, so the unsafe invariant `len` equals the number of live elements is violated on the panic path."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-3-baseline",
+      "variant": "baseline",
+      "review_id": "89b05b03725164e8767d2e36b2e42058479c50a7ef4fca255352b61ed9741c7b:sha256-length-comparator-unconstrained:f006198512f7b2b3abe47dcea03ba7b6ee3627add95062adb07b4c19bc42ff5b",
+      "finding": {
+        "cwe": "CWE-191",
+        "path": "sha.circom",
+        "line": 195,
+        "severity": "high",
+        "title": "Index underflow in block selector lets prover force all-zero SHA-256 output (soundness break)",
+        "evidence": "Input: the prover controls the free signals `paddedIn[]` and `paddedInLength`. Flow: in Sha256General, line 110 computes `inBlockIndex <-- (paddedInLength >> 9)` and line 111 constrains `paddedInLength === inBlockIndex * 512`. With `paddedInLength = 0` (all-zero `paddedIn`), the length check at lines 125-128 (`LessEqThan(maxBitsPaddedBits)` testing `paddedInLength <= maxBitLength`) passes because only an upper bound exists and there is no lower-bound/`>=1` check, and the line-111 equality is satisfied with `inBlockIndex = 0`. Line 195 then assigns `arraySelectors[k].index <== inBlockIndex - 1`, which underflows in the field to `p-1`. Protections: ItemAtIndex (array.circom:25-28) does bound the index with `LessThan(bitLength); out === 1`, but circomlib's LessThan only guarantees correctness while both operands fit in `bitLength` bits; `index = p-1` does not, and the modular comparison `(p-1) + 2^bitLength - maxBlocks < 2^(bitLength+1)` is satisfiable, so `LessThan` still outputs 1 and the range check is bypassed (verified by simulation: for maxBlocks=1, bitLength=2, valid index 0 -> out=in[0]; ordinary out-of-range index 1 -> rejected (out=0); index p-1 -> accepted with out=0). Unsafe operation: none of the 256 `IsEqual` comparators in ItemAtIndex matches `p-1`, so `calcTotal.sum = 0`, and lines 189-197 set every `out[k] = 0`. Result: a prover can satisfy the circuit while claiming `sha.out = 0^256` for an all-zero padded block, which no real SHA-256 preimage produces (SHA-256 of the empty/zero block is not 0), i.e. a soundness violation of the hash circuit. Sha256Partial repeats the identical pattern at line 292 (`arraySelectors[k].index <== inBlockIndex - 1`) with the same line-234 constraint, so it is affected too."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-3-candidate",
+      "variant": "candidate",
+      "review_id": "19a431e2a235b2d8b551d2666642c5bdb5783aec149e5dcf783129768df7712b:sha256-length-comparator-unconstrained:197a2a44ae00561663a5ba7b27e825516f5a22911ab5cd183d8285a248fa8d86",
+      "finding": {
+        "cwe": "CWE-129",
+        "path": "sha.circom",
+        "line": 195,
+        "severity": "high",
+        "title": "Unbounded SHA block index lets prover force SHA256 output to all zeros",
+        "evidence": "Attacker-controlled input `paddedInLength` (in `Sha256Bytes` it is the byte-count input multiplied by 8; in `Sha256General`/`Sha256Partial` it is the bit length) flows into the unconstrained witness assignment `inBlockIndex <-- (paddedInLength >> 9)` at line 110 (partial version line 233). The only constraint is `paddedInLength === inBlockIndex * 512` (line 111 / 234), which pins the field element but does not bound it. The intended bound, `bitLengthVerifier = LessEqThan(maxBitsPaddedBits)` with `in[0] <== paddedInLength` (lines 125-128 / 237-240), does not work: circomlib's `LessThan`/`LessEqThan` performs no bit-range check on its operands, and `paddedInLength` is never run through `Num2Bits`, so small field-element negatives (e.g. -512, -1024, ... up to -512*maxBlocks, and 0) satisfy the comparison and pass while yielding negative/zero `inBlockIndex`. That value is then used directly as an array index at line 195 (partial: line 292): `arraySelectors[k].index <== inBlockIndex - 1;`. The guard inside `ItemAtIndex` (`LessThan(bitLength)` on `index`, array.circom lines 25-28) suffers the same missing range check, so an out-of-range index such as -1 is accepted. Because no `i` in `[0,maxBlocks)` equals the out-of-range index, every `eqs[i].out` is 0 and `calcTotal.sum` is 0, so `out[k] <== arraySelectors[k].out` produces 0 for all 256 output bits. A malicious prover can therefore generate a valid proof that the SHA256 of an arbitrary message is the all-zero hash, breaking soundness for any consumer relying on these templates (the commented-out floor verifiers at lines 114-122 and the comment at lines 130-131 confirm the length/index validation was knowingly left out)."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    }
+  ],
+  "usage_note": "Provider-reported totals; zero/missing usage is unknown, not free. No cost claim."
+}

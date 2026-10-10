@@ -51,8 +51,14 @@ The library separates provider protocols, tool execution, and evidence validatio
    under one deadline. `conversation` decodes tool calls and preserves native
    assistant messages, Responses reasoning items, and Anthropic signatures.
    `tools` executes calls in order and returns bounded results; failures are
-   available to the model for correction. The loop ends with a validated JSON
-   report or an explicit limit/provider error. Findings must cite observed lines.
+   available to the model for correction. Once the tool budget is spent the
+   provider drops the tool schemas for the last turn so the model returns the
+   report instead of asking for another tool. A final report that fails JSON,
+   schema, or evidence validation is returned to the model for bounded repair
+   (`--max-output-repairs`), and a completed stream with no text or tool calls is
+   retried up to `--max-attempts` without replaying a tool. The loop ends with a
+   validated JSON report or an explicit limit/provider error. Findings must cite
+   observed lines.
    Enabled MCP stdio servers initialize and advertise selected tool schemas
    before the first model turn. Their calls share the native tool budget and
    monitoring events. No MCP instruction text is added to the system prompt.
@@ -70,8 +76,9 @@ The library separates provider protocols, tool execution, and evidence validatio
 - **Bounded everywhere.** Source bytes, files, directory entries, HTTP bodies,
   output tokens, deadlines, and retry attempts all have explicit caps.
 - **Explicit limits.** Oversized requests, incomplete streams, unsupported
-  citations, and exhausted tool budgets fail the case. Reads expose paging;
-  shell output truncation is marked. Invalid final JSON is never repaired.
+  citations, and an unusable final report fail the case. An exhausted tool
+  budget forces a tool-free final turn first. Reads expose paging; shell output
+  truncation is marked. Invalid final JSON is never repaired.
 - **Evidence-driven execution.** Prompts distinguish source/tool data from
   instructions and observed PoC results from hypotheses. Bash can run code;
   process limits and root-relative file tools are not a sandbox.

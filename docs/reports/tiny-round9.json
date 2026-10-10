@@ -1,0 +1,440 @@
+{
+  "schema_version": 1,
+  "groups": {
+    "candidate": {
+      "trials": 6,
+      "success": 6,
+      "failed": 0,
+      "tp": 0,
+      "fp": 6,
+      "fn": 6,
+      "latencies_ms": [
+        74002,
+        135612,
+        132746,
+        186022,
+        211575,
+        246567
+      ],
+      "completed_latencies_ms": [
+        74002,
+        135612,
+        132746,
+        186022,
+        211575,
+        246567
+      ],
+      "timeouts": 0,
+      "operational_totals": {
+        "turns": 56,
+        "tools": 68,
+        "tool_errors": 15,
+        "retries": 0,
+        "output_repairs": 2,
+        "empty_completions": 0,
+        "completion_tokens": 158922,
+        "prompt_tokens": 1266133,
+        "reasoning_tokens": 146846,
+        "total_tokens": 1425055
+      },
+      "runs_with_usage": 6,
+      "unexpected_total": 6,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 6,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "latencies_ms_mean": 164420.66666666666,
+      "latencies_ms_stdev": 62364.93870650934,
+      "completed_latencies_ms_mean": 164420.66666666666,
+      "completed_latencies_ms_stdev": 62364.93870650934
+    },
+    "baseline": {
+      "trials": 6,
+      "success": 6,
+      "failed": 0,
+      "tp": 0,
+      "fp": 6,
+      "fn": 6,
+      "latencies_ms": [
+        150929,
+        218183,
+        233768,
+        156511,
+        61854,
+        294754
+      ],
+      "completed_latencies_ms": [
+        150929,
+        218183,
+        233768,
+        156511,
+        61854,
+        294754
+      ],
+      "timeouts": 0,
+      "operational_totals": {
+        "turns": 51,
+        "tools": 73,
+        "tool_errors": 14,
+        "retries": 0,
+        "output_repairs": 0,
+        "empty_completions": 0,
+        "completion_tokens": 182470,
+        "prompt_tokens": 1335912,
+        "reasoning_tokens": 172255,
+        "total_tokens": 1518382
+      },
+      "runs_with_usage": 6,
+      "unexpected_total": 6,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 6,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "latencies_ms_mean": 185999.83333333334,
+      "latencies_ms_stdev": 80816.78700224766,
+      "completed_latencies_ms_mean": 185999.83333333334,
+      "completed_latencies_ms_stdev": 80816.78700224766
+    }
+  },
+  "case_metrics": [
+    {
+      "run": "sha256-length-comparator-unconstrained-1-candidate",
+      "variant": "candidate",
+      "unexpected_total": 1,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 1,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-2-candidate",
+      "variant": "candidate",
+      "unexpected_total": 1,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 1,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-2-baseline",
+      "variant": "baseline",
+      "unexpected_total": 1,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 1,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-1-baseline",
+      "variant": "baseline",
+      "unexpected_total": 1,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 1,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-4-candidate",
+      "variant": "candidate",
+      "unexpected_total": 1,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 1,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-3-baseline",
+      "variant": "baseline",
+      "unexpected_total": 1,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 1,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-3-candidate",
+      "variant": "candidate",
+      "unexpected_total": 1,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 1,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-4-baseline",
+      "variant": "baseline",
+      "unexpected_total": 1,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 1,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-6-baseline",
+      "variant": "baseline",
+      "unexpected_total": 1,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 1,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-5-candidate",
+      "variant": "candidate",
+      "unexpected_total": 1,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 1,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-6-candidate",
+      "variant": "candidate",
+      "unexpected_total": 1,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 1,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-5-baseline",
+      "variant": "baseline",
+      "unexpected_total": 1,
+      "unexpected_valid": 0,
+      "unexpected_invalid": 0,
+      "unexpected_unreviewed": 1,
+      "unexpected_out_of_scope": 0,
+      "unexpected_low_impact": 0,
+      "alternate_matches": 0,
+      "valid_distinct": 0
+    }
+  ],
+  "review_queue": [
+    {
+      "run": "sha256-length-comparator-unconstrained-1-candidate",
+      "variant": "candidate",
+      "review_id": "c675de98139ff2742a043fbb0d4ddbcd62cfdffdbecad8d221ea5ee5cf7ef5b8:sha256-length-comparator-unconstrained:650ce5563556404859e38606445913f48dc05d110ddcf4f224e21e4ed82d5182",
+      "finding": {
+        "cwe": "CWE-345",
+        "path": "sha.circom",
+        "line": 110,
+        "severity": "high",
+        "title": "SHA-256 circuit does not constrain padding / encoded length, allowing non-canonical padded inputs and length-extension forgeries",
+        "evidence": "The prover fully controls the inputs `paddedIn[maxBitLength]` and `paddedInLength` (lines 96-97, and `Sha256Bytes` lines 18-19/28-33, `Sha256BytesPartial` lines 49-50/60-65). The only length validation is that `inBlockIndex` is derived from `paddedInLength` (line 110) and constrained by `paddedInLength === inBlockIndex * 512` (line 111) plus the bounded check `paddedInLength <= maxBitLength` (lines 125-128). These checks enforce only that the padded input is a multiple of 512 bits and within range; they never verify that the bytes actually form the SHA-256 padding (the 0x80 terminator, the zero fill, and the trailing 64-bit big-endian message-length field), nor that the embedded length equals `paddedInLength`. The code explicitly acknowledges this gap at lines 130-131 (\"we'll just do it outside the circuit\"). Because the attacker-controlled bits are fed directly into the compression chain and output selector (lines 156-197, and identically in `Sha256Partial` lines 233-234/253-294), the circuit will invert/soundly accept digests computed over arbitrary padded blocks. For example, given the accepted digest of some padded message, an attacker can set `preHash` to that digest and supply an arbitrary extension block to `Sha256Partial`, obtaining a circuit-verified digest for `M || padding || X` without any key. This is the classic SHA-256 length-extension / padding-ambiguity weakness, so any consumer relying on this circuit as \"the SHA-256 of a message\" loses message integrity/authenticity; a correct consumer must separately constrain the canonical padding and encoded length that no code in the audited source provides."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-2-candidate",
+      "variant": "candidate",
+      "review_id": "dc3b7bcc197c664a2cff3789fa96ed8dfb5d62767b0b5ab6b6bfb7d17400423e:sha256-length-comparator-unconstrained:995be59cdfc3d671d63328f2b00dabbe280dd4f8b201a5842ecd9f02beb7794a",
+      "finding": {
+        "cwe": "CWE-129",
+        "path": "sha.circom",
+        "line": 195,
+        "severity": "high",
+        "title": "Block index underflow lets invalid SHA256 input prove an all-zero hash",
+        "evidence": "The attacker controls paddedInLength. In Sha256General, line 110 computes inBlockIndex from the unconstrained hint `paddedInLength >> 9` and line 111 constrains `paddedInLength === inBlockIndex * 512`; setting paddedInLength = 0 therefore satisfies the circuit with inBlockIndex = 0 (the length verifier at lines 125-128 is also true for 0). At line 195, `arraySelectors[k].index <== inBlockIndex - 1` then underflows to p-1. The ItemAtIndex validation in array.circom lines 24-28 only checks `index < maxArrayLen` with LessThan(bitLength); it never requires the index to equal an actual array position. For index = p-1, LessThan is satisfiable and returns 1 because `(p-1) + 2^bitLength - maxArrayLen` reduces modulo p to `2^bitLength - maxArrayLen - 1`, whose bit `bitLength` is 0. As a result every IsEqual(i, index) is 0 and CalculateTotal returns 0, so out[0..255] are all zero for arbitrary `paddedIn` bytes with claimed length 0. The same underflow occurs in Sha256Partial at line 292. This breaks soundness of the SHA-256 circuit: a prover can produce a valid proof that the hash of a chosen padded message is zero, while the upstream/fixed ItemAtIndex adds `calcTotalIndex.sum === 1` to reject this case."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-2-baseline",
+      "variant": "baseline",
+      "review_id": "e3442f914fdf95ffd14fd847ff301748cea09e3a2823016b1b53b2301edc5504:sha256-length-comparator-unconstrained:36e253d3ad8fdc4e7c64e83c1afe6d41845f9e99106c14fcefabf4aaf26ccc2d",
+      "finding": {
+        "cwe": "CWE-129",
+        "path": "sha.circom",
+        "line": 195,
+        "severity": "high",
+        "title": "Zero block count underflows array-selector index and forges an all-zero SHA-256 output",
+        "evidence": "Attacker-controlled padding length reaches an unchecked array index in the SHA-256 block selector. In Sha256Bytes, `sha.paddedInLength <== paddedInLength * 8` (line 33) forwards a prover-chosen byte length; with paddedInLength = 0, Sha256General computes `inBlockIndex <-- (paddedInLength >> 9)` and constrains `paddedInLength === inBlockIndex * 512` (lines 110-111), forcing inBlockIndex = 0. The selector then assigns `arraySelectors[k].index <== inBlockIndex - 1` (line 195; identical at line 292 in Sha256Partial), i.e. index = -1 = p-1 in the field. The only protection intended to reject this is ItemAtIndex's `LessThan(bitLength)` bound with `lessThan.out === 1` (array.circom lines 25-28), but circomlib's LessThan is `out <== 1 - Num2Bits(n+1).out[n]` over `in[0] + 2^n - in[1]`; it does not range-check its operands. For index = p-1 and in[1] = maxArrayLen < 2^n the sum wraps to `2^n - maxArrayLen - 1`, which is < 2^n, so Num2Bits(n+1) succeeds and LessThan returns 1, falsely accepting index = p-1. Consequently every `eqs[i].out` is 0, `calcTotal.sum`/`out` is 0 (array.circom lines 34-45), and `out[k] <== arraySelectors[k].out` (line 196) forces all 256 output bits to 0. The length check `bitLengthVerifier = LessEqThan(maxBitsPaddedBits)` (lines 125-128) only upper-bounds paddedInLength (and is likewise bypassable for wrapped values); there is no lower-bound/inBlockIndex>=1 constraint. Result: a prover can satisfy the circuit and produce a valid proof that the SHA-256 hash of an arbitrary paddedIn is all zeros, decoupling the proven hash from the real SHA-256 computation (soundness break). Reachable for any maxByteLength that is a multiple of 64 via Sha256Bytes (paddedInLength = 0) or directly via Sha256General (paddedInLength = 0)."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-1-baseline",
+      "variant": "baseline",
+      "review_id": "cd635388f0b294b8feba216c4ff458acd5d82f19315c00473ec6a1a360a633ab:sha256-length-comparator-unconstrained:e7f25449a7a6a83a458f318af0f3000e51b79261c81890883d6d55b73bf4f865",
+      "finding": {
+        "cwe": "CWE-191",
+        "path": "sha.circom",
+        "line": 195,
+        "severity": "medium",
+        "title": "Under-constrained block index underflows to -1 and forces an all-zero SHA-256 output",
+        "evidence": "Attacker input is the prover-supplied `paddedInLength` (sha.circom:97 / :219). Sha256General derives the block selector from it: `inBlockIndex <-- (paddedInLength >> 9); paddedInLength === inBlockIndex * 512;` (sha.circom:110-111). There is no constraint enforcing `inBlockIndex >= 1` or `inBlockIndex <= maxBlocks`; the only length check is `bitLengthVerifier` (sha.circom:125-128), whose LessEqThan/LessThan primitive from circomlib computes `in[0] + 2^n - in[1]` modulo the BN254 scalar field and only bit-decomposes the *reduced* value, so it does not bound `paddedInLength` as an integer (verified: `paddedInLength = p-0, p-1, p-10` all pass `<= maxBitLength`). Setting `paddedInLength = 0` satisfies `paddedInLength === inBlockIndex*512` with `inBlockIndex = 0`, so `arraySelectors[k].index <== inBlockIndex - 1` (sha.circom:195, duplicated at :292) evaluates to `-1 mod p`. ItemAtIndex's range guard `LessThan(bitLength)` on `index` (array.circom:25-28) suffers the same modular-arithmetic flaw: for index = p-1 the check value is `(p-1) + 2^bitLength - maxArrayLen \u2261 2^bitLength - maxArrayLen - 1`, a small non-negative number whose top bit is 0, so `lessThan.out === 1` is satisfied and the guard passes (verified numerically for maxArrayLen = 1, 2, 8, 64). Inside ItemAtIndex every `IsEqual(i, index)` then evaluates false, `CalculateTotal.sum` is 0 (array.circom:41-45), and `out[k] <== arraySelectors[k].out` (sha.circom:196) is therefore forced to 0 for all 256 bits. A valid witness (paddedIn all-zero bits, paddedInLength = 0) is satisfiable, so a malicious prover can produce an accepting proof that `out = SHA-256(paddedIn)` equals the all-zero digest, which is false (SHA-256 of the empty padded message is e3b0c442...855) - a soundness/integrity break of the hash circuit relied upon by callers such as Sha256Bytes/Sha256BytesPartial."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-4-candidate",
+      "variant": "candidate",
+      "review_id": "e3d62342616a1d12f3eabff047dfe900c63ae8344dc4a07a6ad6c826df4e4b15:sha256-length-comparator-unconstrained:ffcc4540d1085c881058e35cfcaa2a127b29e4f82ac354207ebeeb7692fdba8c",
+      "finding": {
+        "cwe": "CWE-682",
+        "path": "sha.circom",
+        "line": 195,
+        "severity": "high",
+        "title": "Block-index underflow lets prover force SHA-256 output to all-zero (soundness break)",
+        "evidence": "Attacker input: the prover controls paddedIn and paddedInLength. In Sha256General, line 110 computes `inBlockIndex <-- (paddedInLength >> 9)` and line 111 constrains `paddedInLength === inBlockIndex * 512`. There is no lower bound requiring paddedInLength >= 512 (one padded block); the commented-out floor verifiers at lines 114-122 are inert. Setting paddedInLength = 0 yields inBlockIndex = 0 with the constraint 0 === 0*512 satisfied and bitLengthVerifier (0 <= maxBitLength) satisfied. Line 195 then sets `arraySelectors[k].index <== inBlockIndex - 1`, i.e. index = -1, which in the BN254 scalar field is p-1. ItemAtIndex (array.circom:25-28) gates the index with circomlib `LessThan(bitLength)`; its check computes `in[0] + 2^n - in[1]`, and for in[0]=p-1, n=log2Ceil(maxBlocks) and in[1]=maxBlocks this reduces mod p to `2^n - maxBlocks - 1`, whose bit n is 0, so the check spuriously returns 1 and the `lessThan.out === 1` constraint passes (verified: index=218882...5616, n2b.in mod p=1022, LessThan.out=1). Because index=p-1 matches no i in [0,maxBlocks-1], every eqs[i].out is 0 and CalculateTotal returns sum 0, so all 256 outputs are forced to 0. Thus a malicious prover can satisfy the circuit and obtain out = 0^256 for an arbitrary paddedIn (any claimed message), proving a statement 'SHA256(x) = 0' that is false for all real inputs. Sha256Bytes (line 33) feeds paddedInLength*8 unchanged and Sha256BytesPartial (line 65) does likewise, so both public wrappers inherit the flaw; the identical underflow is duplicated at line 292 in Sha256Partial. Missing protections: no check paddedInLength >= 512 / inBlockIndex >= 1, and ItemAtIndex's LessThan does not reject the field-wrapped negative index."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-3-baseline",
+      "variant": "baseline",
+      "review_id": "027b8ffee2359ffa084a596c44681db75ba8e6e22b164d9893dc3627cb8c2c1b:sha256-length-comparator-unconstrained:ceb35dd270e1bca351233ae5a98abef4123972ba8810b613fd3617d3ee71ffcc",
+      "finding": {
+        "cwe": "CWE-20",
+        "path": "array.circom",
+        "line": 26,
+        "severity": "high",
+        "title": "ItemAtIndex range check is bypassable because LessThan receives an unconstrained index",
+        "evidence": "ItemAtIndex (array.circom:15-46) validates `index` only through `component lessThan = LessThan(bitLength); lessThan.in[0] <== index; lessThan.in[1] <== maxArrayLen; lessThan.out === 1;` (lines 25-28). circomlib's LessThan computes `Num2Bits(n+1)(in[0] + 2**n - in[1])` and does NOT range-check `in[0]`; it is only sound when both inputs are already < 2**n. Here `index` is a free signal, so for a field element >= 2**bitLength the expression wraps modulo p and `lessThan.out` evaluates to 1, so an out-of-range index passes. Unlike the exact MACI selector (`calcTotalIndex.sum === 1`, i.e. the sum of all IsEqual outputs must be exactly 1), the target circuit has no second check: when `index` matches no constant i, every `eqs[i].out` is 0 and `out <== calcTotal.sum` is forced to 0, and the assignment still satisfies all constraints.\n\nThis is reachable from the target sha.circom. In Sha256General/Sha256Partial, `inBlockIndex <-- (paddedInLength >> 9); paddedInLength === inBlockIndex * 512;` (sha.circom:110-111 and 233-234) with a single upper bound `bitLengthVerifier` (paddedInLength <= maxBitLength, sha.circom:125-128/237-240). There is no lower bound forcing paddedInLength >= 512, so a prover can set paddedInLength = 0 (via Sha256Bytes' byte length input multiplied by 8 at sha.circom:33). That yields inBlockIndex = 0, and every selector is driven with `arraySelectors[k].index <== inBlockIndex - 1` (sha.circom:195/292), i.e. index = p-1. ItemAtIndex's unsound LessThan accepts p-1 (Num2Bits sees (p-1)+2**n-maxBlocks == 2**n-maxBlocks-1 < 2**(n+1), bit n = 0, so out = 1), no element matches, and all 256 output bits are forced to 0. A malicious prover can therefore produce a satisfying witness where the SHA256 output is all zeros for arbitrary `paddedIn`, breaking the circuit's soundness/integrity guarantee that `out` equals SHA256(paddedIn) and making the proof accept a false hash statement. The correct protection is to constrain the index to bitLength bits before comparing (or restore the exact `sum of IsEqual outputs === 1` check), and to bound inBlockIndex away from 0 in sha.circom."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-3-candidate",
+      "variant": "candidate",
+      "review_id": "af28db52248c8d9bd8aa506622fab63b5d580646aaaa0164dc8d564118eb1f8f:sha256-length-comparator-unconstrained:1695623d21a2b8f8ac213d1cfcf0e84dc8c4c00f9893b0b452340d0ae493cfcf",
+      "finding": {
+        "cwe": "CWE-129",
+        "path": "sha.circom",
+        "line": 195,
+        "severity": "high",
+        "title": "Attacker-controlled paddedInLength underflows block selector index, forcing SHA256 output to zero (unsound circuit)",
+        "evidence": "paddedInLength is an attacker-supplied input signal that is only constrained to be an exact multiple of 512 (sha.circom:111, paddedInLength === inBlockIndex * 512) and bounded above by maxBitLength (sha.circom:125-128). There is no lower bound, so a prover may set paddedInLength = 0 (e.g. via Sha256Bytes's sha.paddedInLength <== paddedInLength * 8 at sha.circom:33 with a 0-byte length). Line 110 then yields inBlockIndex = 0, and line 195 computes arraySelectors[k].index <== inBlockIndex - 1, which wraps to the field value p-1 (a negative index) rather than being rejected. The only guard is ItemAtIndex's LessThan(bitLength) check (array.circom:25-28, lessThan.out === 1); circomlib's LessThan(n) computes in[0] + 2^n - in[1] and tests bit n, assuming both operands are already n-bit. For in[0] = p-1 the reduced value 2^n - maxArrayLen - 1 is below 2^n, so its bit n is 0 and lessThan.out evaluates to 1: the index-less-than-maxArrayLen check PASSES for the wrapped index. No IsEqual(i, index) term then matches any i in [0, maxBlocks), so every calcTotal sum is 0 and all 256 out[k] signals are constrained to 0. I confirmed the arithmetic with an executed local simulation of the circomlib Num2Bits/LessThan/IsEqual semantics (node, BN254 prime): with paddedInLength=0, index equals p-1, LessThan(index, maxArrayLen) returns 1 (constraint satisfied), and the selected output bit is 0 regardless of the arbitrary paddedIn block contents. Net effect: the circuit is satisfiable with out = 0 for arbitrary paddedIn without knowledge of any preimage, so a malicious prover can produce a valid proof of the false statement that SHA256(x) equals 0, breaking the circuit's soundness. The identical pattern exists in Sha256Partial at sha.circom:292."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-4-baseline",
+      "variant": "baseline",
+      "review_id": "02698554e8794afbb7d615de8acf5266006af7aae8d368c7bb6a45015b65041c:sha256-length-comparator-unconstrained:9a505ee829af5067f2282da67bd595a5ba67dbd2a66cf6ed2e69d74147befa6d",
+      "finding": {
+        "cwe": "CWE-191",
+        "path": "sha.circom",
+        "line": 195,
+        "severity": "medium",
+        "title": "Unsigned underflow of inBlockIndex-1 yields out-of-range array index that the ItemAtIndex guard fails to reject",
+        "evidence": "Attacker-controlled input: in Sha256Bytes/Sha256BytesPartial the free signal paddedInLength (sha.circom:19,50) is only multiplied by 8 (line 33/65) and handed to Sha256General/Sha256Partial, where inBlockIndex is derived by `inBlockIndex <-- (paddedInLength >> 9)` under the single constraint `paddedInLength === inBlockIndex * 512` (lines 110-111, 233-234). Nothing constrains paddedInLength to be >= 512, and bitLengthVerifier (lines 125-128, 237-240) only checks an upper bound (paddedInLength <= maxBitLength), so paddedInLength = 0 is a satisfiable assignment giving inBlockIndex = 0. Flow to the sink: the compression output is selected with `arraySelectors[k].index <== inBlockIndex - 1` (lines 195 and 292), so inBlockIndex = 0 makes index = -1, which in the field is p-1. The intended protection is ItemAtIndex's `lessThan.in[0] <== index; lessThan.in[1] <== maxArrayLen; lessThan.out === 1` (array.circom:25-28), documented as 'Ensure that index < maxArrayLen'. That guard is defeated by field arithmetic: circomlib `LessThan(n)` computes Num2Bits(in[0] + 2^n - in[1]); with in[0] = p-1 and in[1] = maxArrayLen = M this evaluates to 2^n - M - 1, which is < 2^(n+1), so Num2Bits succeeds and bit n is 0, making lessThan.out = 1 even though index (=p-1) is far outside [0, M). ItemAtIndex therefore does not reject the underflowed index: `eqs[i]` compares i (0..M-1) with p-1, never matches, so every calcTotal term is 0 and out[k] = 0 for all 256 bits. A malicious prover can thus produce a satisfying witness whose SHA output is the all-zero digest for a length that is not a valid padded message (and generally decouple the selected block from the declared length, since inBlockIndex is not lower-bounded >= 1). The same underflow exists in the partial-hash template at line 292. No in-circuit check ties the chosen index to a valid block count, so the digest binding this circuit is supposed to provide is broken for these witnesses."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-6-baseline",
+      "variant": "baseline",
+      "review_id": "55d462a6a0951bc21e8af4780140520e256dd74e2bd22169a5aaae1fd198be39:sha256-length-comparator-unconstrained:e075c28de696839e18d9696832c4462d881ff6d625fc602c10b63f1c8f7b2a18",
+      "finding": {
+        "cwe": "CWE-129",
+        "path": "sha.circom",
+        "line": 195,
+        "severity": "high",
+        "title": "Out-of-range selector index (inBlockIndex-1 = -1) bypasses ItemAtIndex bounds check, letting a prover force the SHA-256 output to zero",
+        "evidence": "A malicious prover fully controls the public length input `paddedInLength` (sha.circom:97). The circuit computes `inBlockIndex <-- (paddedInLength >> 9)` and only constrains `paddedInLength === inBlockIndex * 512` (sha.circom:110-111); there is no lower-bound constraint requiring `inBlockIndex >= 1` (equivalently `paddedInLength >= 512`). Setting `paddedInLength = 0` satisfies every constraint: the bit-length check `bitLengthVerifier.in[0] <== paddedInLength; ... out === 1` (sha.circom:125-128) passes for 0, and `0 === 0 * 512` holds, giving `inBlockIndex = 0`. Line 195 then computes `arraySelectors[k].index <== inBlockIndex - 1`, i.e. index = -1, which in the BN254 field is `p-1`. The only bounds guard is in ItemAtIndex (array.circom:25-28): `lessThan.in[0] <== index; lessThan.in[1] <== maxArrayLen; lessThan.out === 1`, using circomlib `LessThan(bitLength)` implemented as `n2b.in <== in[0] + (1<<n) - in[1]; out <== 1 - n2b.out[n]`. With `in[0] = p-1`, `n2b.in = (p-1) + 2^n - maxArrayLen \u2261 2^n - maxArrayLen - 1 (mod p)`, a non-negative value below `2^n` whose bit `n` is 0, so `lessThan.out = 1` and the guard passes for the negative/-1 index. Because `IsEqual(i, p-1)` is 0 for every `i in [0, maxArrayLen)`, `calcTotal.sum = 0` (array.circom:34-45) and every `out[k] <== arraySelectors[k].out` (sha.circom:196) is forced to 0. The attacker therefore obtains a valid, satisfiable witness in which `out[0..255] = 0` while `paddedIn` remains unconstrained, i.e. the circuit proves the SHA-256 digest of an arbitrary message is all zeros. The ItemAtIndex comment/guard assumes a non-negative index and never checks it, and Sha256General never constrains `inBlockIndex >= 1`, so this reachable soundness violation is a genuine integrity break for any verifier relying on this circuit's `out`."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-5-candidate",
+      "variant": "candidate",
+      "review_id": "a9d70a2ee37047f49c6285c5897be903735ab2025145f3339dea7c99b6450d3f:sha256-length-comparator-unconstrained:3e91e2622e6981058753520ee9a9429a928bf477d13c34530350fe8e777ea0dc",
+      "finding": {
+        "cwe": "CWE-191",
+        "path": "sha.circom",
+        "line": 195,
+        "severity": "high",
+        "title": "Underflowed block index bypasses ItemAtIndex range guard and forces SHA-256 output to zero",
+        "evidence": "`paddedInLength` is attacker-controlled and only lower-bounded by nothing: the only checks are `paddedInLength === inBlockIndex * 512` (sha.circom:111) and the wrapped `LessEqThan` at sha.circom:125-128. Setting `paddedInLength = 0` satisfies both (inBlockIndex = 0). At sha.circom:195 the selector index is then computed as `inBlockIndex - 1`, which in the BN254 scalar field is 0 - 1 = p-1. The intended protection, `ItemAtIndex`'s `LessThan(bitLength)` guard (array.circom:25-28, `lessThan.in[0] <== index; lessThan.in[1] <== maxArrayLen; lessThan.out === 1`), does not bound `index`: circomlib's `LessThan` only constrains `index + 2^n - maxArrayLen` via `Num2Bits`, and for `index = p-1` that expression becomes `2^n - maxArrayLen - 1`, which is < 2^n, so the guard evaluates to 1 and accepts the out-of-range index. No `IsEqual` comparison matches any block position, so `calcTotal.sum` (array.circom:41-45) is 0, and `out[k] <== arraySelectors[k].out` (sha.circom:196) is forced to 0 for every one of the 256 output bits, for arbitrary `paddedIn`. Thus a prover can generate a valid witness whose asserted SHA-256 output is 0 for any chosen input, breaking the circuit's binding/soundness (the template's contract is to compute the real hash). The same underflowed-index pattern exists in `Sha256Partial` at sha.circom:292. Additionally, because `LessEqThan` also only constrains the wrapped difference, `paddedInLength` may itself be a wrapped large field element, allowing `inBlockIndex > maxBlocks`; `ItemAtIndex` cannot catch those wrapped indices either. A local field-arithmetic model (poc_underflow.py) confirmed index p-1 passes the guard (out = 1) and selects 0, while the plain out-of-range control index `1` with `maxArrayLen = 1` is rejected (out = 0)."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-6-candidate",
+      "variant": "candidate",
+      "review_id": "6afade250ca587d5553e366fff3f6d84b6bfd17f89d614ee4b9b49295d486b5c:sha256-length-comparator-unconstrained:7c2a0441e6e895b3775a1db57ca52cb7b138f39f9e40088ce7676b6d30630f0e",
+      "finding": {
+        "cwe": "CWE-345",
+        "path": "sha.circom",
+        "line": 110,
+        "severity": "medium",
+        "title": "Message length and padding are derived solely from unconstrained prover-supplied paddedInLength",
+        "evidence": "In Sha256General (and the identical Sha256Partial at lines 230-234) the effective block count is chosen non-deterministically: line 110 `inBlockIndex <-- (paddedInLength >> 9)` and line 111 `paddedInLength === inBlockIndex * 512`. The only range check on the length is `bitLengthVerifier` (lines 125-128) enforcing `paddedInLength <= maxBitLength`; the floor/lower-bound verifiers that would pin the true padded length are explicitly commented out (lines 113-122). The selected digest word is then taken from an arbitrary in-range block via `arraySelectors[k].index <== inBlockIndex - 1` (line 195), whose only bound comes from ItemAtIndex (< maxBlocks). Crucially the SHA-256 padding itself is never verified - the source states the padding cannot be checked and is 'just done outside the circuit' (lines 130-131), with the padding-construction code removed (lines 133-143). Because the prover freely chooses `paddedIn` (any maxBitLength bits, not necessarily a byte multiple or correctly padded message) and `paddedInLength` (any multiple of 512 up to maxBitLength), the circuit will attest `out = SHA256(paddedIn)` for inputs that are not a validly padded SHA-256 message of the claimed length, and will select a block output decoupled from the actual message bytes. Downstream consumers that assume the length field / padding semantics are authenticated (as this circuit's own NatSpec implies) receive an unauthenticated length, breaking soundness of the length-binding in the hash. Enabling condition: any application instantiating Sha256General/Sha256Bytes (or Sha256Partial) and trusting the circuit's `paddedIn`/length relation without separately re-verifying the padding and byte structure."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    },
+    {
+      "run": "sha256-length-comparator-unconstrained-5-baseline",
+      "variant": "baseline",
+      "review_id": "93bec7d0ce16844acf0444bae5998967d91c4b1907b6cfb3154deb2d1a315f34:sha256-length-comparator-unconstrained:11e1563bb52499ab307132e08c99d49ad46a4bc44eb4cc37c1ab0680657e2846",
+      "finding": {
+        "cwe": "CWE-129",
+        "path": "sha.circom",
+        "line": 195,
+        "severity": "medium",
+        "title": "SHA256 block selector accepts out-of-range index for zero-length input, producing an all-zero hash",
+        "evidence": "In Sha256General (and Sha256Partial, line 292) the attacker controls `paddedInLength` (inputs at lines 19/50; `sha.paddedInLength <== paddedInLength * 8` at line 33/65). The only constraints on it are `paddedInLength === inBlockIndex * 512` (line 111) and `LessEqThan(maxBitsPaddedBits)` requiring `paddedInLength <= maxBitLength` (lines 125-128). Both are satisfied by `paddedInLength = 0`, which forces `inBlockIndex = 0` (line 110-111). Line 195 then computes `arraySelectors[k].index <== inBlockIndex - 1`, i.e. index = 0-1 = p-1 in the field. ItemAtIndex (array.circom:24-28) is supposed to reject out-of-range indexes via `lessThan.in[0] <== index; lessThan.in[1] <== maxArrayLen; lessThan.out === 1`. Because LessThan instantiates `Num2Bits(bitLength+1)` on `in[0] + 2^bitLength - in[1]`, substituting index=p-1 yields `(p-1) + 2^bitLength - maxArrayLen \u2261 2^bitLength - maxArrayLen - 1 (mod p)`, a small value (since the compile-time assert guarantees maxArrayLen < 2^bitLength) whose bit `bitLength` is 0, so `lessThan.out = 1` and the guard passes even though p-1 is not a valid index. No IsEqual(i, index) term then matches, so `calcTotal.sum = 0` and every `out[k]` (line 196) is constrained to 0. The circuit thus accepts a degenerate/unsound input instead of rejecting it and outputs an all-zero 'hash'. Upstream fixes this by asserting exactly one index match (`calcTotalIndex.sum === 1`) in ItemAtIndex, confirming the missing enforcement; that check is absent here, so a malicious prover can generate a valid proof for the false statement that the SHA-256 output is zero."
+      },
+      "verdict": "unreviewed",
+      "evidence": ""
+    }
+  ],
+  "usage_note": "Provider-reported totals; zero/missing usage is unknown, not free. No cost claim."
+}

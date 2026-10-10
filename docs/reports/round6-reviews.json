@@ -1,0 +1,82 @@
+{
+  "06c281513d164df2d27e2034ca1b667ea951837e2488fdbf08a03e0035b33808:lock-symlink-truncation:e0a5ce827dd2bcde04ccb233ade23cfde4f6d2242f41a826b8ed7b1fb75f2881": {
+    "evidence": "os.open at line 44 follows the attacker-controlled lock path with O_TRUNC set at line 41 and no O_NOFOLLOW; same protected-file truncation root cause one line after the expected sink. Directory write access and victim write permission are prerequisites.",
+    "verdict": "alternate_match"
+  },
+  "0aaec47a0dd3baf370503f5ff4a726cc3f5c38c5db92161c7851cd5cf8d05a34:argon2i32-small-block-count:214006ca1dd37e6e3e370cd35e067e4669dc3b02b402dcbe2bc87b21d514f1fc": {
+    "evidence": "unlock() forwards an attacker-controlled MAC, key, and nonce to crypto_aead_unlock, whose C prototype declares fixed-size mac[16]/key[32]/nonce[24]; no length check exists. Same AEAD bounds family as line 181, source-verified.",
+    "verdict": "valid_distinct"
+  },
+  "0aaec47a0dd3baf370503f5ff4a726cc3f5c38c5db92161c7851cd5cf8d05a34:argon2i32-small-block-count:a136319b2bdf26cd619d06e0dfafe7780115d262546e9a9490c7a75048a8642f": {
+    "evidence": "blake2b passes unbounded len(key) into crypto_blake2b_keyed; monocypher.c copies key_size bytes into key_block[128]. Keys >128 bytes overflow the stack. Source-verified; remote reachability is not claimed.",
+    "verdict": "valid_distinct"
+  },
+  "143c341d797578370b8f3131a03aaae36ec40e64d216b65841557a3373b3106c:iss-array-loose-match:f6c57cf6bb6d8314e6f6bb2d274001ffd04cacc66c7e68979d5b8a8aa5e4034d": {
+    "evidence": "cacheSet derives the cached validity window only when a numeric iat exists, so cache:true keeps accepting a signed exp token without iat after expiry. round4-jwt-verification.json shows uncached and numeric-iat controls reject; cache opt-in is required.",
+    "verdict": "valid_distinct"
+  },
+  "675ec67efe2d908175d6a21a0056247216acc6e31a527d88965dc4bb061bb368:iss-array-loose-match:e4b6a3f67c9ad3d1910ec6af0a2b6a674960e950661518625bd64bb0a32a1ddc": {
+    "evidence": "The matchers are caller-configured RegExp objects accepted by ensureStringClaimMatcher; the attacker controls claim values, not the pattern. A catastrophic caller pattern is a caller configuration choice, not an attacker-reachable library defect.",
+    "verdict": "invalid"
+  },
+  "682945d5f1d282bf81ea9743e9b72619b4680c76ada8f431c228607d564089e4:sha256-length-comparator-unconstrained:133660c1d975ab2d229d0d02e11af2b0382532d3ddc31e92df540ddc62e0ed99": {
+    "evidence": "Sha256General/Sha256Partial derive inBlockIndex from an unbounded paddedInLength and feed inBlockIndex-1 into ItemAtIndex, whose LessThan lacks a range check. Same comparator/selector soundness defect as the expected line-126 sink.",
+    "verdict": "alternate_match"
+  },
+  "87427b805caaac01a179f1d6893ff8715975dfaa6593a2e3e98db2ce25f2b960:argon2i32-small-block-count:7b720b1b62af9dda0e9b75455ec1af4d6d552d56feb10993209032e422e4c668": {
+    "evidence": "blake2b passes unbounded len(key) into crypto_blake2b_keyed; monocypher.c copies key_size bytes into key_block[128]. Keys >128 bytes overflow the stack. Source-verified; remote reachability is not claimed.",
+    "verdict": "valid_distinct"
+  },
+  "9b1baff84549ca0ce0292990a7c04e5083ee514c98b5ca4daad418841b55547d:iss-array-loose-match:e91579828ee7dc70f0aa5ffb00d4fd9269f4a2b7d7a3d48602bc7182bda5fef8": {
+    "evidence": "key:'' or key:null with a signing algorithm allowed reaches verifyToken with a falsy hasKey, so an empty signature segment is accepted. Confirmed by round4-jwt-verification.json; conditional on an invalid key configuration.",
+    "verdict": "valid_distinct"
+  },
+  "a902ed52c654f9ccf593c3c4e3f69603244e64e1d4a11ab512c8d726b4f03c6a:sha256-length-comparator-unconstrained:72e7b0716b451c34965594ef62f58b4de7cd2b106ce4a43dd0ed54364655ffca": {
+    "evidence": "Missing lower bound on paddedInLength underflows the selector index. Same comparator/selector soundness defect as the expected line-126 sink.",
+    "verdict": "alternate_match"
+  },
+  "a94a71778c328a25b92e5c6b4c576124b709c1fd18d074185d2396bfcd2c5233:argon2i32-small-block-count:fd436e18e0f512f27323c4ed06e51bbd946b49023ac08ba50f73b62c71754a14": {
+    "evidence": "blake2b passes unbounded len(key) into crypto_blake2b_keyed; monocypher.c copies key_size bytes into key_block[128]. Keys >128 bytes overflow the stack. Source-verified; remote reachability is not claimed.",
+    "verdict": "valid_distinct"
+  },
+  "d0dad50de779731d81a0f11ed8240b2bd6c22776b81859f990cc33cf66607112:intoiter-drop-panic-double-free:aea03ac6d0c3458c12569a2fcc009480ff76f73ba7c68d73de2ae35be418b5fa": {
+    "evidence": "IntoIter::drop drops its tail before zeroing len, so a destructor panic drops the stale local vector again. Same expected root cause at the adjacent unsafe operation.",
+    "verdict": "alternate_match"
+  },
+  "d0dad50de779731d81a0f11ed8240b2bd6c22776b81859f990cc33cf66607112:intoiter-drop-panic-double-free:db6315e8019b32845ca05941d1e41fe82d8f5714000c48134a7e7103ffb9d566": {
+    "evidence": "clear drops its slice at 1084 before setting len to zero at 1085, so a destructor panic leaves a stale live length that a later drop re-drops. reference/FIX.md independently patches this path; distinct from IntoIter cleanup.",
+    "verdict": "valid_distinct"
+  },
+  "ddd7222474e3a4a7045e54c4848c1472bec2e4a186b29b859e369da75fed74c1:iss-array-loose-match:19a832bcc95ae1f254ab15cf184cf8ed87e7670c21a272cd01ddd169d981c0d7": {
+    "evidence": "Claimed HMAC downgrade when asymmetric key material is not recognized as PEM. The detection path and a real exploit were not reproduced in this round; keep unreviewed rather than assume valid or invalid.",
+    "verdict": "unreviewed"
+  },
+  "e25d41a29e7f311509ba2405c8487b0320089f13cd4b4358b82df30a378736e2:sha256-length-comparator-unconstrained:b383173dfaa66d642adaaee7853ebeca857ddbe5af54332bfccf486859c037a2": {
+    "evidence": "Unconstrained inBlockIndex derived from an unbounded paddedInLength reaches the ItemAtIndex selector. Same comparator/selector soundness defect as the expected line-126 sink.",
+    "verdict": "alternate_match"
+  },
+  "e802756d339e780b889eef2869984726da090183c1e9b5ec7d9af85b6ac85049:argon2i32-small-block-count:2afad4c0506aa3d89a980545342cd2ea5cf76e6dea8400da297e2694961f4502": {
+    "evidence": "Unvalidated nb_blocks sizes the work area while native Argon2 reads initialized blocks; same expected undersized-work-area root cause with an alternate CWE at the expected line.",
+    "verdict": "alternate_match"
+  },
+  "e802756d339e780b889eef2869984726da090183c1e9b5ec7d9af85b6ac85049:argon2i32-small-block-count:92306f24ddabd860214b625aa1a516412a53c703e13deba986f4581011f877b9": {
+    "evidence": "blake2b passes unbounded len(key) into crypto_blake2b_keyed; monocypher.c copies key_size bytes into key_block[128]. Keys >128 bytes overflow the stack. Source-verified; remote reachability is not claimed.",
+    "verdict": "valid_distinct"
+  },
+  "ef0230ad48d6df72fac11bff0d7d9b975a0a59b532135128781137507e5f4b76:intoiter-drop-panic-double-free:152a4842566551c937d3d0e49315244f6854a7797346c3346968f9640bee9756": {
+    "evidence": "IntoIter::drop drops its tail before zeroing len, so a destructor panic drops the stale local vector again. Same expected root cause at the adjacent unsafe operation.",
+    "verdict": "alternate_match"
+  },
+  "ef0230ad48d6df72fac11bff0d7d9b975a0a59b532135128781137507e5f4b76:intoiter-drop-panic-double-free:ae13341a071ec785afc6fa146af147e72087ec006b2e6d1318a3a674d59062f5": {
+    "evidence": "clear drops its slice at 1084 before setting len to zero at 1085, so a destructor panic leaves a stale live length that a later drop re-drops. reference/FIX.md independently patches this path; distinct from IntoIter cleanup.",
+    "verdict": "valid_distinct"
+  },
+  "fc1278fe2d1717c9de005e6d49d3a97b88d00d99968d22232b692ea1dc1a0087:intoiter-drop-panic-double-free:e8d17dd28a549503afa656923061fd341ba55fe1706cb4c770c2347237b0adc4": {
+    "evidence": "clear drops its slice at 1084 before setting len to zero at 1085, so a destructor panic leaves a stale live length that a later drop re-drops. reference/FIX.md independently patches this path; distinct from IntoIter cleanup.",
+    "verdict": "valid_distinct"
+  },
+  "fc1278fe2d1717c9de005e6d49d3a97b88d00d99968d22232b692ea1dc1a0087:intoiter-drop-panic-double-free:f8495797aa4ac8663affbb1f1bf58abfd151674456d28df8db97aea047b13881": {
+    "evidence": "IntoIter::drop drops its tail before zeroing len, so a destructor panic drops the stale local vector again. Same expected root cause at the adjacent unsafe operation.",
+    "verdict": "alternate_match"
+  }
+}

@@ -19,7 +19,14 @@ Start with the [README](../README.md) for installation and a first run.
 | [Tiny baseline round 1](reports/tiny-baseline-round1.json) | Blind live evaluation over the seven submodule fixtures |
 | [Tiny baseline round 2](reports/tiny-baseline-round2.json) | Same blind run after the JSON-mode and reasoning-effort fixes |
 | [Tiny baseline round 3](reports/tiny-baseline-round3.json) | Same blind run after the configurable stream cap |
-| [Unexpected-finding verification](reports/tiny-unexpected-verification.json) | Verdicts for every non-exact-match finding across rounds 1-3 |
+| [Tiny paired round 4](reports/tiny-round4.json) | Old vs threshold prompt after the limit-forwarding fix |
+| [Tiny paired round 5](reports/tiny-round5.json) | Same comparison after the forced final-report fix |
+| [Tiny strategy round 6](reports/tiny-round6.json) | Full-plan A/B for bounded output repair |
+| [Tiny strategy rounds 7-9](reports/tiny-round9.json), [8](reports/tiny-round8.json), [7](reports/tiny-round7.json) | Targeted recovery-strategy experiments |
+| [Round 4 reviews](reports/round4-reviews.json) | Per-finding verdicts for the round-4 non-exact matches |
+| [Round 5 reviews](reports/round5-reviews.json) | Per-finding verdicts for the round-5 non-exact matches |
+| [Round 6 reviews](reports/round6-reviews.json) | Per-finding verdicts for the round-6 non-exact matches |
+| [Unexpected-finding verification](reports/tiny-unexpected-verification.json) | Deduplicated cross-round catalog of reviewed root causes |
 | [Tiny metrics log](reports/tiny-metrics-log.jsonl) | Per-round and per-case execution/metric records for comparison |
 
 The change history is in [CHANGELOG.md](../CHANGELOG.md).

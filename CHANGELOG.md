@@ -9,13 +9,27 @@ All notable changes to this project are documented here. The format follows
 
 - Verified non-exact-match findings from the live rounds
   (`docs/reports/tiny-unexpected-verification.json`) and promoted the genuine
-  separate issues to dataset cases in the tiny submodule: `blake2b-key-overflow`
-  (`CWE-121`), `aead-key-length` (`CWE-125`), `clear-panic-double-free`
-  (`CWE-415`), and `empty-signature-accepted` (`CWE-347`).
-- Distinct `unexpected_valid`/`unexpected_invalid` metrics and per-round/per-case
-  execution records in `docs/reports/tiny-metrics-log.jsonl` for round-over-round
-  comparison. The default prompt now prefers reachable root causes and omits
-  low-impact hardening.
+  separate issues to dataset cases in the tiny submodule (`blake2b-key-overflow`,
+  `aead-key-length`, `chacha20-short-key`, `signature-check-short-buffers`,
+  `argon2-null-allocation`, `clear-panic-double-free`, `empty-hs256-null-key`,
+  `cache-expiry-without-iat`, `cache-max-age-with-exp`, and the low-impact
+  `layout-rounded-size-overflow-low-impact`). A clean `unsigned-opt-in-control`
+  case with no expected findings measures false-positive behavior directly.
+- Distinct `unexpected_valid`/`unexpected_invalid` metrics, per-finding reviews
+  bound to the full claim and report hash (`docs/reports/round4-reviews.json`,
+  `docs/reports/round5-reviews.json`, `docs/reports/round6-reviews.json`), and
+  per-round/per-case execution records in `docs/reports/tiny-metrics-log.jsonl`
+  for round-over-round comparison. `scripts/evaluate_round.py --log` appends the
+  compact log and supports per-variant limit overrides. The default prompt now
+  prefers reachable medium-or-higher root causes and omits low-impact hardening.
+- Two bounded recovery strategies selected from well-known harnesses
+  (`docs/harness-design.md`): `--max-output-repairs` (default 2) returns a
+  rejected final report's JSON/schema/evidence error to the model for a corrected
+  answer, and an empty completion is retried as a transient provider response up
+  to `--max-attempts`. Both are covered by deterministic tests; round 9 repaired
+  two live malformed reports. Recovery counters (`output_repairs`,
+  `empty_completions`) are recorded in run journals and the metrics log. A failed
+  child's stderr tail is surfaced through operational logs (never the report).
 
 - Blind live evaluation baseline over the seven `datasets/tiny` fixtures
   (`docs/reports/tiny-baseline-round1.json`): 2/7 completed, 1 exact match, and
@@ -42,6 +56,13 @@ All notable changes to this project are documented here. The format follows
   bounded temporary output archives recoverable through native Bash, and
   request/projection telemetry. Documented pinned Codex, DeepSeek Harness, Pi,
   and OpenCode design references and CLI/provider regression coverage.
+
+### Fixed
+
+- When `--max-tool-calls` is exhausted, the provider now removes the tool
+  definitions and forces a final report turn instead of failing with
+  `agent exhausted --max-tool-calls without a final report`. Exercised on all
+  three wires by `exhausted_budget_forces_a_final_report_without_tools`.
 
 ### Changed
 

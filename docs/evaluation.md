@@ -54,19 +54,39 @@ That result predates the tool loop and does not measure its discovery quality.
 ## Unexpected-finding verification
 
 Exact scoring is deliberately strict, so a run's non-matching findings are
-classified separately after a live round. `reports/tiny-unexpected-verification.json`
-records, for each unexpected finding, whether it is the same root cause at
-another sink line or label (`alternate_sink`/`alternate_label`), a genuine
-separate issue (`valid_distinct`), genuine but low impact (`valid_low_impact`),
-or outside the case boundary (`out_of_scope`). Verified-genuine findings are
-promoted into dataset cases. This classification is analysis metadata: the
-harness still scores exact keys and does not silently relax them. The aggregate
-`unexpected_valid`/`unexpected_invalid` counts are written to
-`reports/tiny-metrics-log.jsonl` for round-over-round comparison.
+classified separately after a live round. Each review binds to the full finding
+claim *and* the exact report hash (through its `review_id`), so an unreviewed
+claim is never silently treated as a false positive. The machine-readable
+verdicts live in `reports/round4-reviews.json` and `reports/round5-reviews.json`;
+`reports/tiny-unexpected-verification.json` is the deduplicated cross-round
+catalog of distinct root causes. Verdicts are:
+
+- `alternate_match`: the same root cause as the case label at another sink line.
+- `valid_distinct`: a genuine, source-supported issue separate from the label.
+- `invalid`: within scope but not a supported finding (for example, intended
+  opt-in behavior or a documented component interface).
+- `low_impact`, `out_of_scope`, `unreviewed`: genuine but below the default
+  impact threshold, outside the case boundary, or not yet reviewed.
+
+`unexpected_valid` (`alternate_match` + `valid_distinct`) and
+`unexpected_invalid` are distinct metrics, never folded into exact precision.
+Verified-genuine findings are promoted into dataset cases, including a clean
+`unsigned-opt-in-control` case whose expected set is empty so false-positive
+behavior is measured rather than assumed. Reviews are analysis metadata: the
+harness still scores exact keys and does not silently relax them.
+
+`scripts/evaluate_round.py` writes per-round and per-case review metrics to
+`reports/tiny-metrics-log.jsonl` (`--summarize ... --log ... --round N`) so later
+rounds compare the same fields without re-reading every full report. It also
+supports `[limits_by_variant.<name>]` overrides for harness A/B runs. A targeted
+strategy round that does not review its non-matching findings records them as
+`unreviewed`, not as false positives.
 
 The default system prompt asks for reachable root causes that break a security
-property and to omit low-impact hardening and unproven observations. This is a
-default-configuration filter, not a scoring change.
+property and, by default, only medium-or-higher impact. It omits intended
+opt-in behavior and low-impact hardening. This is a default-configuration
+filter, not a scoring change; review verdicts still record below-threshold
+findings separately.
 
 ## Real-world fixtures
 
@@ -88,8 +108,14 @@ audited code:
 Each `README.md` records the upstream advisory, vulnerable and fixed versions,
 and the scope boundary (notably that the fast-jwt, h11, and zk-email fixtures
 are narrower than a full compromise). The labels are deliberate choices among
-defensible CWEs and adjacent sink lines; treat them as tuning data. No live-model
-result for these fixtures is recorded yet.
+defensible CWEs and adjacent sink lines; treat them as tuning data. Live rounds
+1-5 for these fixtures are recorded in the [metrics log](reports/tiny-metrics-log.jsonl)
+and [Validation](validation.md); they are small-sample tuning results, not
+quality claims.
+
+Reviewed secondary root causes are also dataset cases, so the same fixture can
+carry several cases with one expected key each. A safe control carries no
+expected finding and measures false-positive behavior directly.
 
 ## Reproducibility
 

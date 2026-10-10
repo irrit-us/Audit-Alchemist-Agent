@@ -1,0 +1,130 @@
+{
+  "080745fa3bc0f685c1ae9a40bf8cf056089f21ee2b7f242d39cc3e5e71f51672:iss-array-loose-match:f3b5205a69f69990faf9423b6e07ea6a9da6badd4bee14c81613816d44c49bed": {
+    "verdict": "alternate_match",
+    "evidence": "validateClaimValues uses some over attacker-controlled arrays; type validation checks elements only. Same expected issuer-array root cause with alternate CWE. Authentication bypass requires a key fetcher/application trusting the same claim, not arbitrary valid signed array tokens in every deployment. Source and fixture scope verified."
+  },
+  "84d5ce90094fd4e119d9be4124d5c34a5308390330be36e0b22c0400a402e201:lock-symlink-truncation:e683d40bdf0a339a072374f4eeb8fd52297df980c227bd017fecc6d7ed9ae520": {
+    "verdict": "alternate_match",
+    "evidence": "filelock/_unix.py:41 sets O_TRUNC, line 44 opens the attacker-controlled symlink without O_NOFOLLOW. Same protected-file truncation root cause; directory write access and victim write permission required. Source verified; model-reported PoC is not independently attested."
+  },
+  "ef06e54fbcb0da8a9ff52764aad67e248419cb8bcbdaed24440b2751fdd093df:intoiter-drop-panic-double-free:f9cd4126ee521896f2c182b2c9bbf01b6edf1dd815f3a71b8ec7083f2fe27813": {
+    "verdict": "valid_distinct",
+    "evidence": "clear drops its slice at src/lib.rs:1084 before setting len to zero at 1085. Panic leaves stale live length, later ThinVec::drop re-drops elements. Vendored reference/FIX.md independently patches this path with a DropGuard. Distinct from IntoIter cleanup."
+  },
+  "ef06e54fbcb0da8a9ff52764aad67e248419cb8bcbdaed24440b2751fdd093df:intoiter-drop-panic-double-free:cda1c7201c9aba542d293c9c6cbee232521eba10e9728d9767b9adc42c3834be": {
+    "verdict": "alternate_match",
+    "evidence": "IntoIter destructor at src/lib.rs:2546-2548 moves the vector then drops its tail before zeroing len. A destructor panic drops the stale local vector again. Same expected root cause at adjacent unsafe operation; reference/FIX.md confirms guard fix."
+  },
+  "ef06e54fbcb0da8a9ff52764aad67e248419cb8bcbdaed24440b2751fdd093df:intoiter-drop-panic-double-free:6391b2d04c147f864d7f6b0263a66c6feca7e220143265645ccdfb3bf5ede862": {
+    "verdict": "low_impact",
+    "evidence": "alloc_size bounds raw size but Layout::from_size_align_unchecked at 441 also requires rounded size <= isize::MAX. The given near-isize::MAX capacity violates that contract before allocator failure. Source-valid arithmetic defect; realistic medium impact has not been demonstrated for the enormous capacity prerequisite. Retain as an explicit low-impact tuning case."
+  },
+  "ba711a2b7b72bdf6b6524a263b9cb5c546ab2c64b3539263f456af70ef79c408:argon2i32-small-block-count:6779f7275014e362dff77d74c31434b65fa7fadc3deafbc4f2533d7dbcc7ba7d": {
+    "verdict": "valid_distinct",
+    "evidence": "Wrapper passes len(key) unchecked into crypto_blake2b_keyed at 281; monocypher.c:545-546 COPYs key_size bytes into key_block[128]. Keys >128 overflow the stack. Source verified; remote reachability, critical severity, and saved-return-address control are not established."
+  },
+  "ba711a2b7b72bdf6b6524a263b9cb5c546ab2c64b3539263f456af70ef79c408:argon2i32-small-block-count:d1e66d63151689e7eaa67785fba3971c994eee3ad9dd8505a8285169e69d26ca": {
+    "verdict": "alternate_match",
+    "evidence": "Caller-controlled nb_blocks sizes malloc at wrapper 345 while native Argon2 initializes two blocks even for nb_blocks=1. Same expected undersized-work-area cause, alternate CWE. Integer wrap is platform-dependent; not established on this 64-bit run. Source and reference fix verified."
+  },
+  "ba711a2b7b72bdf6b6524a263b9cb5c546ab2c64b3539263f456af70ef79c408:argon2i32-small-block-count:60801a195aea5204200a66cc8b6d03b0aa50074520a7e03691f84347d917b0f5": {
+    "verdict": "valid_distinct",
+    "evidence": "lock passes unvalidated Python buffers to fixed-size native key[32]/nonce[24] reads. Contrast incremental wrapper length guards at 214-218. This establishes the AEAD bounds defect; related wrappers are catalogued separately. No independent native crash or disclosure reproduction claimed."
+  },
+  "ad6fabc5e76c78a792f21e37b8eeb2d0ce261b3ad52046d7f45d59c24fe5cbef:argon2i32-small-block-count:b9fc738fbb4b27fca5cc3b8a613c003ad7c11519feee8a81ba06d91b7350e993": {
+    "verdict": "valid_distinct",
+    "evidence": "Wrapper passes len(key) unchecked into crypto_blake2b_keyed at 281; monocypher.c:545-546 COPYs key_size bytes into key_block[128]. Keys >128 overflow the stack. Source verified; remote reachability, critical severity, and saved-return-address control are not established."
+  },
+  "ad6fabc5e76c78a792f21e37b8eeb2d0ce261b3ad52046d7f45d59c24fe5cbef:argon2i32-small-block-count:1dd6e5ebcbde8a322ef19dc578294c4ea28264e0ec41626ba3a2e2929dbd7441": {
+    "verdict": "valid_distinct",
+    "evidence": "malloc at wrapper 345 is unchecked before crypto_argon2 consumes work_area at 347; native code dereferences blocks. NULL allocation failure is a distinct availability failure from undersized valid allocation. Source verified; OOM crash not independently executed."
+  },
+  "d9c078e74f5b65c1213ae9af023faef3ca588c65ff78f2381958b044d401f554:intoiter-drop-panic-double-free:43c47bc524e3d07df555a6f4b46d39db8705ce73e213ac9dd8afd4bc2372a128": {
+    "verdict": "valid_distinct",
+    "evidence": "clear drops its slice at src/lib.rs:1084 before setting len to zero at 1085. Panic leaves stale live length, later ThinVec::drop re-drops elements. Vendored reference/FIX.md independently patches this path with a DropGuard. Distinct from IntoIter cleanup."
+  },
+  "d9c078e74f5b65c1213ae9af023faef3ca588c65ff78f2381958b044d401f554:intoiter-drop-panic-double-free:b3bc9b5871ba975329c6ef0e0f36b399fffa6b9a6218b0fa3f3c7b0d4e6fcb23": {
+    "verdict": "alternate_match",
+    "evidence": "IntoIter destructor at src/lib.rs:2546-2548 moves the vector then drops its tail before zeroing len. A destructor panic drops the stale local vector again. Same expected root cause at adjacent unsafe operation; reference/FIX.md confirms guard fix."
+  },
+  "55f2d4a82cc707574764c3fd5da6144161699c5f4e988b04995289ee381da6f2:chunked-trailer-not-validated:16f7eb06e37ca44687510c3164c7b39472f6ce5e2de928acfcde38c7cb3ffb4d": {
+    "verdict": "alternate_match",
+    "evidence": "h11/_readers.py:163-170 discards footer bytes without comparing CRLF; 197 schedules that discard. Same expected framing root cause, alternate sink. Request-smuggling impact requires a disagreeing second parser; no complete deployment exploit claimed."
+  },
+  "8a7c6d3c4f111ca65a7276fac8cc656546d394096060f2d652f6026e7be1f575:sha256-length-comparator-unconstrained:0f3eb17bf14ec8021f8df0085e52765c7d68f589e00ce9a228e8478ecf1b7f55": {
+    "verdict": "alternate_match",
+    "evidence": "Standalone Sha256General allows paddedInLength=0, inBlockIndex=0, and selector index=-1 in the field. ItemAtIndex LessThan lacks a range-bound index; wrapping comparator permits an unmatched selector and zero digest. Same expected comparator/selector soundness defect at another sink/CWE. Full EmailVerifier applies additional constraints; no end-to-end compromise or independently generated circuit proof claimed."
+  },
+  "27ec4b555a0c1eda25032df2720b4a168a54ad7566f97a34e9dea46b3664a5c0:lock-symlink-truncation:6eca7f323acd992316a18d62d3b9a00e81362f0277f3e7eba7c3945630b323ff": {
+    "verdict": "alternate_match",
+    "evidence": "filelock/_unix.py:41 sets O_TRUNC, line 44 opens the attacker-controlled symlink without O_NOFOLLOW. Same protected-file truncation root cause; directory write access and victim write permission required. Source verified; model-reported PoC is not independently attested."
+  },
+  "3070a57af2b489a6860c3c81f4fa0c321c72ac05c29a1ed9335ab7aa4161496f:sha256-length-comparator-unconstrained:25dd5d79fe7bad9df11a7560ab5cad15bf86d651b842c79c0937a0e7839def33": {
+    "verdict": "invalid",
+    "evidence": "This claim only observes that caller-supplied padded input/length is not canonicalized internally. sha.circom:130-131 explicitly delegates padding to callers; selecting the declared prefix is the component interface. No caller violating its padding duty or bypassing its external constraints is demonstrated. This does not dismiss the separate field-wrap/zero-index comparator defect, which was verified independently."
+  },
+  "b75694b267a5a5a37e6f7b8d31d6016febcbd2501959653a24fd8ec849961438:iss-array-loose-match:24ca2bc0c5d21e6d15f5c1be4be611b8ad1d5d2193e7024a847ba01f74e383ea": {
+    "verdict": "alternate_match",
+    "evidence": "validateClaimValues uses some over attacker-controlled arrays; type validation checks elements only. Same expected issuer-array root cause with alternate CWE. Authentication bypass requires a key fetcher/application trusting the same claim, not arbitrary valid signed array tokens in every deployment. Source and fixture scope verified."
+  },
+  "0dd2931befb45bc080da4f50ddc43620ca8b8a8b459914a35696367e883b0993:intoiter-drop-panic-double-free:c49cba33aa4d275a2f1414cbda259747ac3d5763810735857fad0f6fa52326e4": {
+    "verdict": "valid_distinct",
+    "evidence": "clear drops its slice at src/lib.rs:1084 before setting len to zero at 1085. Panic leaves stale live length, later ThinVec::drop re-drops elements. Vendored reference/FIX.md independently patches this path with a DropGuard. Distinct from IntoIter cleanup."
+  },
+  "0dd2931befb45bc080da4f50ddc43620ca8b8a8b459914a35696367e883b0993:intoiter-drop-panic-double-free:489918ec3923738e953e721cb5e37418d1430eed78992543bc6fd14a47f85612": {
+    "verdict": "alternate_match",
+    "evidence": "IntoIter destructor at src/lib.rs:2546-2548 moves the vector then drops its tail before zeroing len. A destructor panic drops the stale local vector again. Same expected root cause at adjacent unsafe operation; reference/FIX.md confirms guard fix."
+  },
+  "ee89f122150462b0b549eb1d0565d8a94b29a07c082cd6881c02923464b6ca7f:intoiter-drop-panic-double-free:6573e7b7f8e71b998d3ef0a522d6f5bfb6004916cde457e54bda77211040898d": {
+    "verdict": "valid_distinct",
+    "evidence": "clear drops its slice at src/lib.rs:1084 before setting len to zero at 1085. Panic leaves stale live length, later ThinVec::drop re-drops elements. Vendored reference/FIX.md independently patches this path with a DropGuard. Distinct from IntoIter cleanup."
+  },
+  "ee89f122150462b0b549eb1d0565d8a94b29a07c082cd6881c02923464b6ca7f:intoiter-drop-panic-double-free:5d7ae9d777da1da4061097d13e139864483e8ee4d12ffe478bddba77c556d651": {
+    "verdict": "alternate_match",
+    "evidence": "IntoIter destructor at src/lib.rs:2546-2548 moves the vector then drops its tail before zeroing len. A destructor panic drops the stale local vector again. Same expected root cause at adjacent unsafe operation; reference/FIX.md confirms guard fix."
+  },
+  "425be5e54532691f658b7ecb43da6f0f0439cdd7084e5bcc9f789ce1e169cbdd:argon2i32-small-block-count:56623db6b5d16638ba20c9c2dd6ccd424828912157b4cec6d3f1e1c475efb4da": {
+    "verdict": "valid_distinct",
+    "evidence": "Wrapper passes len(key) unchecked into crypto_blake2b_keyed at 281; monocypher.c:545-546 COPYs key_size bytes into key_block[128]. Keys >128 overflow the stack. Source verified; remote reachability, critical severity, and saved-return-address control are not established."
+  },
+  "425be5e54532691f658b7ecb43da6f0f0439cdd7084e5bcc9f789ce1e169cbdd:argon2i32-small-block-count:551558cb159ad35045402613eef3eb887d1d704a10aeba1ea82fe57f17dc1576": {
+    "verdict": "valid_distinct",
+    "evidence": "lock passes unvalidated Python buffers to fixed-size native key[32]/nonce[24] reads. Contrast incremental wrapper length guards at 214-218. This establishes the AEAD bounds defect; related wrappers are catalogued separately. No independent native crash or disclosure reproduction claimed."
+  },
+  "425be5e54532691f658b7ecb43da6f0f0439cdd7084e5bcc9f789ce1e169cbdd:argon2i32-small-block-count:d7e256edec5fe2ee688adc7f408a614b9861f63ab3fe0a59ce5825387b7c2f14": {
+    "verdict": "valid_distinct",
+    "evidence": "malloc at wrapper 345 is unchecked before crypto_argon2 consumes work_area at 347; native code dereferences blocks. NULL allocation failure is a distinct availability failure from undersized valid allocation. Source verified; OOM crash not independently executed."
+  },
+  "0e474a5a6d31d0857dd855bc7b15ca68ba9948fd00763a91a1ba4aed6d2c2bb9:iss-array-loose-match:b249d5b74969b1f75a7edbc54c412f4302c508acb176846c1396be2e5ddcfb0c": {
+    "verdict": "valid_distinct",
+    "evidence": "Independent controls in round4-jwt-verification.json confirm key:null plus algorithms:[HS256] accepts an HS256 header with empty signature; real key rejects. Intentionally permitting none is a separate safe control. This validates the conditional defect, not the claimed advisory ID or critical severity."
+  },
+  "0e474a5a6d31d0857dd855bc7b15ca68ba9948fd00763a91a1ba4aed6d2c2bb9:iss-array-loose-match:ed77b29e084c942e98aa86ba1317d4123826c810f123f44f17197bbab04361b0": {
+    "verdict": "valid_distinct",
+    "evidence": "Independent signed-token controls confirm cache:true accepts exp token without iat after expiry while uncached and numeric-iat controls reject. cacheSet gates exp bounds on hasIat at 89-92. See round4-jwt-verification.json; cache opt-in is required."
+  },
+  "0e474a5a6d31d0857dd855bc7b15ca68ba9948fd00763a91a1ba4aed6d2c2bb9:iss-array-loose-match:80d996bed17e408d58e17de95da61872c1b7d9bbe54a87036f292baa7f965763": {
+    "verdict": "valid_distinct",
+    "evidence": "Independent signed-token controls confirm cache:true with maxAge:1000 accepts token at age 2000 ms when exp is later; uncached rejects. cacheSet exp branch excludes maxAge with else-if at 98. Distinct from missing-iat expiry bypass. See round4-jwt-verification.json."
+  },
+  "4f2b8497092d4e68b04ace7378e0b8646acd2c12984324000de27e31288e75a4:argon2i32-small-block-count:281a9ca730f718b90745db77623257e6a0dccc86bbd25c5ec45fbb72f5fd8653": {
+    "verdict": "valid_distinct",
+    "evidence": "Wrapper passes len(key) unchecked into crypto_blake2b_keyed at 281; monocypher.c:545-546 COPYs key_size bytes into key_block[128]. Keys >128 overflow the stack. Source verified; remote reachability, critical severity, and saved-return-address control are not established."
+  },
+  "4f2b8497092d4e68b04ace7378e0b8646acd2c12984324000de27e31288e75a4:argon2i32-small-block-count:a5f1e6b2a055889998e08317f90fe6bb8ef27f6c3e04036a5228f49ad0c472ec": {
+    "verdict": "valid_distinct",
+    "evidence": "lock passes unvalidated Python buffers to fixed-size native key[32]/nonce[24] reads. Contrast incremental wrapper length guards at 214-218. This establishes the AEAD bounds defect; related wrappers are catalogued separately. No independent native crash or disclosure reproduction claimed."
+  },
+  "4f2b8497092d4e68b04ace7378e0b8646acd2c12984324000de27e31288e75a4:argon2i32-small-block-count:c6b7f4318db271a0ab74ea01616d7492b0d2f2954e4a800d06fba91f3796de81": {
+    "verdict": "alternate_match",
+    "evidence": "Caller-controlled nb_blocks sizes malloc at wrapper 345 while native Argon2 initializes two blocks even for nb_blocks=1. Same expected undersized-work-area cause, alternate CWE. Integer wrap is platform-dependent; not established on this 64-bit run. Source and reference fix verified."
+  },
+  "79b15d58b783e10314fb859e285d8cb55aa0e74d9fb077e1e639bc38f42285b0:sha256-length-comparator-unconstrained:ca5ef3c5fb5b8f4b3aba0487845ddfb1618a48f9aad5e3cc0eb34ee9e5945585": {
+    "verdict": "invalid",
+    "evidence": "This claim only observes that caller-supplied padded input/length is not canonicalized internally. sha.circom:130-131 explicitly delegates padding to callers; selecting the declared prefix is the component interface. No caller violating its padding duty or bypassing its external constraints is demonstrated. This does not dismiss the separate field-wrap/zero-index comparator defect, which was verified independently."
+  },
+  "8b8ed9e463fe6a3c42d4155d8865a163bb612b630de04806f31f33aed083a91c:sha256-length-comparator-unconstrained:dc63f0d7facf305f421edc004dfdbcf8e0ab0d407ad80ab1c38f8aedabcce1de": {
+    "verdict": "alternate_match",
+    "evidence": "Standalone Sha256General allows paddedInLength=0, inBlockIndex=0, and selector index=-1 in the field. ItemAtIndex LessThan lacks a range-bound index; wrapping comparator permits an unmatched selector and zero digest. Same expected comparator/selector soundness defect at another sink/CWE. Full EmailVerifier applies additional constraints; no end-to-end compromise or independently generated circuit proof claimed."
+  }
+}
