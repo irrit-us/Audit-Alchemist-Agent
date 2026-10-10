@@ -19,17 +19,28 @@ All notable changes to this project are documented here. The format follows
   bound to the full claim and report hash (`docs/reports/round4-reviews.json`,
   `docs/reports/round5-reviews.json`, `docs/reports/round6-reviews.json`), and
   per-round/per-case execution records in `docs/reports/tiny-metrics-log.jsonl`
-  for round-over-round comparison. `scripts/evaluate_round.py --log` appends the
-  compact log and supports per-variant limit overrides. The default prompt now
-  prefers reachable medium-or-higher root causes and omits low-impact hardening.
+  for round-over-round comparison (`round10`-`round13` reviews included).
+  `scripts/evaluate_round.py --log` appends the compact log and supports
+  per-variant limit overrides and per-case threat-model runs. The default prompt
+  now prefers reachable medium-or-higher root causes and omits low-impact
+  hardening.
+- Line-only `(path, line)` precision/recall/F1 alongside exact `(CWE, path, line)`
+  and reviewed `unexpected_valid`, so sink discovery is not hidden by CWE label
+  choice. The [experiment log](docs/experiments.md) records the round ledger and
+  the accumulated evidence: robustness fixes drove completion, exact F1 is
+  label-bound, larger budgets did not help, and a 12-call budget cut ~31% of
+  tokens at equal exact TP (pending replication).
 - Two bounded recovery strategies selected from well-known harnesses
   (`docs/harness-design.md`): `--max-output-repairs` (default 2) returns a
   rejected final report's JSON/schema/evidence error to the model for a corrected
   answer, and an empty completion is retried as a transient provider response up
-  to `--max-attempts`. Both are covered by deterministic tests; round 9 repaired
-  two live malformed reports. Recovery counters (`output_repairs`,
-  `empty_completions`) are recorded in run journals and the metrics log. A failed
-  child's stderr tail is surfaced through operational logs (never the report).
+  to `--max-attempts`. A tool batch that would exceed the budget is rejected
+  without executing a call, then finalized (`tool_budget_rejections`). All are
+  covered by deterministic tests; rounds 9 and 12 repaired live malformed
+  reports. Recovery counters (`output_repairs`, `empty_completions`,
+  `tool_budget_rejections`) are recorded in run journals and the metrics log. A
+  failed child's stderr tail is surfaced through operational logs (never the
+  report).
 
 - Blind live evaluation baseline over the seven `datasets/tiny` fixtures
   (`docs/reports/tiny-baseline-round1.json`): 2/7 completed, 1 exact match, and

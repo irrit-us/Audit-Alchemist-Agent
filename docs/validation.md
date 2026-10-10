@@ -1,6 +1,6 @@
 # Validation
 
-## Optimization and validation rounds 10-12: 2026-10-10
+## Optimization and validation rounds 10-13: 2026-10-10
 
 Three further rounds under the same procedure (same provider, model, dataset
 revision, and budgets unless stated; all trials retained and reviewed).
@@ -22,6 +22,11 @@ revision, and budgets unless stated; all trials retained and reviewed).
   repairs fired live. `tool_budget_rejections` was 0 because no run happened to
   over-request; the behavior is covered deterministically by
   `over_budget_batch_is_rejected_then_finalizes_without_mutation`.
+- **Round 13 - smaller tool budget (16 vs 12, 7 cases x 2).** The 12-call variant
+  cut total tokens 31% (4.77M to 3.30M) and turns 154 to 115 with exact TP
+  unchanged (2 vs 2) and exact F1 flat (.121 vs .125). Line TP slipped 4 to 3 and
+  one candidate run hit the stream cap unrelated to the budget. Promising, but a
+  default change needs a replicated, higher-trial run.
 
 The over-budget fix rejects the whole batch without executing a call, then
 removes the tool schemas and forces a final report, so an over-budget turn can no
@@ -34,6 +39,8 @@ no-partial-mutation invariant in H04.
 | 10 | 7 x 2 | 24 tools | 14/14 | 1 / 17 / 13 | .062 | 15 | 1 | 7.33M |
 | 11 | 18 x 1 | default | 17/18 | 8 / 12 / 9 | .432 | 12 | 1 | 5.62M |
 | 12 | 18 x 1 | default | 18/18 | 8 / 10 / 9 | .457 | 10 | 3 | 4.95M |
+| 13 | 7 x 2 | 16 tools | 14/14 | 2 / 17 / 12 | .121 | 15 | 0 | 4.77M |
+| 13 | 7 x 2 | 12 tools | 13/14 | 2 / 16 / 12 | .125 | 16 | 0 | 3.30M |
 
 Rounds 11-12 use per-case threat models, so their exact F1 is higher than the
 blind 7-case baseline and is not a blind capability claim. Reviews:

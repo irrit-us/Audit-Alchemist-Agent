@@ -14,7 +14,8 @@ Start with the [README](../README.md) for installation and a first run.
 | [Evaluation](evaluation.md) | Matching, scoring, metrics, and reproducibility |
 | [Constraints](constraints.md) | Required harness invariants, existing checks, and enforcement gaps |
 | [Harness design research](harness-design.md) | Primary-source findings, project applications, and optimization acceptance criteria |
-| [Validation](validation.md) | Recorded smoke-set run and local checks |
+| [Validation](validation.md) | Recorded live rounds, checks, and per-round results |
+| [Experiment log](experiments.md) | Round ledger, accumulated experience, and future directions |
 | [Reports](reports/deepseek-evaluation.json) | Committed evaluation artifact |
 | [Tiny baseline round 1](reports/tiny-baseline-round1.json) | Blind live evaluation over the seven submodule fixtures |
 | [Tiny baseline round 2](reports/tiny-baseline-round2.json) | Same blind run after the JSON-mode and reasoning-effort fixes |
@@ -25,6 +26,7 @@ Start with the [README](../README.md) for installation and a first run.
 | [Tiny strategy rounds 7-9](reports/tiny-round9.json), [8](reports/tiny-round8.json), [7](reports/tiny-round7.json) | Targeted recovery-strategy experiments |
 | [Action-budget round 10](reports/tiny-round10.json) | 16 vs 24 tool calls; larger budget rejected |
 | [Expanded validation rounds 11-12](reports/tiny-round12.json), [11](reports/tiny-round11.json) | 18-case dataset with per-case threat models |
+| [Smaller-budget round 13](reports/tiny-round13.json) | 16 vs 12 tool calls; ~31% token saving |
 | [Round 4 reviews](reports/round4-reviews.json) | Per-finding verdicts for the round-4 non-exact matches |
 | [Round 5 reviews](reports/round5-reviews.json) | Per-finding verdicts for the round-5 non-exact matches |
 | [Round 6 reviews](reports/round6-reviews.json) | Per-finding verdicts for the round-6 non-exact matches |

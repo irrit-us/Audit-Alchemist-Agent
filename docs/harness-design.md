@@ -89,8 +89,10 @@ revisions and repeat trials. Keep held-out cases separate from tuning cases.
 
 Measure supported findings, false positives on safe controls, misses, execution
 failures, completed-run latency, timeout frequency, tool calls/errors/retries,
-recovery counters (output repairs, empty-completion retries), and available token
-usage. Include failures rather than selecting only successful runs. Report sample
+recovery counters (output repairs, empty-completion retries, rejected tool
+batches), and available token usage. Report exact, line-only, and reviewed
+capability separately; the [experiment log](experiments.md) records the round
+ledger and the accumulated evidence behind these choices. Include failures rather than selecting only successful runs. Report sample
 size and variability; a recovery counter is direct evidence only when the
 recovery path actually fired, not merely when the variant succeeded. Choose any
 acceptable quality/latency tradeoff before examining the candidate results.
