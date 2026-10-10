@@ -1,0 +1,106 @@
+{
+  "18877ee9aaa8dd11efb82fee3f7ec3aac86a3aaad37e6044ba3c91465efbe0eb:intoiter-drop-panic-double-free:6b343167d0e7501bf5219399be69adc183e59260045e0b8c29eae763df4012ce": {
+    "evidence": "IntoIter::drop drops its tail before zeroing len, so a destructor panic drops the stale local vector again. Same expected root cause at the adjacent unsafe operation.",
+    "verdict": "alternate_match"
+  },
+  "18877ee9aaa8dd11efb82fee3f7ec3aac86a3aaad37e6044ba3c91465efbe0eb:intoiter-drop-panic-double-free:79ac3cc6d4db5be70be3db6b64233ceae3e3228c6bd04319f1e89c826f7458fe": {
+    "evidence": "clear drops its slice at 1084 before setting len to zero at 1085, so a destructor panic leaves a stale live length that a later drop re-drops. reference/FIX.md independently patches this path; distinct from IntoIter cleanup.",
+    "verdict": "valid_distinct"
+  },
+  "1dd64325d957a756994d2b632952e821b90b4c64464103c760e3e5227250e636:iss-array-loose-match:f228dfd304bfd8a1b89235eb83aed4456798c2dd2e154ced1e9d5c228d5b6711": {
+    "evidence": "Claimed HS256 algorithm confusion when PEM key material is not matched at offset 0. The detection path and a working forgery were not reproduced; keep unreviewed.",
+    "verdict": "unreviewed"
+  },
+  "2095e88c3f0cb889a1482f977dee20684bea245b8e54e043381d4b3626e99d13:iss-array-loose-match:576735392138efd9da8e8f92431fd16dedf614ae3c29d50ec94b81e8b6756cbd": {
+    "evidence": "key:'' or key:null with a signing algorithm allowed reaches verifyToken with a falsy hasKey, so an empty signature segment is accepted. Confirmed by round4-jwt-verification.json; conditional on an invalid key configuration.",
+    "verdict": "valid_distinct"
+  },
+  "2ca19685092839c2ab9b604fe263661cae43083825ebc7ecca150abb0114e1b1:iss-array-loose-match:da11accd7cddcc41d8c059b22456aeb4d550eb5700dc8d7833ae03b557fe7a80": {
+    "evidence": "key:'' or key:null with a signing algorithm allowed reaches verifyToken with a falsy hasKey, so an empty signature segment is accepted. Confirmed by round4-jwt-verification.json; conditional on an invalid key configuration.",
+    "verdict": "valid_distinct"
+  },
+  "384f399c810d2dacad2c5dd15e37c868118ebe933bca02caee6d7ed675bc8589:lock-symlink-truncation:8eb280b3e7e1f5b8bd63c8dd10d2f2067b84775024ad8a0c2b34132628087974": {
+    "evidence": "os.open at line 44 follows the attacker-controlled lock path with O_TRUNC set at line 41 and no O_NOFOLLOW; same protected-file truncation root cause one line after the expected sink. Directory write access and victim write permission are prerequisites.",
+    "verdict": "alternate_match"
+  },
+  "4710b6c86da350a48cbdfb920204736d75874dee443ba086cd814d647cf4e3a3:lock-symlink-truncation:bb0603b7db9b73fa3efea5214d3fff863bb7e9bcdae4de003b0b25ee89db2410": {
+    "evidence": "os.open at line 44 follows the attacker-controlled lock path with O_TRUNC set at line 41 and no O_NOFOLLOW; same protected-file truncation root cause one line after the expected sink. Directory write access and victim write permission are prerequisites.",
+    "verdict": "alternate_match"
+  },
+  "47ba0446a871a283671e48b2e3743029391ec458f79919440f302b40b4ad2b70:intoiter-drop-panic-double-free:c5d9e137e1d592d87196dde5b390faff90dabeff6fc236731a7e90a5a2ffd5fe": {
+    "evidence": "clear drops its slice at 1084 before setting len to zero at 1085, so a destructor panic leaves a stale live length that a later drop re-drops. reference/FIX.md independently patches this path; distinct from IntoIter cleanup.",
+    "verdict": "valid_distinct"
+  },
+  "48d6160c4f80c2c785bd44b9cb350feef9410682380aebab2a3acf126f7862f6:sha256-length-comparator-unconstrained:f9a0316701e0a58d25f65b5e5f6635e52b1fd08f5511c6092de08c95f9477fc7": {
+    "evidence": "sha.circom:130-131 explicitly delegates padding to callers; selecting the declared prefix is the component interface. Same reasoning as the round-4 review, not a demonstrated caller violation.",
+    "verdict": "invalid"
+  },
+  "632b2889abfa8636353e9039cee7e0f5333307519763dcb9e05851a62f7fd065:argon2i32-small-block-count:b04610371efaf228afc6dbf0837a961010b2f2a0c9f20e9d4d01f1cb546a22f9": {
+    "evidence": "blake2b passes unbounded len(key) into crypto_blake2b_keyed; monocypher.c copies key_size bytes into key_block[128]. Keys >128 bytes overflow the stack. Source-verified; remote reachability is not claimed.",
+    "verdict": "valid_distinct"
+  },
+  "632b2889abfa8636353e9039cee7e0f5333307519763dcb9e05851a62f7fd065:argon2i32-small-block-count:e4da4e17624392994b861ad8747a19336dcd657c240ac331460d9950dc0dec14": {
+    "evidence": "crypto_argon2 is called with the caller-sized work area; same undersized-work-area root cause as the expected line-345 sink.",
+    "verdict": "alternate_match"
+  },
+  "76a17482a871fbf1e0c4591e2fa468be605315bf38b1a2e3c26ced7c6be8994f:sha256-length-comparator-unconstrained:1c646f4b35ff977d2de78ba77648f18fc32d4a52cef717a7ecb8dc5aeb42d5d1": {
+    "evidence": "Unbounded inBlockIndex derivation; same comparator/length root cause as the expected sink.",
+    "verdict": "alternate_match"
+  },
+  "7fd564de9c69eb15da5e2875c383c062026950e36d876c9e051cdd165dde86bb:lock-symlink-truncation:75f3f4ba4a36e21951fc524173a72c29ab2e4733deda41be032db6401ca35038": {
+    "evidence": "os.open at line 44 follows the attacker-controlled lock path with O_TRUNC set at line 41 and no O_NOFOLLOW; same protected-file truncation root cause one line after the expected sink. Directory write access and victim write permission are prerequisites.",
+    "verdict": "alternate_match"
+  },
+  "c4d97411b474849feeb8e9ad2ebf12313e312f14736a1430151587ad3ba446ec:argon2i32-small-block-count:1fbb3b385acde630b93f6fa66770ada5872f8f680df9a1231dc0c45a29512804": {
+    "evidence": "lock()/unlock() pass caller-controlled key and nonce buffers into native routines declaring key[32]/nonce[24] without a length check; the incremental wrapper guards lengths at lines 214-218. Distinct AEAD bounds defect; no native crash or disclosure reproduced.",
+    "verdict": "valid_distinct"
+  },
+  "c4d97411b474849feeb8e9ad2ebf12313e312f14736a1430151587ad3ba446ec:argon2i32-small-block-count:653dae7fbf29645bd0188dab672c64a8446d11942eb8801abfa21f36a4105aee": {
+    "evidence": "malloc at line 345 is unchecked before crypto_argon2 consumes work_area at 347; a failed allocation dereferences NULL. Distinct availability failure from a successfully sized undersized allocation; OOM was not executed.",
+    "verdict": "valid_distinct"
+  },
+  "c4d97411b474849feeb8e9ad2ebf12313e312f14736a1430151587ad3ba446ec:argon2i32-small-block-count:82775d989b0259f390dd83a8d64e31db06964f3536f163cbb3c326d5eab53cf2": {
+    "evidence": "blake2b passes unbounded len(key) into crypto_blake2b_keyed; monocypher.c copies key_size bytes into key_block[128]. Keys >128 bytes overflow the stack. Source-verified; remote reachability is not claimed.",
+    "verdict": "valid_distinct"
+  },
+  "cfff5e0c8858f5c4b4deacd72af40ea531076cd8c9869e8d209e4c42d9ba1e58:intoiter-drop-panic-double-free:bd611a5c626c31a8cda56a1f5bf9394f317666caf8f9e482190194cdfa784f53": {
+    "evidence": "clear drops its slice at 1084 before setting len to zero at 1085, so a destructor panic leaves a stale live length that a later drop re-drops. reference/FIX.md independently patches this path; distinct from IntoIter cleanup.",
+    "verdict": "valid_distinct"
+  },
+  "cfff5e0c8858f5c4b4deacd72af40ea531076cd8c9869e8d209e4c42d9ba1e58:intoiter-drop-panic-double-free:c222b12ffbca0b4daed92c80eb4e7e7e3ba0aabc8d1e9abf61b7b528f84cd9b5": {
+    "evidence": "IntoIter::drop drops its tail before zeroing len, so a destructor panic drops the stale local vector again. Same expected root cause at the adjacent unsafe operation.",
+    "verdict": "alternate_match"
+  },
+  "e85b8ee12befdae64135dd92cac0acb0210538a1c34b225ff565e7622c755371:intoiter-drop-panic-double-free:4704646d33e943a468f65f0e1434bee60e1c62cbe93423b14dbda7e4463891a2": {
+    "evidence": "clear drops its slice at 1084 before setting len to zero at 1085, so a destructor panic leaves a stale live length that a later drop re-drops. reference/FIX.md independently patches this path; distinct from IntoIter cleanup.",
+    "verdict": "valid_distinct"
+  },
+  "e85b8ee12befdae64135dd92cac0acb0210538a1c34b225ff565e7622c755371:intoiter-drop-panic-double-free:b644931ff8f363b0bbf5e488316f9db25a7b1604e917e4bee5caeab67fd7b418": {
+    "evidence": "IntoIter::drop drops its tail before zeroing len, so a destructor panic drops the stale local vector again. Same expected root cause at the adjacent unsafe operation.",
+    "verdict": "alternate_match"
+  },
+  "f00af9244ffe1b6d5648d42ea861340e416be46472ff52b9095daa5a745ee259:argon2i32-small-block-count:64527d9590fad7c467965f6d4457306d81abbf49099473d461b66f1c5505de22": {
+    "evidence": "signature_check forwards caller-controlled signature and public key to crypto_eddsa_check, which reads fixed-size signature[64]/public_key[32] without a wrapper length check. Source-verified wrapper bounds defect.",
+    "verdict": "valid_distinct"
+  },
+  "f00af9244ffe1b6d5648d42ea861340e416be46472ff52b9095daa5a745ee259:argon2i32-small-block-count:9144e92d53c722377f07f7016fcb1d9a49cb2df8fca7c13345e782ad6ce262ec": {
+    "evidence": "Blake2b.__init__ passes unbounded len(key) into crypto_blake2b_keyed_init, the same fixed key_block[128] copy as line 281. Genuine separate wrapper defect from the expected argon2 undersized work area.",
+    "verdict": "valid_distinct"
+  },
+  "f2f48908ae85012fbb23889bb0a19b9fd3ef49b8d6db1444e8779c454363c97f:argon2i32-small-block-count:38fc82e8c5d41f53010c32a4a52e054887cffc1c20a0506f58b2fd2d69d3309a": {
+    "evidence": "blake2b passes unbounded len(key) into crypto_blake2b_keyed; monocypher.c copies key_size bytes into key_block[128]. Keys >128 bytes overflow the stack. Source-verified; remote reachability is not claimed.",
+    "verdict": "valid_distinct"
+  },
+  "f2f48908ae85012fbb23889bb0a19b9fd3ef49b8d6db1444e8779c454363c97f:argon2i32-small-block-count:a44c00dfac911f26f58bd744b2100891c04ed02920fb0d079323fd51bf330d61": {
+    "evidence": "signature_check forwards caller-controlled signature and public key to crypto_eddsa_check, which reads fixed-size signature[64]/public_key[32] without a wrapper length check. Source-verified wrapper bounds defect.",
+    "verdict": "valid_distinct"
+  },
+  "f380d245f972c5c068287234ab7b8897bf258a2b7a7815e3d25b36ea6da8b906:sha256-length-comparator-unconstrained:3b901f6e035151788f4836726d3f7f7da9cb6f4ecd978b980380ecf391f02ac0": {
+    "evidence": "Unbounded inBlockIndex derivation; same comparator/length root cause as the expected sink.",
+    "verdict": "alternate_match"
+  },
+  "fd05206fb01bc0509282ae7b079709297f3e6fe434cb606c467115a95483ec65:sha256-length-comparator-unconstrained:af38605d998e6bb8f7eee948823ca0b973002c4e39ace41e2103eba50b9177ec": {
+    "evidence": "bitLengthVerifier connection for the unbounded paddedInLength; same comparator/length root cause.",
+    "verdict": "alternate_match"
+  }
+}

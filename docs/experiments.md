@@ -41,6 +41,7 @@ distinct metrics are reported alongside it and never folded into exact F1:
 | 14 | Budget 16 vs 12, 3 trials | 21/21, 19/21 | .041 / .143 | 21 / 16 | -32% tokens; line F1 .122 to .286. Two model-side failures, not budget. Cost lever confirmed. |
 | 15 | Context cap 2 MiB vs 128 KiB | 14/14, 10/14 | .125 / .000 | 14 / 11 | Aggressive pruning fails 4/14 with `conversation exceeds` and loses recall; rejected. |
 | 16 | Stable 18-case report, 2 trials | 36/36 | .329 | 27 | Line F1 .493; clean control empty; 6 repairs fired. Headline capability. |
+| 17 | Read-only settlement, 16 vs 12 calls | 14/14, 13/14 | .200 / .200 | 11 / 13 | Settlement fired 17 times and used 3 read-only calls; the 12-call variant stayed ~38% cheaper. |
 
 ## Accumulated experience
 
@@ -68,9 +69,10 @@ distinct metrics are reported alongside it and never folded into exact F1:
    direction, but n=14 cannot confirm it; replicate before changing a default.
 
 5. **Recovery strategies are insurance, not quality levers.** Output repair,
-   empty-completion retry, and over-budget finalization fire sporadically (0-3
-   times per 12-18 runs). They prevent run loss; they do not change what the
-   model finds.
+   empty-completion retry, over-budget finalization, and read-only settlement
+   fire sporadically. In round 17 settlement started in 17 of 28 runs and used
+   3 read-only calls; it prevents run loss (notably unobserved-line citations)
+   without changing what the model finds.
 
 6. **Prompt tokens dominate cost (95-97% of total).** Rounds 6, 10, and 12 all
    spend 95%+ of tokens resending conversation history. Reasoning effort and

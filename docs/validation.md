@@ -1,6 +1,6 @@
 # Validation
 
-## Confirmation and stable-reporting rounds 14-16: 2026-10-10
+## Confirmation and stable-reporting rounds 14-17: 2026-10-10
 
 - **Round 14 - smaller-budget replication (16 vs 12, 7 cases x 3).** The 12-call
   variant cut tokens 32% (8.02M to 5.42M) with exact F1 .041 -> .143 and line F1
@@ -15,6 +15,11 @@
   reviewed, clean control empty, and 6 output repairs fired. The blind budget
   rounds remain the harder setting; per-case threat models explain most of the
   gap.
+- **Round 17 - read-only settlement (16 vs 12 calls, 7 cases x 2).** After the
+  external-reference review, settlement fired in 17 of 28 runs and used three
+  read-only calls to verify citations. The 12-call variant completed 13/14 at
+  3.41M tokens versus 14/14 at 5.50M for 16 calls; only the provider stream-cap
+  failure remained. This validates the settlement whitelist live.
 
 | Round | Cases x trials | Variant | Success | Exact P/R/F1 | Line P/R/F1 | unexpected valid | Tokens |
 | --- | --- | --- | ---: | --- | --- | ---: | ---: |
@@ -23,6 +28,8 @@
 | 15 | 7 x 2 | 2 MiB cap | 14/14 | .111/.143/.125 | .167/.214/.188 | 14 | 5.10M |
 | 15 | 7 x 2 | 128 KiB cap | 10/14 | .000/.000/.000 | .083/.071/.077 | 11 | 2.59M |
 | 16 | 18 x 2 | default | 36/36 | .308/.353/.329 | .462/.529/.493 | 27 | 10.39M |
+| 17 | 7 x 2 | 16 calls | 14/14 | .200 | .267 | 11 | 5.50M |
+| 17 | 7 x 2 | 12 calls | 13/14 | .200 | .200 | 13 | 3.41M |
 
 The smaller budget is a confirmed cost lever (rounds 13-14); forced context
 pruning is rejected (round 15); `update_plan`/`apply_patch` are retired on the
