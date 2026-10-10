@@ -369,6 +369,24 @@ fn final_turn(wire: &str) -> String {
     }
 }
 
+fn empty_final_turn(wire: &str) -> String {
+    let answer = json!({"schema_version":1,"findings":[]}).to_string();
+    match wire {
+        "chat-completions" => {
+            sse(json!({"choices":[{"delta":{"content":answer},"finish_reason":"stop"}]}))
+                + "data: [DONE]\n\n"
+        }
+        "responses" => sse(
+            json!({"type":"response.completed","response":{"output":[{"type":"message","role":"assistant","phase":"final_answer","content":[{"type":"output_text","text":answer}]}]}}),
+        ),
+        "anthropic" => {
+            sse(json!({"type":"content_block_delta","delta":{"type":"text_delta","text":answer}}))
+                + &sse(json!({"type":"message_stop"}))
+        }
+        _ => unreachable!(),
+    }
+}
+
 fn server(bodies: Vec<String>) -> (String, mpsc::Receiver<Value>, thread::JoinHandle<()>) {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     listener.set_nonblocking(true).unwrap();
@@ -552,16 +570,29 @@ fn exhausted_budget_forces_a_final_report_without_tools() {
 }
 
 #[test]
-fn over_budget_batch_fails_before_any_tool_mutation() {
+fn over_budget_batch_is_rejected_then_finalizes_without_mutation() {
     let dir = tempfile::tempdir().unwrap();
     std::fs::write(dir.path().join("entry.py"), "pass\n").unwrap();
-    let (endpoint, rx, task) = server(vec![tool_turn("chat-completions")]);
+    // The first turn asks for four tools against a one-call budget. None may
+    // execute; the harness disables tools and asks for a final empty report.
+    let (endpoint, rx, task) = server(vec![
+        tool_turn("chat-completions"),
+        empty_final_turn("chat-completions"),
+    ]);
     let output = run("chat-completions", dir.path(), &endpoint, "1");
-    assert_eq!(output.status.code(), Some(2));
-    rx.recv().unwrap();
+    assert!(
+        output.status.success(),
+        "{} {}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
     task.join().unwrap();
+    let _first = rx.recv().unwrap();
+    let second = rx.recv().unwrap();
+    assert!(second.get("tools").is_none());
     assert!(!dir.path().join("poc.sh").exists());
-    assert!(String::from_utf8_lossy(&output.stdout).contains("max-tool-calls"));
+    let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(report["findings"].as_array().unwrap().len(), 0);
 }
 
 #[test]

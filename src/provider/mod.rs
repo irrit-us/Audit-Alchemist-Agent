@@ -683,10 +683,25 @@ async fn audit_session(
                 Err(error) => return Err(error),
             }
         }
-        ensure!(
-            used + turn.calls.len() <= options.max_tool_calls as usize,
-            "agent exhausted --max-tool-calls without a final report"
-        );
+        if used + turn.calls.len() > options.max_tool_calls as usize {
+            // Reject the whole batch without executing any call, then force a
+            // tool-free final turn. This keeps the no-partial-mutation
+            // invariant while recovering the evidence already gathered.
+            ensure!(
+                !tools_disabled,
+                "agent requested tool calls after the tool budget was exhausted"
+            );
+            tools_disabled = true;
+            conversation.disable_tools();
+            sink.on_event(&crate::monitor::operation(
+                "tool_budget_rejected",
+                serde_json::json!({
+                    "requested":turn.calls.len(),
+                    "remaining":options.max_tool_calls as usize - used
+                }),
+            ));
+            continue;
+        }
         let mut results = Vec::new();
         // Preserve call order: a later call may run a PoC created by an earlier one.
         for call in &turn.calls {

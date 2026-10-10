@@ -57,6 +57,7 @@ pub struct Monitor<'a> {
     retries: u64,
     output_repairs: u64,
     empty_completions: u64,
+    tool_budget_rejections: u64,
     completed_usage: Usage,
     current_usage: Usage,
 }
@@ -105,6 +106,7 @@ impl<'a> Monitor<'a> {
             retries: 0,
             output_repairs: 0,
             empty_completions: 0,
+            tool_budget_rejections: 0,
             completed_usage: Usage::default(),
             current_usage: Usage::default(),
         })
@@ -133,6 +135,7 @@ impl<'a> Monitor<'a> {
             "tools":self.tools,"tool_errors":self.tool_errors,"retries":self.retries,
             "output_repairs":self.output_repairs,
             "empty_completions":self.empty_completions,
+            "tool_budget_rejections":self.tool_budget_rejections,
             "usage":add(self.completed_usage, self.current_usage),"trace_truncated":self.truncated})));
         if let Some(error) = &self.error {
             anyhow::bail!("run trace write failed: {error}");
@@ -228,6 +231,9 @@ impl EventSink for Monitor<'_> {
             }
             StreamEvent::Operation { name, .. } if name == "empty_completion_retry" => {
                 self.empty_completions += 1;
+            }
+            StreamEvent::Operation { name, .. } if name == "tool_budget_rejected" => {
+                self.tool_budget_rejections += 1;
             }
             StreamEvent::Operation { name, .. } if name == "turn_end" => {
                 self.phase = "validating".into();

@@ -61,6 +61,13 @@ class ReviewTests(unittest.TestCase):
         self.assertEqual(ROUND.variant_limits(plan, "baseline")["max_output_repairs"], 0)
         self.assertEqual(ROUND.variant_limits(plan, "candidate")["max_output_repairs"], 2)
 
+    def test_case_instruction_can_be_kept_for_validation_rounds(self):
+        data = {"cases": [{"id": "c", "instruction": "case text", "expected": []}]}
+        plan = {"instruction": "blind plan text"}
+        self.assertEqual(ROUND.select_case(data, "c", plan)["instruction"], "blind plan text")
+        kept = ROUND.select_case(data, "c", {**plan, "use_plan_instruction": False})
+        self.assertEqual(kept["instruction"], "case text")
+
     def test_dropped_child_limits_reject_comparison(self):
         with self.assertRaisesRegex(ValueError, "did not forward"):
             ROUND.verify_forwarded_limits({"args": ["agent"]}, {"reasoning_effort": "low"})

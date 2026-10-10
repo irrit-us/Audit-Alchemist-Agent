@@ -50,6 +50,14 @@ def variant_limits(plan, name):
     return {**plan["limits"], **plan.get("limits_by_variant", {}).get(name, {})}
 
 
+def select_case(data, case_id, plan):
+    """Pick a case, optionally replacing its instruction with the blind plan one."""
+    case = next(c for c in data["cases"] if c["id"] == case_id)
+    if plan.get("use_plan_instruction", True):
+        return {**case, "instruction": plan["instruction"]}
+    return dict(case)
+
+
 def verify_forwarded_limits(report, limits):
     """Reject comparisons whose evaluated child did not receive the planned limits."""
     args = report["args"]
@@ -134,7 +142,7 @@ def summarize(output, review_path=None):
             for name, count in counts.items():
                 group[name] = group.get(name, 0) + count
         for summary in record["summaries"]:
-            for name in ("turns", "tools", "tool_errors", "retries", "output_repairs", "empty_completions"):
+            for name in ("turns", "tools", "tool_errors", "retries", "output_repairs", "empty_completions", "tool_budget_rejections"):
                 group["operational_totals"][name] = group["operational_totals"].get(name, 0) + summary.get(name, 0)
             usage = summary.get("usage")
             if usage and any(usage.values()):
@@ -194,6 +202,7 @@ def log_records(output, summary, round_number, date=None):
             "tool_errors": operational.get("tool_errors", 0), "retries": operational.get("retries", 0),
             "output_repairs": operational.get("output_repairs", 0),
             "empty_completions": operational.get("empty_completions", 0),
+            "tool_budget_rejections": operational.get("tool_budget_rejections", 0),
             "tokens": {name: operational.get(name, 0) for name in
                        ("prompt_tokens", "completion_tokens", "reasoning_tokens", "total_tokens")},
         })
@@ -235,8 +244,7 @@ def run_plan(plan_path, binary, output):
     for entry in plan["datasets"]:
         path = root / entry["path"]
         data = json.loads(path.read_text(encoding="utf-8"))
-        case = next(c for c in data["cases"] if c["id"] == entry["case"])
-        case = {**case, "instruction": plan["instruction"]}
+        case = select_case(data, entry["case"], plan)
         datasets.append((path, data["name"], case, source_hash(path.parent)))
     manifest = {"schema_version": 1, "started_utc": datetime.now(timezone.utc).isoformat(),
                 "harness_revision": git(root, "rev-parse", "HEAD"),
