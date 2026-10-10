@@ -19,7 +19,7 @@ All notable changes to this project are documented here. The format follows
   bound to the full claim and report hash (`docs/reports/round4-reviews.json`,
   `docs/reports/round5-reviews.json`, `docs/reports/round6-reviews.json`), and
   per-round/per-case execution records in `docs/reports/tiny-metrics-log.jsonl`
-  for round-over-round comparison (`round10`-`round13` reviews included).
+  for round-over-round comparison (`round10`-`round16` reviews included).
   `scripts/evaluate_round.py --log` appends the compact log and supports
   per-variant limit overrides and per-case threat-model runs. The default prompt
   now prefers reachable medium-or-higher root causes and omits low-impact
@@ -28,8 +28,12 @@ All notable changes to this project are documented here. The format follows
   and reviewed `unexpected_valid`, so sink discovery is not hidden by CWE label
   choice. The [experiment log](docs/experiments.md) records the round ledger and
   the accumulated evidence: robustness fixes drove completion, exact F1 is
-  label-bound, larger budgets did not help, and a 12-call budget cut ~31% of
-  tokens at equal exact TP (pending replication).
+  label-bound, larger budgets did not help, a 12-call budget cut ~32% of tokens
+  at equal-or-better F1 (rounds 13-14), forced context pruning is rejected
+  (round 15), and the 18-case stable baseline is exact F1 .329 / line F1 .493
+  over two trials (round 16). `update_plan` and `apply_patch` are retired on the
+  measured tool-error distribution (`bash` 96% of errors, `edit_file` called
+  once).
 - Two bounded recovery strategies selected from well-known harnesses
   (`docs/harness-design.md`): `--max-output-repairs` (default 2) returns a
   rejected final report's JSON/schema/evidence error to the model for a corrected

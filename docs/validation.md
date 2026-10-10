@@ -1,5 +1,36 @@
 # Validation
 
+## Confirmation and stable-reporting rounds 14-16: 2026-10-10
+
+- **Round 14 - smaller-budget replication (16 vs 12, 7 cases x 3).** The 12-call
+  variant cut tokens 32% (8.02M to 5.42M) with exact F1 .041 -> .143 and line F1
+  .122 -> .286; the two failures were a provider stream cap and an unobserved-line
+  citation, not the budget. Confirms the round-13 cost lever.
+- **Round 15 - context cap (2 MiB vs 128 KiB, 7 cases x 2).** Request sizes are
+  median ~69 KB and max ~329 KB, and no pruning fired at 2 MiB. The 128 KiB cap
+  failed 4/14 runs with `conversation exceeds --max-context-bytes` and dropped
+  exact TP to zero, saving ~49% of tokens. Rejected.
+- **Round 16 - stable capability report (18 cases x 2).** 36/36 completed, exact
+  P/R/F1 .308/.353/.329, line P/R/F1 .462/.529/.493, 27 unexpected findings all
+  reviewed, clean control empty, and 6 output repairs fired. The blind budget
+  rounds remain the harder setting; per-case threat models explain most of the
+  gap.
+
+| Round | Cases x trials | Variant | Success | Exact P/R/F1 | Line P/R/F1 | unexpected valid | Tokens |
+| --- | --- | --- | ---: | --- | --- | ---: | ---: |
+| 14 | 7 x 3 | 16 tools | 21/21 | .036/.048/.041 | .107/.143/.122 | 21 | 8.02M |
+| 14 | 7 x 3 | 12 tools | 19/21 | .143/.143/.143 | .286/.286/.286 | 16 | 5.42M |
+| 15 | 7 x 2 | 2 MiB cap | 14/14 | .111/.143/.125 | .167/.214/.188 | 14 | 5.10M |
+| 15 | 7 x 2 | 128 KiB cap | 10/14 | .000/.000/.000 | .083/.071/.077 | 11 | 2.59M |
+| 16 | 18 x 2 | default | 36/36 | .308/.353/.329 | .462/.529/.493 | 27 | 10.39M |
+
+The smaller budget is a confirmed cost lever (rounds 13-14); forced context
+pruning is rejected (round 15); `update_plan`/`apply_patch` are retired on the
+observed tool-error distribution (`bash` 96% of errors, `edit_file` called once).
+The global CLI `--max-tool-calls` default stays 32; evaluation plans can use
+12-16. Reviews: `round14-reviews.json`, `round15-reviews.json`,
+`round16-reviews.json`.
+
 ## Optimization and validation rounds 10-13: 2026-10-10
 
 Three further rounds under the same procedure (same provider, model, dataset

@@ -27,6 +27,8 @@ Start with the [README](../README.md) for installation and a first run.
 | [Action-budget round 10](reports/tiny-round10.json) | 16 vs 24 tool calls; larger budget rejected |
 | [Expanded validation rounds 11-12](reports/tiny-round12.json), [11](reports/tiny-round11.json) | 18-case dataset with per-case threat models |
 | [Smaller-budget round 13](reports/tiny-round13.json) | 16 vs 12 tool calls; ~31% token saving |
+| [Confirmation rounds 14-15](reports/tiny-round14.json), [15](reports/tiny-round15.json) | Budget replication and rejected context-cap experiment |
+| [Stable capability round 16](reports/tiny-round16.json) | 18-case, 2-trial exact/line/reviewed baseline |
 | [Round 4 reviews](reports/round4-reviews.json) | Per-finding verdicts for the round-4 non-exact matches |
 | [Round 5 reviews](reports/round5-reviews.json) | Per-finding verdicts for the round-5 non-exact matches |
 | [Round 6 reviews](reports/round6-reviews.json) | Per-finding verdicts for the round-6 non-exact matches |
