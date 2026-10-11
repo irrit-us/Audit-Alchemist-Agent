@@ -112,6 +112,7 @@ Groq, Azure, and local servers), `responses` (OpenAI Responses), or `anthropic`
 | [Monitoring and skills](docs/monitoring.md) | Run journals, debugging, local diagnostics, and built-in guidance |
 | [Configuration](docs/configuration.md) | Commands, flags, limits, exit codes, and reports |
 | [Authentication](docs/authentication.md) | API-key and Sign In With ChatGPT (Codex) credentials |
+| [Workflow integration API](docs/api.md) | Process contract, command endpoints, JSON payloads, and exit codes for the calling workflow manager |
 | [Protocol](docs/protocol.md) | Version 1 agent request/response and dataset contract |
 | [Evaluation](docs/evaluation.md) | Matching, scoring, metrics, and reproducibility |
 | [Constraints](docs/constraints.md) | Public constraints and design-decision rationale |

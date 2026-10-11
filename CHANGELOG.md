@@ -7,6 +7,10 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- Standardized [workflow integration API](docs/api.md) reference covering the
+  process contract, command endpoints, JSON payloads, error taxonomy, exit
+  codes, configuration resource, environment variables, and versioning for the
+  calling workflow management program.
 - Verified non-exact-match findings from the live rounds
   (`docs/reports/tiny-unexpected-verification.json`) and promoted the genuine
   separate issues to dataset cases in the tiny submodule (`blake2b-key-overflow`,

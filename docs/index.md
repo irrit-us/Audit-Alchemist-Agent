@@ -10,6 +10,7 @@ Start with the [README](../README.md) for installation and a first run.
 | [Context management](context-management.md) | Tool-output projection, recent-history protection, temporary recovery, and implementation references |
 | [Binary releases](releases.md) | AMD64 GNU, musl, and Windows downloads, checksums, and release CI |
 | [Authentication](authentication.md) | API-key and Sign In With ChatGPT (Codex) credentials |
+| [Workflow integration API](api.md) | Process contract, command endpoints, JSON payloads, exit codes, and versioning for the calling workflow manager |
 | [Protocol](protocol.md) | Version 1 agent request/response and dataset contract |
 | [Evaluation](evaluation.md) | Matching, scoring, metrics, and reproducibility |
 | [Constraints](constraints.md) | Required harness invariants, existing checks, and enforcement gaps |
