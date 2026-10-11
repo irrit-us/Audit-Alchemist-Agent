@@ -1,11 +1,11 @@
 [package]
 name = "audit-harness"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 description = "Bounded CLI execution and reproducible evaluation for vulnerability discovery agents"
 license = "MIT"
 readme = "README.md"
-repository = "https://github.com/irrit-us/Audit-Alchemist-Agent"
+repository = "https://github.com/irrit-us/Audit-Alchemist"
 keywords = ["security", "vulnerability", "audit", "llm"]
 categories = ["command-line-utilities", "development-tools"]
 default-run = "alchemist"

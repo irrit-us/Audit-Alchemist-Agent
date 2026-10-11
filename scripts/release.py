@@ -79,7 +79,7 @@ def package(target):
             "Edit `node.toml` for your provider and target, then run:\n\n"
             "```sh\nalchemist check-config --config node.toml\nalchemist audit --config node.toml --dry-run\nalchemist audit --config node.toml\n```\n\n"
             "Set AUDIT_API_KEY for a real audit. Bash and optional debugger/MCP executables are separate host tools. On Windows install Git Bash or set AUDIT_BASH. Python and Rust are not required to run this binary.\n\n"
-            f"[Configuration reference](https://github.com/irrit-us/Audit-Alchemist-Agent/blob/{commit}/docs/configuration.md)\n",
+            f"[Configuration reference](https://github.com/irrit-us/Audit-Alchemist/blob/{commit}/docs/configuration.md)\n",
             encoding="utf-8")
         (staging / "build-info.json").write_text(json.dumps({"version": version, "commit": commit, "target": target,
             "rustc": subprocess.check_output(["rustc", "--version"], text=True).strip()}, indent=2) + "\n", encoding="utf-8")

@@ -16,7 +16,7 @@ precedence; default context stays concise.
 ## Quick start
 
 Prebuilt AMD64 binaries for Linux GNU, Linux musl, and Windows x64 are available
-from [GitHub Releases](https://github.com/irrit-us/Audit-Alchemist-Agent/releases).
+from [GitHub Releases](https://github.com/irrit-us/Audit-Alchemist/releases).
 See [binary releases](docs/releases.md) for checksums, compatibility, and CI publication.
 
 Install stable Rust, then build and run the deterministic fixture:

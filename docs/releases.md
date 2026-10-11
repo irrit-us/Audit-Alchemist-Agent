@@ -8,17 +8,17 @@ All release targets are **AMD64 / x86_64**:
 | `x86_64-unknown-linux-musl` | `.tar.gz` | Static musl runtime; CI rejects ELF interpreter/shared-library dependencies. |
 | `x86_64-pc-windows-msvc` | `.zip` | Windows x64 with the MSVC C runtime statically linked. |
 
-Download from [GitHub Releases](https://github.com/irrit-us/Audit-Alchemist-Agent/releases).
+Download from [GitHub Releases](https://github.com/irrit-us/Audit-Alchemist/releases).
 New builds contain the optimized `alchemist` binary (`.exe` on Windows),
 a minimal `node.toml`, quick-start instructions, licenses/skill attribution, and
 `build-info.json` recording version, source commit, target, and Rust version.
-New archives use `alchemist-vVERSION-TARGET` names. The published v0.1.1 release
+Archives from v0.1.2 use `alchemist-vVERSION-TARGET` names. The published v0.1.1 release
 still uses `audit-harness` for its archive and binary names. Every archive has a
-sibling `.sha256` checksum file. For example, to verify and extract v0.1.1:
+sibling `.sha256` checksum file. For example, to verify and extract v0.1.2:
 
 ```sh
-sha256sum -c audit-harness-v0.1.1-x86_64-unknown-linux-musl.tar.gz.sha256
-tar -xzf audit-harness-v0.1.1-x86_64-unknown-linux-musl.tar.gz
+sha256sum -c alchemist-v0.1.2-x86_64-unknown-linux-musl.tar.gz.sha256
+tar -xzf alchemist-v0.1.2-x86_64-unknown-linux-musl.tar.gz
 ```
 
 On Windows, compare `Get-FileHash -Algorithm SHA256 <archive.zip>` with the
@@ -49,8 +49,8 @@ To release a new version, update `Cargo.toml`, regenerate and commit `Cargo.lock
 record changes, and push a matching annotated tag:
 
 ```sh
-git tag -a v0.1.1 -m 'Release v0.1.1'
-git push origin v0.1.1
+git tag -a v0.1.2 -m 'Release v0.1.2'
+git push origin v0.1.2
 ```
 
 The workflow refuses to overwrite existing release assets. A failed build can
